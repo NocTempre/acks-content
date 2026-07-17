@@ -29,7 +29,7 @@ const SAVES_LUT = {
   14: { paralysis: 4, death: 5, blast: 6, implements: 7, spell: 8 },
 };
 
-function savesForLevel(level) {
+export function savesForLevel(level) {
   let chosen = 0;
   for (const band of Object.keys(SAVES_LUT).map(Number).sort((a, b) => a - b)) {
     if (level >= band) chosen = band;
@@ -60,78 +60,3 @@ export function extractStatPairs({ items }) {
   return pairs.map((p) => ({ label: p.label, value: p.value.replace(/\s+/g, " ").trim() }));
 }
 
-/**
- * Map understood labels into an acks monster system patch.
- * Returns { system, applied[], unmapped[] }.
- */
-export function mapPairs(pairs) {
-  const get = (label) => pairs.find((p) => p.label.toLowerCase() === label.toLowerCase())?.value ?? null;
-  const system = {};
-  const applied = [];
-  const unmappedLabels = new Set(pairs.map((p) => p.label));
-  const take = (label) => {
-    const v = get(label);
-    if (v !== null) {
-      applied.push(label);
-      for (const p of pairs) if (p.label.toLowerCase() === label.toLowerCase()) unmappedLabels.delete(p.label);
-    }
-    return v;
-  };
-
-  const ac = take("Armor Class");
-  if (ac && /^\d+/.test(ac)) system.aac = { value: parseInt(ac, 10) };
-
-  const hd = take("Hit Dice");
-  if (hd) {
-    const m = /^(\d+)(?:\s*[+-]\s*(\d+))?(\**)/.exec(hd.replace(/\s/g, ""));
-    if (m) {
-      const count = parseInt(m[1], 10);
-      const bonus = /-/.test(hd) ? -parseInt(m[2] ?? 0, 10) : parseInt(m[2] ?? 0, 10);
-      const avg = Math.max(1, Math.floor(count * 4.5 + bonus));
-      system.hp = { hd: `${count}d8${bonus ? (bonus > 0 ? `+${bonus}` : bonus) : ""}`, value: avg, max: avg };
-    }
-  }
-
-  const save = take("Save");
-  if (save) {
-    const m = /^([A-Z]+)\s*(\d+)?/.exec(save.trim());
-    const level = m?.[1] === "NH" ? 0 : parseInt(m?.[2] ?? "0", 10) || 0;
-    const row = savesForLevel(level);
-    system.saves = Object.fromEntries(Object.entries(row).map(([k, v]) => [k, { value: v }]));
-    // Written for both key generations, like the family's pack builders do.
-    system.saves.breath = { value: row.blast };
-    system.saves.wand = { value: row.implements };
-  }
-
-  const morale = take("Morale");
-  const xp = take("XP");
-  const alignment = take("Alignment");
-  const treasure = take("Treasure Type");
-  system.details = {
-    ...(morale ? { morale: parseInt(morale.replace(/[^\d-]/g, ""), 10) || 0 } : {}),
-    ...(xp ? { xp: parseInt(xp.replace(/[^\d]/g, ""), 10) || 0 } : {}),
-    ...(alignment ? { alignment: (() => { const a = alignment.split(/[ (]/)[0]; return a.charAt(0).toUpperCase() + a.slice(1); })() } : {}),
-    ...(treasure ? { treasure: { type: treasure } } : {}),
-  };
-
-  const dungeonEnc = take("Dungeon Enc");
-  const wildernessEnc = take("Wilderness Enc");
-  const dice = (v) => /\d+d\d+/.exec(v ?? "")?.[0] ?? "";
-  if (dungeonEnc || wildernessEnc) {
-    system.details.appearing = { d: dice(dungeonEnc), w: dice(wildernessEnc) };
-  }
-
-  // Land speed "40' / 120'" → base movement is the second (exploration) value.
-  const speed = take("Speed (land)") ?? take("Speed");
-  if (speed) {
-    const nums = [...speed.matchAll(/(\d+)/g)].map((m) => parseInt(m[1], 10));
-    if (nums.length) system.movement = { base: nums[nums.length - 1] };
-  }
-
-  // Attack summary is a display string in the core schema.
-  const attacks = take("Attacks");
-  const damage = take("Damage");
-  if (attacks || damage) system.attacks = [attacks, damage].filter(Boolean).join(" — ");
-
-  return { system, applied, unmapped: [...unmappedLabels] };
-}

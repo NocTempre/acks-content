@@ -25,7 +25,8 @@ import { MODULE_ID, LANG_PREFIX } from "./constants.mjs";
 import { BOOKS, fingerprintWarning } from "./books.mjs";
 import { RECIPES, recipesForBook, recipeById } from "./recipes.mjs";
 import { openBook, pageItems, extractRecipe, extractDisplay, extractRunin, listHeadings, setWorker } from "./extract.mjs";
-import { extractStatPairs, mapPairs } from "./stats.mjs";
+import { extractStatPairs } from "./stats.mjs";
+import { mapPairs } from "./stats-map.mjs";
 import { createSamples, createDocFor, audit as auditDialog } from "./poc.mjs";
 
 const SETTING_CACHE = "contentCache";
@@ -260,10 +261,29 @@ async function loadHeadings(bookId, page, pageData, picked, kindChoice, title) {
 async function applyStatsToActor(actor, pageData, recipe) {
   const pairs = extractStatPairs(pageData);
   if (!pairs.length) return ui.notifications.warn(`acks-content | ${recipe.name}: no stat rows found on PDF p. ${recipe.page}.`);
-  const { system, applied, unmapped } = mapPairs(pairs);
-  await actor.update({ system, [`flags.${MODULE_ID}.statPairs`]: pairs });
+  const { system, extras, items, applied, unmapped } = mapPairs(pairs);
+
+  const update = { system, [`flags.${MODULE_ID}.statPairs`]: pairs };
+  // Full Monster Sheet extras only when acks-monsters is active (its schema).
+  if (Object.keys(extras).length && game.modules.get("acks-monsters")?.active) {
+    update["flags.acks-monsters.extras"] = extras;
+  }
+  await actor.update(update);
+
+  // Embedded attacks/proficiencies: replace previously generated ones (idempotent re-apply).
+  const stale = actor.items.filter((i) => i.getFlag(MODULE_ID, "generated")).map((i) => i.id);
+  if (stale.length) await actor.deleteEmbeddedDocuments("Item", stale);
+  if (items.length) {
+    await actor.createEmbeddedDocuments(
+      "Item",
+      items.map((i) => ({ ...i, flags: { ...(i.flags ?? {}), [MODULE_ID]: { generated: true } } })),
+    );
+  }
+
   console.log(`${MODULE_ID} | ${actor.name}: stats applied [${applied.join(", ")}]${unmapped.length ? ` — unmapped: ${unmapped.join(", ")}` : ""}`);
-  ui.notifications.info(`acks-content | ${actor.name}: ${applied.length} stat fields set, ${unmapped.length} labels stored raw (see console).`);
+  ui.notifications.info(
+    `acks-content | ${actor.name}: ${applied.length} stat fields, ${items.length} attack/ability items, ${unmapped.length} labels stored raw (console has details).`,
+  );
 }
 
 /** Fill stats on already-created monster actors (e.g. the Griffon sample). */

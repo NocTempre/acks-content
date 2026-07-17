@@ -10,7 +10,8 @@
  */
 import fs from "node:fs";
 import { openBook, extractRecipe, pageItems } from "../scripts/extract.mjs";
-import { extractStatPairs, mapPairs } from "../scripts/stats.mjs";
+import { extractStatPairs } from "../scripts/stats.mjs";
+import { mapPairs } from "../scripts/stats-map.mjs";
 import { RECIPES } from "../scripts/recipes.mjs";
 import { BOOKS, fingerprintWarning } from "../scripts/books.mjs";
 
@@ -54,17 +55,27 @@ for (const recipe of RECIPES) {
   console.log(`OK   ${recipe.id}: ${prose.split(" ").length}w | ${JSON.stringify(prose.slice(0, 40))}`);
 }
 
-// Stat setup: parse every real monster recipe's stat block through the
-// shipping mapper (numbers only — safe to print).
-for (const recipe of RECIPES.filter((r) => r.kind === "monster" && !BOOKS[r.book]?.fake)) {
+// Stat setup: parse monster stat blocks through the shipping mapper (numbers
+// only — safe to print). Lammasu is a dev-only recipe exercising HD bonus,
+// multi-speed, vision gluing, incarnation type, and proficiency "none".
+const STAT_RECIPES = [
+  ...RECIPES.filter((r) => r.kind === "monster" && !BOOKS[r.book]?.fake),
+  { id: "dev.lammasu", book: "mm", page: 200, mode: "display", heading: "LAMMASU", kind: "monster", name: "Lammasu" },
+];
+for (const recipe of STAT_RECIPES) {
   const doc = docs[recipe.book];
   if (!doc) continue;
   const pairs = extractStatPairs(await pageItems(doc, recipe.page));
-  const { system, applied, unmapped } = mapPairs(pairs);
-  console.log(`STATS ${recipe.id}: ${pairs.length} rows -> ${applied.length} mapped [${applied.join(", ")}]`);
+  const res = mapPairs(pairs);
+  const { system, extras, applied, unmapped } = res;
+  console.log(`STATS ${recipe.id}: ${pairs.length} rows -> ${applied.length} mapped, ${res.items.length} items [${applied.join(", ")}]`);
   console.log(
     `      ac=${system.aac?.value} hd=${system.hp?.hd} hp=${system.hp?.max} save.death=${system.saves?.death?.value} morale=${system.details?.morale} xp=${system.details?.xp} align=${system.details?.alignment} move=${system.movement?.base} appearing.w=${system.details?.appearing?.w} attacks=${JSON.stringify(system.attacks)}`,
   );
+  console.log(
+    `      extras: types=${JSON.stringify(extras.types)} subtype=${JSON.stringify(extras.subtype)} size=${extras.size} mass=${extras.mass?.stone}st hd=${JSON.stringify(extras.hd)} saveAs=${JSON.stringify(extras.saveAs)} speeds=${JSON.stringify(extras.speeds)} vision=${JSON.stringify(extras.vision)}@${extras.lightlessRange} load=${extras.load?.normal} lair=${extras.encounter?.lairChance}%`,
+  );
+  console.log(`      throw=${system.thac0?.throw} items=${res.items.map((i) => `${i.type}:${i.name}(${i.system.damage ?? ""})`).join(" ")}`);
   if (unmapped.length) console.log(`      unmapped (stored raw): ${unmapped.join(", ")}`);
   if (!applied.length) failed = true;
 }

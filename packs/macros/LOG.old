@@ -1,0 +1,5 @@
+2026/07/17-00:46:45.166 43e4 Delete type=3 #1
+2026/07/17-00:46:45.182 859c Level-0 table #5: started
+2026/07/17-00:46:45.182 859c Level-0 table #5: 1442 bytes OK
+2026/07/17-00:46:45.182 859c Delete type=0 #3
+2026/07/17-00:46:45.182 859c Manual compaction at level-0 from '!macros!ackscMacAudit000' @ 72057594037927935 : 1 .. '!macros!ackscMacStatus00' @ 0 : 0; will stop at (end)
