@@ -395,24 +395,25 @@ async function applyStatsToActor(actor, doc, pageData, recipe) {
   if (!pairs.length) return ui.notifications.warn(`acks-content | ${recipe.name}: no stat rows found on PDF p. ${recipe.page}.`);
   const { system, extras, items, applied, unmapped } = mapPairs(pairs);
 
+  // Stream the entry prose into the core biography: it is the ONE description
+  // field the monster sheet runs enrichers on ({{{enriched.biography}}}), so the
+  // @PdfText tag resolves per seat there (stub for a bookless seat, "show book
+  // text" reveal for one with the book). The FMS extras.description.* fields
+  // render raw HTML through <prose-mirror> and never enrich — a tag written
+  // there would show as literal text — so biography is the correct target.
+  // Keep it inside the `system` object (not a dotted `system.details.biography`
+  // sibling key) so the two never race to merge the same parent.
+  system.details = { ...(system.details ?? {}), biography: tagHtmlFor(recipe) };
+
   const update = { system, [`flags.${MODULE_ID}.statPairs`]: pairs };
-  // Full Monster Sheet extras only when acks-monsters is active (its schema).
-  // Its Description tab reads extras.description.* — stream the entry prose
-  // there too (the tag enriches per seat like everywhere else).
+  // Full Monster Sheet structured extras only when acks-monsters is active (its
+  // schema); a plain `flags.*` path never collides with the `system` object.
   const fmsActive = game.modules.get("acks-monsters")?.active;
-  if (fmsActive) {
-    update["flags.acks-monsters.extras"] = extras;
-    // Leaf-path write is the most merge-safe way to land the streamed entry
-    // prose where the FMS Description tab reads it.
-    update["flags.acks-monsters.extras.description.appearance"] = tagHtmlFor(recipe);
-  }
+  if (fmsActive) update["flags.acks-monsters.extras"] = extras;
   await actor.update(update);
-  if (fmsActive) {
-    // Truthful diagnostics: verify the description actually landed. If it is
-    // present here but later vanishes, a sheet submit erased it (FMS-side).
-    const back = actor.getFlag("acks-monsters", "extras")?.description?.appearance;
-    console.log(`${MODULE_ID} | ${actor.name}: FMS description ${back ? "VERIFIED on actor" : "MISSING after write (!)"}`);
-  }
+  // Truthful diagnostics: verify the streamed description actually landed.
+  const back = actor.system?.details?.biography;
+  console.log(`${MODULE_ID} | ${actor.name}: biography ${back ? "VERIFIED on actor" : "MISSING after write (!)"}`);
 
   // Spoils subsection -> spoil-flagged items (Full Monster Sheet Spoils tab).
   // Book weights are authoritative as printed (stored in 1/6-stone units).
@@ -445,26 +446,71 @@ async function applyStatsToActor(actor, doc, pageData, recipe) {
   );
 }
 
-/** Fill stats on already-created monster actors (e.g. the Griffon sample). */
+/** The monster recipe whose name matches an actor ("Griffon" or "Griffon (PoC)"). */
+function monsterRecipeForActor(actor) {
+  return (
+    allRecipes().find(
+      (r) =>
+        r.kind === "monster" &&
+        !BOOKS[r.book]?.fake &&
+        (actor.name === r.name || actor.name === `${r.name} (PoC)`),
+    ) ?? null
+  );
+}
+
+/** Fill one monster actor from its recipe's book (must be open this session). */
+async function fillMonster(actor, recipe) {
+  const session = sessionDocs.get(recipe.book);
+  if (!session) {
+    ui.notifications.warn(
+      `acks-content | ${BOOKS[recipe.book]?.label ?? recipe.book} is not open this session — connect it (PoC 2 / unlock) to fill ${actor.name}.`,
+    );
+    return false;
+  }
+  const pageData = await pageItems(session.doc, recipe.page);
+  await applyStatsToActor(actor, session.doc, pageData, recipe);
+  return true;
+}
+
+/**
+ * Fill stats on the SELECTED monster tokens only (not every monster in the
+ * world). Select the token(s) on the canvas, then run this.
+ */
 async function applyStats() {
   if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only.");
-  const monsters = allRecipes().filter((r) => r.kind === "monster" && !BOOKS[r.book]?.fake);
+  const selected = [
+    ...new Set((canvas.tokens?.controlled ?? []).map((t) => t.actor).filter((a) => a?.type === "monster")),
+  ];
+  if (!selected.length) {
+    return ui.notifications.warn(
+      "acks-content | select the monster token(s) to fill first — Apply Stats now targets only your selection, never every monster.",
+    );
+  }
   let touched = 0;
-  for (const recipe of monsters) {
-    const session = sessionDocs.get(recipe.book);
-    if (!session) continue;
+  for (const actor of selected) {
+    const recipe = monsterRecipeForActor(actor);
+    if (!recipe) {
+      ui.notifications.warn(`acks-content | no recipe matches "${actor.name}" — browse-load it (PoC 4) or rename it to a known sample.`);
+      continue;
+    }
+    if (await fillMonster(actor, recipe)) touched++;
+  }
+  if (touched) ui.notifications.info(`acks-content | filled ${touched} selected monster${touched === 1 ? "" : "s"}.`);
+}
+
+/**
+ * Create the fixed sample set (poc.mjs) and immediately auto-fill each created
+ * monster whose book is open this session — a populated sheet on import, no
+ * separate Apply-Stats step.
+ */
+async function createSamplesAndFill() {
+  await createSamples();
+  for (const recipe of allRecipes().filter((r) => r.kind === "monster" && !BOOKS[r.book]?.fake)) {
+    if (!sessionDocs.has(recipe.book)) continue;
     const actor = game.actors.find(
       (a) => a.type === "monster" && (a.name === recipe.name || a.name === `${recipe.name} (PoC)`),
     );
-    if (!actor) continue;
-    const pageData = await pageItems(session.doc, recipe.page);
-    await applyStatsToActor(actor, session.doc, pageData, recipe);
-    touched++;
-  }
-  if (!touched) {
-    ui.notifications.warn(
-      "acks-content | nothing to fill — open the monster's book this session (PoC 2 / unlock) and create the samples (PoC 1) first.",
-    );
+    if (actor) await fillMonster(actor, recipe);
   }
 }
 
@@ -529,7 +575,7 @@ Hooks.once("ready", async () => {
 
   document.body.addEventListener("click", onRevealClick);
   const audit = () => auditDialog(allRecipes(), stubFor);
-  const api = { connectBook, browseAndLoad, createSamples, applyStats, audit, bookStatus, forgetBooks, proseFor, RECIPES, BOOKS };
+  const api = { connectBook, browseAndLoad, createSamples: createSamplesAndFill, applyStats, audit, bookStatus, forgetBooks, proseFor, RECIPES, BOOKS };
   globalThis.acksContent = api;
   const module = game.modules.get(MODULE_ID);
   if (module) module.api = api;

@@ -15,31 +15,95 @@ const SPEED_KEYS = ["land", "burrow", "climb", "fly", "swim", "webcrawl"];
 const SAVE_CLASS_BY_ABBR = { F: "fighter", C: "crusader", M: "mage", T: "thief", D: "dwarvenVaultguard", E: "elvenSpellsword" };
 
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+// Private-use-area glyphs (damage-type icons, foot/inch marks) — strip for
+// clean text; kept out of source as codepoints so the file stays ASCII.
 const PUA_RE = /[-]/g;
 const clean = (v) => (v ?? "").replace(PUA_RE, "").replace(/\s+/g, " ").trim();
 
-// Damage-type icon glyphs, decoded from the MM legend (PDF p. 14). Keys are
-// acks-monsters DAMAGE_TYPES enum values. E907 = luminous by elimination.
-const DAMAGE_GLYPHS = {
-  "": "acidic",
-  "": "arcane",
-  "": "bludgeoning",
-  "": "necrotic",
-  "": "cold",
-  "": "electrical",
-  "": "fire",
-  "": "luminous",
-  "": "slashing",
-  "": "piercing",
-  "": "poisonous",
-  "": "seismic",
-};
+// Damage-type icon glyph -> acks-monsters DAMAGE_TYPES enum key, decoded from
+// the MM Damage-table legend (verified against the real Monstrous Manual by
+// codepoint). The legend prints the SAME codepoint in the Mundane and
+// Extraordinary columns — they differ only by COLOUR (red = extraordinary),
+// which text extraction can never see. Extraordinary is therefore DERIVED from
+// the monster (extraordinaryNatural below), the exact RAW ruling the book uses
+// when it is not overriding with a red icon.
+const DAMAGE_GLYPHS = Object.fromEntries(
+  Object.entries({
+    e900: "acidic",
+    e901: "arcane",
+    e902: "bludgeoning",
+    e903: "necrotic",
+    e904: "cold",
+    e905: "electrical",
+    e906: "fire",
+    e907: "luminous",
+    e908: "slashing",
+    e90b: "piercing",
+    e90c: "poisonous",
+    e90d: "seismic",
+    e910: "varies",
+  }).map(([hex, type]) => [String.fromCodePoint(parseInt(hex, 16)), type]),
+);
 const damageTypeOf = (segment) => {
-  for (const ch of segment) if (DAMAGE_GLYPHS[ch]) return DAMAGE_GLYPHS[ch];
+  for (const ch of segment ?? "") if (DAMAGE_GLYPHS[ch]) return DAMAGE_GLYPHS[ch];
   return null;
 };
 
-const NATURAL_WEAPONS = /^(claws?|talons?|bites?|tails?|stings?|slams?|hugs?|gores?|horns?|tentacles?|crush|wings?|hoo(f|ves)|fists?|touch|constrict|trample|kick)$/i;
+// Natural-weapon name -> acks-monsters NATURAL_WEAPONS enum key + that key's
+// default damage type (MM Damage table: Bludgeoning = Constriction/Hoof/Tail/
+// Tentacle/Tongue; Piercing = Bite/Stinger; Slashing = Claw/Talon; remaining
+// keys from acks-monsters config.mjs NATURAL_WEAPONS). Ordered so a more
+// specific stem wins (stinger before sting).
+const NATURAL_WEAPON_KEYS = [
+  ["bite", /^bit/, "piercing"],
+  ["stinger", /^stinger/, "piercing"],
+  ["sting", /^sting/, "piercing"],
+  ["gore", /^gor/, "piercing"],
+  ["horn", /^horn/, "piercing"],
+  ["tusk", /^tusk/, "piercing"],
+  ["spine", /^spine/, "piercing"],
+  ["claw", /^claw/, "slashing"],
+  ["talon", /^talon/, "slashing"],
+  ["pincer", /^pincer/, "slashing"],
+  ["hoof", /^(hoof|hoov|hoove)/, "bludgeoning"],
+  ["tail", /^tail/, "bludgeoning"],
+  ["tentacle", /^tentacl/, "bludgeoning"],
+  ["tongue", /^tongue/, "bludgeoning"],
+  ["constriction", /^constrict/, "bludgeoning"],
+  ["ram", /^ram/, "bludgeoning"],
+  ["feeler", /^feeler/, "bludgeoning"],
+  ["envelopment", /^envelop/, "acidic"],
+  ["weapon", /^weapon/, "varies"],
+];
+/** Resolve an attack name to { key, damage } (enum key + default type) or null. */
+function naturalWeaponOf(name) {
+  const n = (name ?? "").toLowerCase().trim();
+  for (const [key, re, damage] of NATURAL_WEAPON_KEYS) if (re.test(n)) return { key, damage };
+  return null;
+}
+
+/**
+ * Whether a monster's NATURAL attacks deal extraordinary (vs mundane) damage,
+ * per the MM Damage-table rulings (the icon's red/black colour is unreadable in
+ * text, so we apply the same rules the book states):
+ *   incarnation / enchanted    -> always extraordinary
+ *   humanoid (not enchanted)    -> always mundane
+ *   animal                      -> extraordinary iff > 4+1 HD AND huge-or-larger
+ *   construct/giant/monstrosity/undead/vermin -> extraordinary iff > 4+1 HD
+ *   anything else (ooze/plant/beastman/unknown) -> mundane (recipe override later)
+ */
+function extraordinaryNatural(types = [], hd = {}, size = "") {
+  const t = new Set(types);
+  if (t.has("incarnation") || t.has("enchanted")) return true;
+  if (t.has("humanoid")) return false;
+  const count = hd.count ?? 0;
+  const bonus = hd.bonus ?? 0;
+  const moreThan4plus1 = count > 4 || (count === 4 && bonus > 1);
+  const hugeOrLarger = ["huge", "gigantic", "colossal"].includes(size);
+  if (t.has("animal")) return moreThan4plus1 && hugeOrLarger;
+  if (["construct", "giant", "monstrosity", "undead", "vermin"].some((k) => t.has(k))) return moreThan4plus1;
+  return false;
+}
 
 const firstInt = (v) => {
   const m = /(-?[\d,]+)/.exec(v ?? "");
@@ -112,7 +176,7 @@ export function mapPairs(pairs) {
     ...(morale ? { morale: parseInt(morale.replace(/[^\d-]/g, ""), 10) || 0 } : {}),
     ...(xp !== null ? { xp: firstInt(xp) ?? 0 } : {}),
     ...(alignment ? { alignment: capitalize(alignment.split(/[ (]/)[0].toLowerCase()) } : {}),
-    ...(treasure ? { treasure: { type: /^none/i.test(treasure) ? "none" : treasure.trim().charAt(0).toUpperCase() } } : {}),
+    ...(treasure ? { treasure: { type: /^none/i.test(treasure) ? "None" : treasure.trim() } } : {}),
   };
 
   const dungeonEnc = take("Dungeon Enc");
@@ -205,18 +269,25 @@ export function mapPairs(pairs) {
         names.push(token);
       }
     }
+    // Extraordinary applies to natural attacks only, derived from the monster.
+    const extraNatural = extraordinaryNatural(extras.types, extras.hd, extras.size);
     segments.forEach((dmgSeg, i) => {
       const dmg = /\d*d\d+(?:[+-]\d+)?/.exec(clean(dmgSeg))?.[0] ?? clean(dmgSeg);
-      const damageType = damageTypeOf(dmgSeg);
-      const name = capitalize((names[i] ?? names[names.length - 1] ?? `attack ${i + 1}`).trim());
+      const rawName = (names[i] ?? names[names.length - 1] ?? `attack ${i + 1}`).trim();
+      const nw = naturalWeaponOf(rawName);
+      // Damage type: prefer the printed icon glyph; fall back to the natural
+      // weapon's RAW default (Claw -> slashing, etc.).
+      const damageType = damageTypeOf(dmgSeg) ?? nw?.damage ?? null;
+      const name = capitalize(rawName);
       items.push({
         name,
         type: "weapon",
         img: "icons/svg/sword.svg",
         flags: {
           "acks-monsters": {
+            ...(nw ? { naturalWeapon: nw.key } : {}),
             ...(damageType ? { damageType } : {}),
-            naturalWeapon: NATURAL_WEAPONS.test(name),
+            extraordinary: nw ? extraNatural : false,
           },
         },
         system: {
