@@ -75,20 +75,43 @@ const joinProse = (items) =>
     .replace(/\s+/g, " ")
     .trim();
 
+/** Reconstruct display-heading lines from large items (headings span items). */
+function displayHeadings(items, cols) {
+  const big = items.filter((it) => it.h >= HEADING_MIN_H).map((it) => ({ ...it, col: colOf(it.x, cols) }));
+  const lines = {};
+  for (const it of big) (lines[`${it.col}:${Math.round(it.y / 3)}`] ||= []).push(it);
+  return Object.values(lines)
+    .map((arr) => arr.sort((a, b) => a.x - b.x))
+    .map((arr) => ({ text: arr.map((a) => a.str).join("").replace(/\s+/g, " ").trim(), y: arr[0].y, col: arr[0].col }))
+    .filter((h) => h.text.length > 2);
+}
+
+/**
+ * Every extraction anchor detected on a page, for interactive browsing:
+ * display headings plus run-in candidates (line-initial "Name:" body items).
+ * Returned in column/reading order with the mode each anchor needs.
+ */
+export function listHeadings({ items }) {
+  const cols = detectColumns(items);
+  const displays = displayHeadings(items, cols).map((h) => ({ text: h.text, mode: "display", col: h.col, y: h.y }));
+  const runins = items
+    .filter(
+      (it) =>
+        it.h < HEADING_MIN_H &&
+        /^[A-Z][^:]{1,38}:\s*$/.test(it.str.trim()) &&
+        cols.some((c) => Math.abs(it.x - c) < 15),
+    )
+    .map((it) => ({ text: it.str.trim(), mode: "runin", col: colOf(it.x, cols), y: it.y }));
+  return [...displays, ...runins].sort((a, b) => a.col - b.col || a.y - b.y);
+}
+
 /**
  * Display-heading mode: anchor on a large heading, collect same-column body
  * text until the next large heading in that column (or page end).
  */
 export function extractDisplay({ items, height }, heading) {
   const cols = detectColumns(items);
-  // Reconstruct heading lines from large items (a heading may span items).
-  const big = items.filter((it) => it.h >= HEADING_MIN_H).map((it) => ({ ...it, col: colOf(it.x, cols) }));
-  const lines = {};
-  for (const it of big) (lines[`${it.col}:${Math.round(it.y / 3)}`] ||= []).push(it);
-  const heads = Object.values(lines)
-    .map((arr) => arr.sort((a, b) => a.x - b.x))
-    .map((arr) => ({ text: arr.map((a) => a.str).join("").replace(/\s+/g, " ").trim(), y: arr[0].y, col: arr[0].col }))
-    .filter((h) => h.text.length > 2);
+  const heads = displayHeadings(items, cols);
   const anchor = heads.find((h) => h.text.toLowerCase().startsWith(heading.toLowerCase()));
   if (!anchor) return null;
   const next = heads

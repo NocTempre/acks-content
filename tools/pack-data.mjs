@@ -47,8 +47,14 @@ function buildMacros() {
       GUARD + `api.connectBook();`,
     ),
     macro(
+      "ackscMacBrowse00",
+      "PoC 3 — Browse & Load a Page (GM)",
+      "icons/svg/direction.svg",
+      GUARD + `api.browseAndLoad();`,
+    ),
+    macro(
       "ackscMacAudit000",
-      "PoC 3 — Audit: the two language options",
+      "PoC 4 — Audit: the two language options",
       "icons/svg/eye.svg",
       GUARD + `api.audit();`,
     ),

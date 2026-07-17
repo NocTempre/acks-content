@@ -1,23 +1,42 @@
 /**
  * PoC drivers: load sample documents INTO ACTORS/ITEMS (persisting only
- * @PdfText tags — never prose), and the audit chat card contrasting the two
+ * @PdfText tags — never prose), and the audit POPOUT contrasting the two
  * language options:
  *   A — persisted stub + page reference (what ships; what a bookless seat sees)
- *   B — the tag, enriched per viewing client: with a connected book, "show
+ *   B — the tag enriched live for THIS seat: with a connected book, "show
  *       book text" reproduces the passage on demand; without one, B renders
- *       exactly as A. The message persists tags only.
+ *       exactly as A. The popout is ephemeral — nothing persists at all.
  */
-import { MODULE_ID, LANG_PREFIX } from "./constants.mjs";
+import { LANG_PREFIX } from "./constants.mjs";
 import { RECIPES, recipeById } from "./recipes.mjs";
 import { BOOKS } from "./books.mjs";
 
 const FOLDER_NAME = "ACKS Content PoC";
-const tagP = (id) => `<p>@PdfText[${id}]{${recipeById(id).cite}}</p>`;
+const tagFor = (recipe) => `@PdfText[${recipe.id}]{${recipe.cite}}`;
+const tagP = (id) => `<p>${tagFor(recipeById(id))}</p>`;
+
+export async function ensureFolder(type) {
+  return (
+    game.folders.find((f) => f.type === type && f.name === FOLDER_NAME) ??
+    Folder.create({ name: FOLDER_NAME, type })
+  );
+}
 
 async function resetFolder(type) {
   const existing = game.folders.find((f) => f.type === type && f.name === FOLDER_NAME);
   if (existing) await existing.delete({ deleteSubfolders: true, deleteContents: true });
   return Folder.create({ name: FOLDER_NAME, type });
+}
+
+/** Create the world document for one recipe (used by dynamic browse-loads). */
+export async function createDocFor(recipe) {
+  const html = `<p>${tagFor(recipe)}</p>`;
+  if (recipe.kind === "monster") {
+    const folder = await ensureFolder("Actor");
+    return Actor.create({ name: recipe.name, type: "monster", folder: folder.id, system: { details: { biography: html } } });
+  }
+  const folder = await ensureFolder("Item");
+  return Item.create({ name: recipe.name, type: recipe.kind === "ability" ? "ability" : "item", folder: folder.id, system: { description: html } });
 }
 
 export async function createSamples() {
@@ -54,26 +73,38 @@ export async function createSamples() {
   );
 }
 
-export async function audit() {
+/**
+ * Audit popout. `allRecipes` and `stubFor` come from module.mjs so dynamic
+ * browse-loaded recipes are included and stubs resolve the same way the
+ * enricher resolves them.
+ */
+export async function audit(allRecipes, stubFor) {
   const esc = foundry.utils.escapeHTML ?? ((s) => s);
-  const rows = RECIPES.map((r) => {
-    const stub = game.i18n.localize(`${LANG_PREFIX}.pdftext.${r.id}`);
+  const TE = foundry.applications?.ux?.TextEditor?.implementation ?? globalThis.TextEditor;
+
+  const rows = [];
+  for (const r of allRecipes) {
     const fake = BOOKS[r.book]?.fake;
-    return `<tr class="${fake ? "acks-content-fake" : ""}">
-      <td><strong>${esc(r.name)}</strong><br><span class="acks-content-cite">${esc(r.cite)}${fake ? " — fake book" : ""}</span></td>
-      <td>${esc(stub)}</td>
-      <td>@PdfText[${r.id}]{${esc(r.cite)}}</td>
-    </tr>`;
-  }).join("");
+    const enriched = await TE.enrichHTML(tagFor(r));
+    rows.push(`<tr class="${fake ? "acks-content-fake" : ""}">
+      <td><strong>${esc(r.name)}</strong><br><span class="acks-content-cite">${esc(r.cite)}${fake ? " — fake book" : ""}${r.dynamic ? " — browse-loaded" : ""}</span></td>
+      <td>${esc(stubFor(r))}</td>
+      <td>${enriched}</td>
+    </tr>`);
+  }
 
   const content = `<div class="acks-content-audit">
-    <h3>${game.i18n.localize(`${LANG_PREFIX}.ui.auditTitle`)}</h3>
     <p>${game.i18n.localize(`${LANG_PREFIX}.ui.auditIntro`)}</p>
     <table>
-      <tr><th></th><th>A — stub + reference (persisted)</th><th>B — reproduced on demand (per seat)</th></tr>
-      ${rows}
+      <tr><th></th><th>A — stub + reference (persisted)</th><th>B — this seat, reproduced on demand</th></tr>
+      ${rows.join("")}
     </table>
   </div>`;
 
-  return ChatMessage.create({ content, whisper: [game.user.id] });
+  return foundry.applications.api.DialogV2.prompt({
+    window: { title: game.i18n.localize(`${LANG_PREFIX}.ui.auditTitle`), resizable: true },
+    position: { width: 880, height: 640 },
+    content,
+    ok: { label: game.i18n.localize(`${LANG_PREFIX}.ui.close`) },
+  });
 }
