@@ -1,25 +1,25 @@
 /**
  * acks-content — bring-your-own-book content streamer (PoC).
  *
- * Persisted documents carry only @PdfText[recipe-id]{citation} tags. Each
- * client resolves tags at render time: prose extracted from THAT seat's own
- * PDF (cached per-browser, never written to world data, never sent over the
- * socket) → else a sparse stub with a page reference. Book prose is
- * reproduced only on explicit demand ("show book text") and only for seats
- * that connected the book — per-player enforcement by construction.
+ * POSSESSION MODEL: what persists across sessions is the LOCATION of each
+ * seat's book (a FileSystemFileHandle in IndexedDB) — never the prose. Every
+ * session re-reads descriptions from the actual file; lose the file, lose the
+ * prose (stubs + citations remain). Mechanical data (stats, attacks, spoils)
+ * is imported into world documents and persists like hand-entered data.
  *
- * The prose cache lives in a direct localStorage key (NOT game.settings) and
- * every write is verified by reading back — notifications report what is
- * actually on disk, never just what was attempted.
+ * Persisted documents carry only @PdfText[recipe-id]{citation} tags, resolved
+ * per viewing seat at render time from that seat's in-memory extraction.
+ * Browsers without the File System Access API (e.g. Firefox players) fall
+ * back to re-picking the file each session — same enforcement, more clicks.
  *
  * PoC api (globalThis.acksContent / game.modules.get("acks-content").api):
- *   connectBook()    pick a book + your local PDF; extracts all recipes
+ *   connectBook()    pick a book + your local PDF (location remembered)
  *   browseAndLoad()  GM: pick a page, choose headings, load actors/items
  *   createSamples()  load the fixed sample set (GM, acks system)
  *   applyStats()     fill monster actors from the connected book
  *   audit()          popout contrasting language options A and B
- *   cacheStatus()    truthful on-disk cache report for this browser
- *   clearCache()     forget this browser's extracted prose
+ *   bookStatus()     which books are open / remembered / absent on this seat
+ *   forgetBooks()    drop remembered locations + this session's prose
  */
 import { MODULE_ID, LANG_PREFIX } from "./constants.mjs";
 import { BOOKS, fingerprintWarning } from "./books.mjs";
@@ -29,12 +29,43 @@ import { extractStatPairs } from "./stats.mjs";
 import { mapPairs } from "./stats-map.mjs";
 import { createSamples, createDocFor, audit as auditDialog } from "./poc.mjs";
 
-const SETTING_CACHE = "contentCache"; // legacy game.settings location (migrated once)
 const SETTING_DYNAMIC = "dynamicRecipes";
-const CACHE_KEY = "acks-content.proseCache"; // direct localStorage: deterministic + verifiable
+const LEGACY_KEYS = ["acks-content.proseCache", "acks-content.contentCache"]; // pre-possession-model storage
 
-/** PDFs opened this session (memory only — file handles don't persist). */
+/** Open PDFs this session: bookId -> { doc, title }. Memory only. */
 const sessionDocs = new Map();
+/** Extracted prose this session: bookId -> { recipeId: prose }. Memory only, by design. */
+const proseMem = new Map();
+
+/* -------------------------------------------- */
+/*  Remembered book locations (IndexedDB)       */
+/* -------------------------------------------- */
+
+const IDB_STORE = "bookHandles";
+
+function idb() {
+  return new Promise((resolve, reject) => {
+    const rq = indexedDB.open("acks-content", 1);
+    rq.onupgradeneeded = () => rq.result.createObjectStore(IDB_STORE);
+    rq.onsuccess = () => resolve(rq.result);
+    rq.onerror = () => reject(rq.error);
+  });
+}
+
+async function idbOp(mode, fn) {
+  const db = await idb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, mode);
+    const rq = fn(tx.objectStore(IDB_STORE));
+    tx.oncomplete = () => resolve(rq?.result);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+const handleSet = (bookId, handle) => idbOp("readwrite", (s) => s.put(handle, bookId));
+const handleGet = (bookId) => idbOp("readonly", (s) => s.get(bookId));
+const handleKeys = () => idbOp("readonly", (s) => s.getAllKeys());
+const handleClear = () => idbOp("readwrite", (s) => s.clear());
 
 /* -------------------------------------------- */
 /*  Recipe resolution (static + dynamic)        */
@@ -55,101 +86,51 @@ function stubFor(recipe) {
   });
 }
 
-/* -------------------------------------------- */
-/*  Per-browser prose cache (localStorage)      */
-/* -------------------------------------------- */
-
-function readCache() {
-  try {
-    return JSON.parse(localStorage.getItem(CACHE_KEY) ?? "{}");
-  } catch {
-    return {};
-  }
-}
-
-/** Write, then VERIFY by reading back. Returns total entries on disk, or -1. */
-function writeCache(cache) {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-    const back = JSON.parse(localStorage.getItem(CACHE_KEY) ?? "{}");
-    return Object.values(back).reduce((n, b) => n + Object.keys(b?.entries ?? {}).length, 0);
-  } catch (err) {
-    console.error(`${MODULE_ID} | cache persist FAILED`, err);
-    return -1;
-  }
-}
-
 function proseFor(recipeId) {
   const recipe = resolveRecipe(recipeId);
   if (!recipe) return null;
-  return readCache()?.[recipe.book]?.entries?.[recipeId] ?? null;
+  return proseMem.get(recipe.book)?.[recipeId] ?? null;
 }
 
-/** Merge entries into the on-disk cache. Returns verified on-disk total (-1 on failure). */
-function cacheEntries(bookId, title, newEntries) {
-  const cache = readCache();
-  const bucket = (cache[bookId] ??= { entries: {} });
-  bucket.title = title;
-  bucket.when = Date.now();
-  Object.assign(bucket.entries, newEntries);
-  return writeCache(cache);
-}
+/* -------------------------------------------- */
+/*  Connect / restore books                     */
+/* -------------------------------------------- */
 
-function cacheStatus() {
-  const cache = readCache();
-  const bytes = (localStorage.getItem(CACHE_KEY) ?? "").length;
-  const lines = Object.entries(BOOKS).map(([id, book]) => {
-    const have = Object.keys(cache?.[id]?.entries ?? {}).length;
-    const want = allRecipes().filter((r) => r.book === id).length;
-    const when = cache?.[id]?.when ? new Date(cache[id].when).toLocaleString() : "never";
-    return `${book.label}: ${have}/${want}${book.fake ? " (fake)" : ""} — extracted ${when}`;
-  });
-  ui.notifications.info(`acks-content | on-disk cache for this browser (${bytes} bytes). Console has per-book detail.`);
-  console.log(`${MODULE_ID} | on-disk cache (${bytes} bytes):\n${lines.join("\n")}`);
-  return cache;
-}
-
-async function clearCache() {
-  localStorage.removeItem(CACHE_KEY);
-  await game.settings.set(MODULE_ID, SETTING_CACHE, {}); // legacy location too
-  ui.notifications.info("acks-content | this browser's extracted-prose cache cleared (verified empty).");
-}
-
-async function ingestBook(bookId, buffer) {
+async function ingestBook(bookId, buffer, { silent = false } = {}) {
   const { doc, numPages, title } = await openBook(buffer);
   const warning = fingerprintWarning(bookId, numPages, title);
-  if (warning) ui.notifications.warn(`acks-content | ${warning}`);
+  if (warning && !silent) ui.notifications.warn(`acks-content | ${warning}`);
   sessionDocs.set(bookId, { doc, title });
   const recipes = recipesForBookAll(bookId);
-  const entries = {};
+  const entries = proseMem.get(bookId) ?? {};
   for (const recipe of recipes) {
     const prose = await extractRecipe(doc, recipe).catch(() => null);
     if (prose) entries[recipe.id] = prose;
   }
+  proseMem.set(bookId, entries);
   const hits = Object.keys(entries).length;
-  const onDisk = cacheEntries(bookId, title, entries);
-  if (onDisk < 0) {
-    ui.notifications.error(
-      `acks-content | ${BOOKS[bookId].label}: ${hits}/${recipes.length} extracted but PERSIST FAILED — the cache will NOT survive a reload (see console).`,
-    );
-  } else {
-    ui.notifications.info(
-      `acks-content | ${BOOKS[bookId].label}: ${hits}/${recipes.length} extracted; verified on disk (${onDisk} total entries survive reloads on this browser). Re-open sheets.`,
-    );
-  }
+  const message = `acks-content | ${BOOKS[bookId].label}: open — ${hits}/${recipes.length} descriptions readable this session (in memory only; never stored).`;
+  if (silent) console.log(message);
+  else ui.notifications.info(message);
   return hits;
 }
+
+const fsaAvailable = () => typeof window.showOpenFilePicker === "function";
 
 async function connectBook() {
   const options = Object.entries(BOOKS)
     .map(([id, b]) => `<option value="${id}">${b.label}</option>`)
     .join("");
+  const fsa = fsaAvailable();
+  const fileRow = fsa
+    ? `<p class="notes">${game.i18n.localize(`${LANG_PREFIX}.ui.connectNoteFsa`)}</p>`
+    : `<div class="form-group"><label>${game.i18n.localize(`${LANG_PREFIX}.ui.connectFile`)}</label>
+         <input type="file" name="pdf" accept="application/pdf"></div>
+       <p class="notes">${game.i18n.localize(`${LANG_PREFIX}.ui.connectNote`)}</p>`;
   const content = `
     <div class="form-group"><label>${game.i18n.localize(`${LANG_PREFIX}.ui.connectBook`)}</label>
       <select name="book">${options}</select></div>
-    <div class="form-group"><label>${game.i18n.localize(`${LANG_PREFIX}.ui.connectFile`)}</label>
-      <input type="file" name="pdf" accept="application/pdf"></div>
-    <p class="notes">${game.i18n.localize(`${LANG_PREFIX}.ui.connectNote`)}</p>`;
+    ${fileRow}`;
   return foundry.applications.api.DialogV2.prompt({
     window: { title: game.i18n.localize(`${LANG_PREFIX}.ui.connectTitle`) },
     content,
@@ -158,12 +139,100 @@ async function connectBook() {
       callback: async (event, button) => {
         const form = button.form;
         const bookId = form.elements.book.value;
-        const file = form.elements.pdf.files[0];
-        if (!file) return ui.notifications.warn("acks-content | no file chosen — nothing extracted.");
-        return ingestBook(bookId, await file.arrayBuffer());
+        if (fsa) {
+          try {
+            const [handle] = await window.showOpenFilePicker({
+              types: [{ description: "PDF", accept: { "application/pdf": [".pdf"] } }],
+            });
+            await ingestBook(bookId, await (await handle.getFile()).arrayBuffer());
+            await handleSet(bookId, handle);
+            ui.notifications.info(game.i18n.format(`${LANG_PREFIX}.ui.locationSaved`, { book: BOOKS[bookId].label }));
+          } catch (err) {
+            if (err?.name !== "AbortError") throw err;
+          }
+        } else {
+          const file = form.elements.pdf.files[0];
+          if (!file) return ui.notifications.warn("acks-content | no file chosen — nothing read.");
+          await ingestBook(bookId, await file.arrayBuffer());
+        }
       },
     },
   });
+}
+
+/**
+ * Reopen remembered books. Non-interactive first (silently opens whatever is
+ * already permitted); books needing a permission gesture are offered in an
+ * unlock dialog — clicking it IS the user gesture the browser requires.
+ */
+async function restoreBooks({ interactive = false } = {}) {
+  if (!fsaAvailable()) return [];
+  const pending = [];
+  for (const bookId of (await handleKeys().catch(() => [])) ?? []) {
+    if (sessionDocs.has(bookId)) continue;
+    const handle = await handleGet(bookId).catch(() => null);
+    if (!handle?.queryPermission) continue;
+    try {
+      let perm = await handle.queryPermission({ mode: "read" });
+      if (perm === "prompt" && interactive) perm = await handle.requestPermission({ mode: "read" });
+      if (perm !== "granted") {
+        pending.push(bookId);
+        continue;
+      }
+      await ingestBook(bookId, await (await handle.getFile()).arrayBuffer(), { silent: !interactive });
+    } catch (err) {
+      console.warn(`${MODULE_ID} | remembered ${BOOKS[bookId]?.label ?? bookId} could not be opened (moved/deleted?)`, err);
+      pending.push(bookId);
+    }
+  }
+  return pending;
+}
+
+async function offerUnlock(pending) {
+  const list = pending.map((id) => `<li>${BOOKS[id]?.label ?? id}</li>`).join("");
+  return foundry.applications.api.DialogV2.prompt({
+    window: { title: game.i18n.localize(`${LANG_PREFIX}.ui.unlockTitle`) },
+    content: `<p>${game.i18n.localize(`${LANG_PREFIX}.ui.unlockBody`)}</p><ul>${list}</ul>`,
+    ok: {
+      label: game.i18n.localize(`${LANG_PREFIX}.ui.unlockGo`),
+      callback: async () => {
+        const still = await restoreBooks({ interactive: true });
+        if (still.length) {
+          ui.notifications.warn(
+            `acks-content | still locked/missing: ${still.map((id) => BOOKS[id]?.label ?? id).join(", ")} — reconnect via PoC 2 if the file moved.`,
+          );
+        }
+      },
+    },
+  });
+}
+
+function bookStatus() {
+  const lines = [];
+  handleKeys()
+    .catch(() => [])
+    .then(async (keys) => {
+      for (const [id, book] of Object.entries(BOOKS)) {
+        const want = allRecipes().filter((r) => r.book === id).length;
+        const have = Object.keys(proseMem.get(id) ?? {}).length;
+        let state;
+        if (sessionDocs.has(id)) state = `OPEN this session — ${have}/${want} descriptions readable`;
+        else if ((keys ?? []).includes(id)) state = "location remembered — locked until unlocked this session";
+        else state = book.fake ? "fake book (never connectable — stub demo)" : "not connected on this seat";
+        lines.push(`${book.label}: ${state}`);
+      }
+      ui.notifications.info(
+        `acks-content | ${game.i18n.localize(`${LANG_PREFIX}.ui.statusNote`)} Console has per-book detail.`,
+      );
+      console.log(`${MODULE_ID} | book status (this seat):\n${lines.join("\n")}`);
+    });
+}
+
+async function forgetBooks() {
+  await handleClear().catch(() => {});
+  proseMem.clear();
+  sessionDocs.clear();
+  ui.notifications.info("acks-content | remembered book locations dropped; in-memory prose cleared. Sheets show stubs until books reconnect.");
 }
 
 /* -------------------------------------------- */
@@ -183,15 +252,13 @@ async function browseAndLoad() {
 
   const options = Object.entries(BOOKS)
     .filter(([, b]) => !b.fake)
-    .map(([id, b]) => `<option value="${id}">${b.label}${sessionDocs.has(id) ? " ✓ connected" : ""}</option>`)
+    .map(([id, b]) => `<option value="${id}">${b.label}${sessionDocs.has(id) ? " ✓ open" : ""}</option>`)
     .join("");
   const step1 = `
     <div class="form-group"><label>${game.i18n.localize(`${LANG_PREFIX}.ui.connectBook`)}</label>
       <select name="book">${options}</select></div>
     <div class="form-group"><label>${game.i18n.localize(`${LANG_PREFIX}.ui.browsePage`)}</label>
       <input type="number" name="page" min="1" step="1" placeholder="PDF page #"></div>
-    <div class="form-group"><label>${game.i18n.localize(`${LANG_PREFIX}.ui.connectFile`)}</label>
-      <input type="file" name="pdf" accept="application/pdf"></div>
     <p class="notes">${game.i18n.localize(`${LANG_PREFIX}.ui.browseNote`)}</p>`;
 
   await foundry.applications.api.DialogV2.prompt({
@@ -203,14 +270,11 @@ async function browseAndLoad() {
         const form = button.form;
         const bookId = form.elements.book.value;
         const page = parseInt(form.elements.page.value, 10);
-        const file = form.elements.pdf.files[0];
         if (!Number.isFinite(page) || page < 1) return ui.notifications.warn("acks-content | enter a PDF page number.");
         if (!sessionDocs.has(bookId)) {
-          if (!file) return ui.notifications.warn("acks-content | book not connected this session — choose its PDF file.");
-          const { doc, numPages, title } = await openBook(await file.arrayBuffer());
-          const warning = fingerprintWarning(bookId, numPages, title);
-          if (warning) ui.notifications.warn(`acks-content | ${warning}`);
-          sessionDocs.set(bookId, { doc, title });
+          return ui.notifications.warn(
+            `acks-content | ${BOOKS[bookId].label} is not open this session — connect it first (PoC 2 / unlock dialog).`,
+          );
         }
         return pickHeadings(bookId, page);
       },
@@ -261,9 +325,9 @@ async function pickHeadings(bookId, page) {
   });
 }
 
-async function loadHeadings(bookId, page, pageData, picked, kindChoice, title) {
+async function loadHeadings(bookId, page, pageData, picked, kindChoice) {
   const dyn = foundry.utils.deepClone(dynamicRecipes());
-  const entries = {};
+  const mem = proseMem.get(bookId) ?? {};
   let created = 0;
   for (const head of picked) {
     const prose = head.mode === "runin" ? extractRunin(pageData, head.text) : extractDisplay(pageData, head.text);
@@ -284,18 +348,15 @@ async function loadHeadings(bookId, page, pageData, picked, kindChoice, title) {
       dynamic: true,
     };
     dyn[recipe.id] = recipe;
-    entries[recipe.id] = prose;
+    mem[recipe.id] = prose; // this seat's session memory — other seats resolve via their own book
     const doc = await createDocFor(recipe);
     if (recipe.kind === "monster") await applyStatsToActor(doc, pageData, recipe);
     created++;
   }
   if (!created) return;
+  proseMem.set(bookId, mem);
   await game.settings.set(MODULE_ID, SETTING_DYNAMIC, dyn);
-  const onDisk = cacheEntries(bookId, title, entries);
-  ui.notifications.info(
-    game.i18n.format(`${LANG_PREFIX}.ui.browseDone`, { n: created, book: BOOKS[bookId].label, page }) +
-      (onDisk < 0 ? " — WARNING: prose cache persist FAILED." : ""),
-  );
+  ui.notifications.info(game.i18n.format(`${LANG_PREFIX}.ui.browseDone`, { n: created, book: BOOKS[bookId].label, page }));
 }
 
 /* -------------------------------------------- */
@@ -317,8 +378,16 @@ async function applyStatsToActor(actor, pageData, recipe) {
   await actor.update(update);
 
   // Spoils subsection -> spoil-flagged items (Full Monster Sheet Spoils tab).
-  const spoils = extractSpoils(pageData).map((s) => ({
-    name: s.name.charAt(0).toUpperCase() + s.name.slice(1),
+  const parsedSpoils = extractSpoils(pageData);
+  for (const s of parsedSpoils) {
+    if (s.uncertain) {
+      console.warn(
+        `${MODULE_ID} | ${actor.name}: spoil "${s.name}" weight ${s.weight6}/6 st has no fraction and looks implausible — the book never uses improper fractional weights; fix via a recipe direction.`,
+      );
+    }
+  }
+  const spoils = parsedSpoils.map((s) => ({
+    name: s.name.charAt(0).toUpperCase() + s.name.slice(1) + (s.uncertain ? " (weight?)" : ""),
     type: "item",
     img: "icons/svg/item-bag.svg",
     system: { description: "", subtype: "item", quantity: { value: 1, max: 0 }, cost: s.cost, weight: 0, weight6: s.weight6 },
@@ -362,7 +431,7 @@ async function applyStats() {
   }
   if (!touched) {
     ui.notifications.warn(
-      "acks-content | nothing to fill — connect the monster's book this session (PoC 2) and create the samples (PoC 1) first.",
+      "acks-content | nothing to fill — open the monster's book this session (PoC 2 / unlock) and create the samples (PoC 1) first.",
     );
   }
 }
@@ -409,7 +478,6 @@ function onRevealClick(event) {
 /* -------------------------------------------- */
 
 Hooks.once("init", () => {
-  game.settings.register(MODULE_ID, SETTING_CACHE, { scope: "client", config: false, type: Object, default: {} });
   game.settings.register(MODULE_ID, SETTING_DYNAMIC, { scope: "world", config: false, type: Object, default: {} });
   setWorker(`modules/${MODULE_ID}/vendor/pdf.worker.mjs`);
   CONFIG.TextEditor.enrichers.push({
@@ -418,25 +486,26 @@ Hooks.once("init", () => {
   });
 });
 
-Hooks.once("ready", () => {
-  // One-time migration from the legacy game.settings cache location.
-  try {
-    const legacy = game.settings.get(MODULE_ID, SETTING_CACHE);
-    if (legacy && Object.keys(legacy).length && !Object.keys(readCache()).length) {
-      const moved = writeCache(legacy);
-      console.log(`${MODULE_ID} | migrated legacy settings cache -> localStorage (${moved} entries).`);
+Hooks.once("ready", async () => {
+  // Possession model: purge any prose persisted by earlier PoC builds.
+  for (const key of LEGACY_KEYS) {
+    if (localStorage.getItem(key) !== null) {
+      localStorage.removeItem(key);
+      console.log(`${MODULE_ID} | purged legacy persisted prose (${key}) — prose is session-memory only now.`);
     }
-  } catch (err) {
-    console.warn(`${MODULE_ID} | legacy cache migration skipped`, err);
   }
 
   document.body.addEventListener("click", onRevealClick);
   const audit = () => auditDialog(allRecipes(), stubFor);
-  const api = { connectBook, browseAndLoad, createSamples, applyStats, audit, cacheStatus, clearCache, proseFor, RECIPES, BOOKS };
+  const api = { connectBook, browseAndLoad, createSamples, applyStats, audit, bookStatus, forgetBooks, proseFor, RECIPES, BOOKS };
   globalThis.acksContent = api;
   const module = game.modules.get(MODULE_ID);
   if (module) module.api = api;
   console.log(
     `${MODULE_ID} | ready. PoC macros in "ACKS Content — PoC Macros", or: acksContent.connectBook() · acksContent.browseAndLoad() · acksContent.createSamples() · acksContent.audit().`,
   );
+
+  // Reopen remembered books; offer the unlock gesture for the rest.
+  const pending = await restoreBooks();
+  if (pending.length) await offerUnlock(pending);
 });

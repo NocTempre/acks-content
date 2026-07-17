@@ -66,15 +66,15 @@ function buildMacros() {
     ),
     macro(
       "ackscMacStatus00",
-      "PoC — Cache Status (this seat)",
+      "PoC — Book Status (this seat)",
       "icons/svg/chest.svg",
-      GUARD + `api.cacheStatus();`,
+      GUARD + `api.bookStatus();`,
     ),
     macro(
       "ackscMacClear000",
-      "PoC — Clear This Seat's Cache",
+      "PoC — Forget Books (this seat)",
       "icons/svg/blind.svg",
-      GUARD + `api.clearCache();`,
+      GUARD + `api.forgetBooks();`,
     ),
   ];
 }

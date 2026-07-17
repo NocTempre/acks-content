@@ -180,11 +180,16 @@ export function extractSpoils({ items, height }) {
   const text = joinProse(items.filter((it) => colOf(it.x, cols) === col && it.y > anchor.y && it.y < yMax));
   const spoils = [];
   for (const m of text.matchAll(/([A-Za-z][A-Za-z' -]*?)\s*\((\d+)(?:\s*(\d)\/6)?\s*st,\s*([\d,]+)\s*gp(?:,\s*([^)]+))?\)/g)) {
+    const stone = parseInt(m[2], 10);
     spoils.push({
       name: m[1].trim(),
-      weight6: parseInt(m[2], 10) * 6 + (m[3] ? parseInt(m[3], 10) : 0),
+      weight6: stone * 6 + (m[3] ? parseInt(m[3], 10) : 0),
       cost: parseInt(m[4].replace(/,/g, ""), 10),
       effects: (m[5] ?? "").split(",").map((s) => s.trim()).filter(Boolean),
+      // The books only ever print proper fractional weights; a big whole-stone
+      // value with no fraction means the text layer dropped one (per-entry
+      // recipe direction fixes it).
+      uncertain: !m[3] && stone >= 100,
     });
   }
   return spoils;
