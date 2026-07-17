@@ -1,1 +1,44 @@
-/* acks-content styles. Scope every selector under a module-specific class. */
+/* acks-content styles — every selector scoped under acks-content-*. */
+
+.acks-content-stub {
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.acks-content-reveal {
+  margin-left: 0.35em;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  white-space: nowrap;
+}
+
+.acks-content-prose {
+  display: block;
+  margin: 0.35em 0 0.15em;
+  padding: 0.4em 0.6em;
+  border-left: 2px solid var(--color-border-highlight, #782e22);
+  background: rgba(0, 0, 0, 0.06);
+  font-style: normal;
+}
+
+.acks-content-audit table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.acks-content-audit th,
+.acks-content-audit td {
+  border: 1px solid var(--color-border-light-tertiary, #999);
+  padding: 4px 6px;
+  vertical-align: top;
+  font-size: var(--font-size-12, 0.85em);
+}
+
+.acks-content-audit .acks-content-fake td {
+  opacity: 0.75;
+}
+
+.acks-content-cite {
+  font-size: 0.85em;
+  opacity: 0.8;
+}

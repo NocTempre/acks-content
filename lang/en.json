@@ -1,3 +1,26 @@
 {
-  "ACKS-CONTENT.Title": "ACKS II — Content Streamer (PoC)"
+  "ACKS-CONTENT.Title": "ACKS II — Content Streamer (PoC)",
+
+  "ACKS-CONTENT.ui.connectTitle": "Connect a book (this browser only)",
+  "ACKS-CONTENT.ui.connectBook": "Book",
+  "ACKS-CONTENT.ui.connectFile": "Your PDF copy",
+  "ACKS-CONTENT.ui.connectNote": "The file is read locally in this browser only — nothing is uploaded, stored in the world, or sent to other players.",
+  "ACKS-CONTENT.ui.connectGo": "Extract",
+  "ACKS-CONTENT.ui.reveal": "Show book text",
+  "ACKS-CONTENT.ui.auditTitle": "PdfText audit — the two language options",
+  "ACKS-CONTENT.ui.auditIntro": "A is the persisted text every seat always has: a sparse stub plus page reference. B is the same entry as the @PdfText tag, resolved per viewing seat: with the book connected it offers \"Show book text\" (reproduction on demand); without it, B collapses to exactly A. Only tags and stubs are ever stored.",
+
+  "ACKS-CONTENT.pdftext.mm.griffon": "Monster — Griffon. Full entry: ACKS II Monstrous Manual, PDF p. 171. Connect your PDF (acksContent.connectBook) to read it here.",
+
+  "ACKS-CONTENT.pdftext.prof.combatReflexes": "Proficiency — Combat Reflexes. Full text: ACKS II Revised Rulebook, PDF p. 110. Connect your PDF to read it here.",
+  "ACKS-CONTENT.pdftext.prof.blindFighting": "Proficiency — Blind Fighting. Full text: ACKS II Revised Rulebook, PDF p. 110. Connect your PDF to read it here.",
+  "ACKS-CONTENT.pdftext.prof.berserkergang": "Proficiency — Berserkergang. Full text: ACKS II Revised Rulebook, PDF p. 110. Connect your PDF to read it here.",
+  "ACKS-CONTENT.pdftext.prof.combatFerocity": "Proficiency — Combat Ferocity. Full text: ACKS II Revised Rulebook, PDF p. 110. Connect your PDF to read it here.",
+
+  "ACKS-CONTENT.pdftext.item.grapplingHook": "Equipment — Grappling Hook. Full description: ACKS II Revised Rulebook, PDF p. 145. Connect your PDF to read it here.",
+  "ACKS-CONTENT.pdftext.item.herbWolfsbane": "Equipment — Herb, Wolfsbane. Full description: ACKS II Revised Rulebook, PDF p. 145. Connect your PDF to read it here.",
+  "ACKS-CONTENT.pdftext.item.holyBook": "Equipment — Holy Book. Full description: ACKS II Revised Rulebook, PDF p. 145. Connect your PDF to read it here.",
+
+  "ACKS-CONTENT.pdftext.fake.shadowCant": "Proficiency — Shadow Cant. Full text: ACKS II Codex of Whispers, PDF p. 42. NOTE: this book is an intentional PoC fake — no such PDF exists, so this stub is what every seat sees, permanently.",
+  "ACKS-CONTENT.pdftext.fake.whisperglass": "Equipment — Whisperglass Vial. Full description: ACKS II Codex of Whispers, PDF p. 77. NOTE: this book is an intentional PoC fake — no such PDF exists, so this stub is what every seat sees, permanently."
 }

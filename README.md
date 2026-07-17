@@ -36,3 +36,18 @@ This repo follows the shared ACKS module toolchain — see
 
 Module code © NocTempre. ACKS II content referenced under Autarch LLC's
 compatibility guidelines — see the ACKS II system repository for license texts.
+
+## PoC usage (dev)
+
+1. Enable the module in an `acks` world (junction already in place).
+2. As GM, in the console: `acksContent.createSamples()` — creates the
+   "ACKS Content PoC" folders: Griffon (PoC) + Content Carrier (PoC) actors
+   and three world items, all carrying only `@PdfText` tags.
+3. `acksContent.connectBook()` — pick a book and your local PDF (read in this
+   browser only). Re-open sheets: descriptions gain "📖 Show book text".
+4. `acksContent.audit()` — GM-whispered card contrasting language option A
+   (persisted stub + reference) with B (reproduced on demand per seat).
+5. The two Codex of Whispers entries are INTENTIONAL FAKES — they demo the
+   missing-book path and can never resolve.
+6. Engine regression vs the local library: `node tools/dev-extract-check.mjs`
+   (dev-only; requires C:\Proj\acks-reference).
