@@ -46,7 +46,7 @@ export function extractStatPairs({ items }) {
   let cur = null;
   for (const it of items) {
     if (it.h >= 12) continue; // display headings are never stat rows
-    const raw = it.str.replace(/[-]/g, ""); // strip private-use glyphs
+    const raw = it.str; // PUA glyphs preserved: damage-type icons live in values
     const text = raw.trim();
     if (!text) continue;
     if (LABEL_RE.test(text)) {

@@ -15,6 +15,32 @@ const SPEED_KEYS = ["land", "burrow", "climb", "fly", "swim", "webcrawl"];
 const SAVE_CLASS_BY_ABBR = { F: "fighter", C: "crusader", M: "mage", T: "thief", D: "dwarvenVaultguard", E: "elvenSpellsword" };
 
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+const PUA_RE = /[-]/g;
+const clean = (v) => (v ?? "").replace(PUA_RE, "").replace(/\s+/g, " ").trim();
+
+// Damage-type icon glyphs, decoded from the MM legend (PDF p. 14). Keys are
+// acks-monsters DAMAGE_TYPES enum values. E907 = luminous by elimination.
+const DAMAGE_GLYPHS = {
+  "": "acidic",
+  "": "arcane",
+  "": "bludgeoning",
+  "": "necrotic",
+  "": "cold",
+  "": "electrical",
+  "": "fire",
+  "": "luminous",
+  "": "slashing",
+  "": "piercing",
+  "": "poisonous",
+  "": "seismic",
+};
+const damageTypeOf = (segment) => {
+  for (const ch of segment) if (DAMAGE_GLYPHS[ch]) return DAMAGE_GLYPHS[ch];
+  return null;
+};
+
+const NATURAL_WEAPONS = /^(claws?|talons?|bites?|tails?|stings?|slams?|hugs?|gores?|horns?|tentacles?|crush|wings?|hoo(f|ves)|fists?|touch|constrict|trample|kick)$/i;
+
 const firstInt = (v) => {
   const m = /(-?[\d,]+)/.exec(v ?? "");
   return m ? parseInt(m[1].replace(/,/g, ""), 10) : null;
@@ -40,12 +66,12 @@ export function mapPairs(pairs) {
   const items = [];
   const applied = [];
   const unmappedLabels = new Set(pairs.map((p) => p.label));
-  const take = (label) => {
+  const take = (label, { raw = false } = {}) => {
     const found = pairs.find((p) => p.label.toLowerCase() === label.toLowerCase());
     if (!found) return null;
     applied.push(found.label);
     unmappedLabels.delete(found.label);
-    return found.value;
+    return raw ? found.value : clean(found.value);
   };
 
   /* --- core system --- */
@@ -159,12 +185,14 @@ export function mapPairs(pairs) {
   /* --- attacks -> weapon items; the throw rides in the Attacks parenthetical --- */
 
   const attacks = take("Attacks");
-  const damage = take("Damage");
+  const damageRaw = take("Damage", { raw: true });
+  const damage = clean(damageRaw);
   if (attacks) {
     const throwMatch = /(\d+)\+/.exec(attacks);
     if (throwMatch) system.thac0 = { throw: parseInt(throwMatch[1], 10) };
     system.attacks = [attacks, damage].filter(Boolean).join(" — ");
-    const segments = (damage ?? "").split("/").map((s) => s.trim()).filter((s) => /\d*d\d+/.test(s));
+    // Split RAW segments so each keeps its damage-type icon glyph.
+    const segments = (damageRaw ?? "").split("/").map((s) => s.trim()).filter((s) => /\d*d\d+/.test(s));
     // Names from the parenthetical: "2 talons, bite 4+" -> [talons, talons, bite]
     const inner = /\(([^)]*)\)/.exec(attacks)?.[1] ?? "";
     const names = [];
@@ -177,11 +205,20 @@ export function mapPairs(pairs) {
         names.push(token);
       }
     }
-    segments.forEach((dmg, i) => {
+    segments.forEach((dmgSeg, i) => {
+      const dmg = /\d*d\d+(?:[+-]\d+)?/.exec(clean(dmgSeg))?.[0] ?? clean(dmgSeg);
+      const damageType = damageTypeOf(dmgSeg);
+      const name = capitalize((names[i] ?? names[names.length - 1] ?? `attack ${i + 1}`).trim());
       items.push({
-        name: capitalize((names[i] ?? names[names.length - 1] ?? `attack ${i + 1}`).trim()),
+        name,
         type: "weapon",
         img: "icons/svg/sword.svg",
+        flags: {
+          "acks-monsters": {
+            ...(damageType ? { damageType } : {}),
+            naturalWeapon: NATURAL_WEAPONS.test(name),
+          },
+        },
         system: {
           description: "",
           damage: dmg,

@@ -114,14 +114,23 @@ export function extractDisplay({ items, height }, heading) {
   const heads = displayHeadings(items, cols);
   const anchor = heads.find((h) => h.text.toLowerCase().startsWith(heading.toLowerCase()));
   if (!anchor) return null;
-  const next = heads
+  // Collect same-column segments; a parent heading (e.g. "STATUE, ANIMATED"
+  // directly over its variant "BRONZE") may own almost no prose of its own, so
+  // keep extending past sub-headings until enough text accumulates.
+  const later = heads
     .filter((h) => h.col === anchor.col && h.y > anchor.y + 2)
-    .sort((a, b) => a.y - b.y)[0];
-  const yMax = next ? next.y : height;
-  const body = items.filter(
-    (it) => it.h < HEADING_MIN_H && colOf(it.x, cols) === anchor.col && it.y > anchor.y && it.y < yMax,
-  );
-  const prose = joinProse(body);
+    .sort((a, b) => a.y - b.y);
+  const bounds = [...later.map((h) => h.y), height];
+  let prose = "";
+  let from = anchor.y;
+  for (const yMax of bounds) {
+    const body = items.filter(
+      (it) => it.h < HEADING_MIN_H && colOf(it.x, cols) === anchor.col && it.y > from && it.y < yMax,
+    );
+    prose = `${prose} ${joinProse(body)}`.trim();
+    if (prose.length >= 60) break;
+    from = yMax;
+  }
   return prose.length > 20 ? prose : null;
 }
 
@@ -180,16 +189,12 @@ export function extractSpoils({ items, height }) {
   const text = joinProse(items.filter((it) => colOf(it.x, cols) === col && it.y > anchor.y && it.y < yMax));
   const spoils = [];
   for (const m of text.matchAll(/([A-Za-z][A-Za-z' -]*?)\s*\((\d+)(?:\s*(\d)\/6)?\s*st,\s*([\d,]+)\s*gp(?:,\s*([^)]+))?\)/g)) {
-    const stone = parseInt(m[2], 10);
+    const stone = parseInt(m[2], 10); // book weights are authoritative as printed
     spoils.push({
       name: m[1].trim(),
       weight6: stone * 6 + (m[3] ? parseInt(m[3], 10) : 0),
       cost: parseInt(m[4].replace(/,/g, ""), 10),
       effects: (m[5] ?? "").split(",").map((s) => s.trim()).filter(Boolean),
-      // The books only ever print proper fractional weights; a big whole-stone
-      // value with no fraction means the text layer dropped one (per-entry
-      // recipe direction fixes it).
-      uncertain: !m[3] && stone >= 100,
     });
   }
   return spoils;

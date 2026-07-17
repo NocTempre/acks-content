@@ -75,12 +75,13 @@ for (const recipe of STAT_RECIPES) {
   console.log(
     `      extras: types=${JSON.stringify(extras.types)} subtype=${JSON.stringify(extras.subtype)} size=${extras.size} mass=${extras.mass?.stone}st hd=${JSON.stringify(extras.hd)} saveAs=${JSON.stringify(extras.saveAs)} speeds=${JSON.stringify(extras.speeds)} vision=${JSON.stringify(extras.vision)}@${extras.lightlessRange} load=${extras.load?.normal} lair=${extras.encounter?.lairChance}%`,
   );
-  console.log(`      throw=${system.thac0?.throw} items=${res.items.map((i) => `${i.type}:${i.name}(${i.system.damage ?? ""})`).join(" ")}`);
+  console.log(`      throw=${system.thac0?.throw} items=${res.items.map((i) => `${i.type}:${i.name}(${i.system.damage ?? ""}${i.flags?.["acks-monsters"]?.damageType ? " " + i.flags["acks-monsters"].damageType : ""}${i.flags?.["acks-monsters"]?.naturalWeapon ? " natural" : ""})`).join(" ")}`);
   if (unmapped.length) console.log(`      unmapped (stored raw): ${unmapped.join(", ")}`);
   const spoils = extractSpoils(await pageItems(doc, recipe.page));
   const art = pickArt(await pageArtInfo(doc, recipe.page));
   console.log(`      art: ${art ? `${art.name} ${art.width}x${art.height} kind=${art.kind}` : "none found"}`);
-  console.log(`      spoils(${spoils.length}): ${spoils.map((s) => `${s.name} ${s.weight6}/6st ${s.cost}gp fx=${s.effects.length}`).join(" | ")}`);
+  const wt = (w) => `${Math.floor(w / 6)}${w % 6 ? ` ${w % 6}/6` : ""} st`;
+  console.log(`      spoils(${spoils.length}): ${spoils.map((s) => `${s.name} ${wt(s.weight6)} ${s.cost}gp fx=${s.effects.length}`).join(" | ")}`);
   if (!applied.length) failed = true;
 }
 

@@ -399,22 +399,25 @@ async function applyStatsToActor(actor, doc, pageData, recipe) {
   // Full Monster Sheet extras only when acks-monsters is active (its schema).
   // Its Description tab reads extras.description.* — stream the entry prose
   // there too (the tag enriches per seat like everywhere else).
-  if (game.modules.get("acks-monsters")?.active) {
-    update["flags.acks-monsters.extras"] = { ...extras, description: { appearance: tagHtmlFor(recipe) } };
+  const fmsActive = game.modules.get("acks-monsters")?.active;
+  if (fmsActive) {
+    update["flags.acks-monsters.extras"] = extras;
+    // Leaf-path write is the most merge-safe way to land the streamed entry
+    // prose where the FMS Description tab reads it.
+    update["flags.acks-monsters.extras.description.appearance"] = tagHtmlFor(recipe);
   }
   await actor.update(update);
+  if (fmsActive) {
+    // Truthful diagnostics: verify the description actually landed. If it is
+    // present here but later vanishes, a sheet submit erased it (FMS-side).
+    const back = actor.getFlag("acks-monsters", "extras")?.description?.appearance;
+    console.log(`${MODULE_ID} | ${actor.name}: FMS description ${back ? "VERIFIED on actor" : "MISSING after write (!)"}`);
+  }
 
   // Spoils subsection -> spoil-flagged items (Full Monster Sheet Spoils tab).
-  const parsedSpoils = extractSpoils(pageData);
-  for (const s of parsedSpoils) {
-    if (s.uncertain) {
-      console.warn(
-        `${MODULE_ID} | ${actor.name}: spoil "${s.name}" weight ${s.weight6}/6 st has no fraction and looks implausible — the book never uses improper fractional weights; fix via a recipe direction.`,
-      );
-    }
-  }
-  const spoils = parsedSpoils.map((s) => ({
-    name: s.name.charAt(0).toUpperCase() + s.name.slice(1) + (s.uncertain ? " (weight?)" : ""),
+  // Book weights are authoritative as printed (stored in 1/6-stone units).
+  const spoils = extractSpoils(pageData).map((s) => ({
+    name: s.name.charAt(0).toUpperCase() + s.name.slice(1),
     type: "item",
     img: "icons/svg/item-bag.svg",
     system: { description: "", subtype: "item", quantity: { value: 1, max: 0 }, cost: s.cost, weight: 0, weight6: s.weight6 },
