@@ -31,6 +31,10 @@ build/release plumbing.
   `packs/_source` actually changed.
 - Foundry dev install (junction, not copy):
   `New-Item -ItemType Junction -Path "$env:LOCALAPPDATA\FoundryVTT\Data\modules\acks-content" -Target "C:\Proj\acks-content"`
+- Live testing: if `C:\Proj\acks-rules\TEST_ENVIRONMENT.md` exists it defines
+  this machine's local Foundry test server — use it. If absent, skip live
+  testing (validate/build only). LOCAL-ONLY and machine-specific; never
+  commit its contents to any repo.
 
 ## Release
 

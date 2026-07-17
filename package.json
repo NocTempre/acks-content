@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build:packs": "node tools/build-packs.mjs",
-    "validate": "node tools/validate.mjs && node tools/lint-register.mjs",
+    "validate": "node tools/validate.mjs",
     "lint:register": "node tools/lint-register.mjs",
     "harvest": "node tools/harvest-page.mjs",
     "harvest:index": "node tools/harvest-index.mjs",

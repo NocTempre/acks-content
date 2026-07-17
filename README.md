@@ -34,8 +34,25 @@ This repo follows the shared ACKS module toolchain — see
 
 ## License
 
-Module code © NocTempre. ACKS II content referenced under Autarch LLC's
-compatibility guidelines — see the ACKS II system repository for license texts.
+**Code:** © NocTempre — proprietary; all rights reserved except as granted to
+Autarch LLC under the **ACKS II App License**. This module is **not** open source
+or Open Game Content, and no license is granted to copy, redistribute, or reuse
+its code. See [`LICENSE`](LICENSE).
+
+**ACKS II content** is used under the **ACKS II App License**. ACKS, ACKS II, and
+Adventurer Conqueror King System are trademarks of **Autarch LLC**. This app
+streams prose only from PDFs the user already owns; it publishes no ACKS II
+content itself.
+
+**Unofficial** — this is an unofficial fan module, not published or endorsed by
+Autarch LLC.
+
+**Registration #:** _[pending registration]_
+
+**Requires:** legitimate copies of the ACKS II publications whose prose you
+stream (e.g. the ACKS II core rules, Judges Journal, Monstrous Manual) —
+_[confirm exact publication title(s)]_. You supply your own PDFs; the app is
+free to use and is not a substitute for the books.
 
 ## PoC usage (dev)
 

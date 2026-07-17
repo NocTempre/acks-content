@@ -6,11 +6,6 @@ node_modules/
 npm-debug.log*
 .claude/settings.local.json
 
-# Pipeline state — local-only, regenerable, not shipped content.
-register/_ledger.json
-register/_manifest/
-register/_proposals/
-
 # ACKS rules extracts are LOCAL-ONLY (licensed book text; purged from all
 # repo histories 2026-07-16). They live in C:\Proj\acks-rules\<module-id>\ —
 # these armor patterns guard against accidental re-adds.

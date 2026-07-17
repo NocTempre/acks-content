@@ -4,6 +4,7 @@
   "description": "Streams book prose from the user's own ACKS II PDFs into Foundry at render time — per-client, bring-your-own-book. PoC.",
   "version": "0.3.0",
   "authors": [{ "name": "NocTempre" }],
+  "license": "LICENSE",
   "compatibility": {
     "minimum": "14",
     "verified": "14.364"
