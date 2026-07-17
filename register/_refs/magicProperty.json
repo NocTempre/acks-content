@@ -1,0 +1,7 @@
+{
+  "registry": "magicProperty",
+  "shape": "open",
+  "note": "Spoils component effects -> magic-property definition nodes (Treasure Tome territory). Seeded empty; grown by promotion. Unknown tokens degrade to plain text at runtime.",
+  "tokens": {},
+  "nodes": {}
+}

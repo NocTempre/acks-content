@@ -34,6 +34,7 @@ export async function pageItems(doc, pageNo) {
       str: it.str,
       x: it.transform[4],
       y: vp.height - it.transform[5],
+      w: it.width,
       h: it.height,
       alias: it.fontName,
     }))
@@ -41,8 +42,51 @@ export async function pageItems(doc, pageNo) {
   return { items, width: vp.width, height: vp.height };
 }
 
+/**
+ * Ordered text runs containing any of the given codepoints, with their fill
+ * colors, from the page's operator list. MECHANICAL (no judgment): stream
+ * order is deterministic per printing; run indexes are stable because only
+ * runs containing the target codepoints are counted (per-customer watermark
+ * text never contains PUA glyphs). Used by the executor's glyphColor
+ * instruction and by the compiler to choose pick indexes.
+ */
+export async function glyphColorRuns(doc, pageNo, codepoints) {
+  const want = new Set(codepoints.map((c) => (typeof c === "number" ? c : c.codePointAt(0))));
+  const page = await doc.getPage(pageNo);
+  const vp = page.getViewport({ scale: 1 });
+  const ops = await page.getOperatorList();
+  let fill = null;
+  let tx = 0;
+  let ty = 0;
+  const runs = [];
+  for (let i = 0; i < ops.fnArray.length; i++) {
+    const fn = ops.fnArray[i];
+    const args = ops.argsArray[i];
+    if (fn === OPS.setFillRGBColor) {
+      fill = typeof args?.[0] === "string" ? args[0] : Array.isArray(args) || ArrayBuffer.isView(args) ? `rgb(${[...args].join(",")})` : String(args);
+    } else if (fn === OPS.setTextMatrix) {
+      tx = args[4];
+      ty = args[5];
+    } else if (fn === OPS.moveText) {
+      tx += args[0];
+      ty += args[1];
+    } else if (fn === OPS.showText) {
+      let text = "";
+      let hit = false;
+      for (const g of args?.[0] ?? []) {
+        if (g && typeof g === "object" && typeof g.unicode === "string") {
+          text += g.unicode;
+          if (want.has(g.unicode.codePointAt(0))) hit = true;
+        }
+      }
+      if (hit) runs.push({ text, fill, x: tx, y: vp.height - ty });
+    }
+  }
+  return runs;
+}
+
 /** Column left edges from a histogram of body-item x origins (1-3 columns). */
-function detectColumns(items) {
+export function detectColumns(items) {
   const body = items.filter((it) => it.h < HEADING_MIN_H);
   const bins = {};
   for (const it of body) {
@@ -61,7 +105,7 @@ function detectColumns(items) {
   return cols.length ? cols : [0];
 }
 
-const colOf = (x, cols) => {
+export const colOf = (x, cols) => {
   let best = 0;
   for (let i = 0; i < cols.length; i++) if (x >= cols[i] - 5) best = i;
   return best;

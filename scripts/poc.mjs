@@ -15,6 +15,18 @@ const FOLDER_NAME = "ACKS Content PoC";
 const tagFor = (recipe) => `@PdfText[${recipe.id}]{${recipe.cite}}`;
 const tagP = (id) => `<p>${tagFor(recipeById(id))}</p>`;
 
+/**
+ * Where a monster's streamed description prose belongs, matching applyStats:
+ * the Full Monster Sheet's visible APPEARANCE field when acks-monsters is
+ * active (it enriches its description fields), else the core biography. Kept in
+ * one place so a monster never ends up with the prose in BOTH fields.
+ */
+function monsterDescData(html) {
+  return game.modules.get("acks-monsters")?.active
+    ? { flags: { "acks-monsters": { extras: { description: { appearance: html } } } } }
+    : { system: { details: { biography: html } } };
+}
+
 export async function ensureFolder(type) {
   return (
     game.folders.find((f) => f.type === type && f.name === FOLDER_NAME) ??
@@ -33,7 +45,7 @@ export async function createDocFor(recipe) {
   const html = `<p>${tagFor(recipe)}</p>`;
   if (recipe.kind === "monster") {
     const folder = await ensureFolder("Actor");
-    return Actor.create({ name: recipe.name, type: "monster", folder: folder.id, system: { details: { biography: html } } });
+    return Actor.create({ name: recipe.name, type: "monster", folder: folder.id, ...monsterDescData(html) });
   }
   const folder = await ensureFolder("Item");
   return Item.create({ name: recipe.name, type: recipe.kind === "ability" ? "ability" : "item", folder: folder.id, system: { description: html } });
@@ -46,12 +58,13 @@ export async function createSamples() {
   const actorFolder = await resetFolder("Actor");
   const itemFolder = await resetFolder("Item");
 
-  // One monster — description prose streams into the biography at render time.
+  // One monster — description prose streams into the sheet's description at
+  // render time (FMS APPEARANCE field, or core biography without the FMS).
   await Actor.create({
     name: "Griffon (PoC)",
     type: "monster",
     folder: actorFolder.id,
-    system: { details: { biography: tagP("mm.griffon") } },
+    ...monsterDescData(tagP("mm.griffon")),
   });
 
   // One character carrying the proficiency page as ability items (+ fake-book dummy).

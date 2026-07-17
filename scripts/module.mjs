@@ -28,6 +28,9 @@ import { openBook, pageItems, extractRecipe, extractDisplay, extractRunin, extra
 import { extractStatPairs } from "./stats.mjs";
 import { mapPairs } from "./stats-map.mjs";
 import { createSamples, createDocFor, audit as auditDialog } from "./poc.mjs";
+import {
+  initCookbook, loadCookbook, cookbookImport, cookbookStub, cookbookCanReveal, cookbookProse, cookbookCount,
+} from "./cookbook.mjs";
 
 const SETTING_DYNAMIC = "dynamicRecipes";
 const LEGACY_KEYS = ["acks-content.proseCache", "acks-content.contentCache"]; // pre-possession-model storage
@@ -395,25 +398,31 @@ async function applyStatsToActor(actor, doc, pageData, recipe) {
   if (!pairs.length) return ui.notifications.warn(`acks-content | ${recipe.name}: no stat rows found on PDF p. ${recipe.page}.`);
   const { system, extras, items, applied, unmapped } = mapPairs(pairs);
 
-  // Stream the entry prose into the core biography: it is the ONE description
-  // field the monster sheet runs enrichers on ({{{enriched.biography}}}), so the
-  // @PdfText tag resolves per seat there (stub for a bookless seat, "show book
-  // text" reveal for one with the book). The FMS extras.description.* fields
-  // render raw HTML through <prose-mirror> and never enrich — a tag written
-  // there would show as literal text — so biography is the correct target.
-  // Keep it inside the `system` object (not a dotted `system.details.biography`
-  // sibling key) so the two never race to merge the same parent.
-  system.details = { ...(system.details ?? {}), biography: tagHtmlFor(recipe) };
-
-  const update = { system, [`flags.${MODULE_ID}.statPairs`]: pairs };
-  // Full Monster Sheet structured extras only when acks-monsters is active (its
-  // schema); a plain `flags.*` path never collides with the `system` object.
+  // Stream the entry prose where the sheet the seat is using will ENRICH it,
+  // so the @PdfText tag resolves per seat (stub for a bookless seat, "show book
+  // text" reveal for one with the book):
+  //   • Full Monster Sheet active → the visible APPEARANCE field
+  //     (extras.description.appearance). FMS v0.x enriches its description
+  //     fields, so the tag renders there — the first field on the Description
+  //     tab, which is where the reader looks.
+  //   • otherwise → the core biography ({{{enriched.biography}}}).
+  // Each target is written as ONE object/path — never a parent object plus a
+  // dotted leaf of it in the same update() (that ambiguity clobbered the write).
+  const update = { [`flags.${MODULE_ID}.statPairs`]: pairs };
   const fmsActive = game.modules.get("acks-monsters")?.active;
-  if (fmsActive) update["flags.acks-monsters.extras"] = extras;
+  if (fmsActive) {
+    extras.description = { ...(extras.description ?? {}), appearance: tagHtmlFor(recipe) };
+    update["flags.acks-monsters.extras"] = extras;
+  } else {
+    system.details = { ...(system.details ?? {}), biography: tagHtmlFor(recipe) };
+  }
+  update.system = system;
   await actor.update(update);
   // Truthful diagnostics: verify the streamed description actually landed.
-  const back = actor.system?.details?.biography;
-  console.log(`${MODULE_ID} | ${actor.name}: biography ${back ? "VERIFIED on actor" : "MISSING after write (!)"}`);
+  const back = fmsActive
+    ? actor.getFlag("acks-monsters", "extras")?.description?.appearance
+    : actor.system?.details?.biography;
+  console.log(`${MODULE_ID} | ${actor.name}: description ${back ? "VERIFIED on actor" : "MISSING after write (!)"}`);
 
   // Spoils subsection -> spoil-flagged items (Full Monster Sheet Spoils tab).
   // Book weights are authoritative as printed (stored in 1/6-stone units).
@@ -524,9 +533,10 @@ function enrichPdfText(recipeId, label) {
   holder.classList.add("acks-content-pdftext");
   const stubEl = document.createElement("span");
   stubEl.classList.add("acks-content-stub");
-  stubEl.textContent = recipe ? stubFor(recipe) : game.i18n.localize(`${LANG_PREFIX}.pdftext.${recipeId}`);
+  stubEl.textContent =
+    (recipe ? stubFor(recipe) : cookbookStub(recipeId)) ?? game.i18n.localize(`${LANG_PREFIX}.pdftext.${recipeId}`);
   holder.append(stubEl);
-  if (proseFor(recipeId)) {
+  if (proseFor(recipeId) || cookbookCanReveal(recipeId)) {
     const reveal = document.createElement("a");
     reveal.classList.add("acks-content-reveal");
     reveal.dataset.acksContentId = recipeId;
@@ -536,14 +546,16 @@ function enrichPdfText(recipeId, label) {
   return holder;
 }
 
-function onRevealClick(event) {
+async function onRevealClick(event) {
   const link = event.target.closest?.(".acks-content-reveal");
   if (!link) return;
   event.preventDefault();
   const holder = link.closest(".acks-content-pdftext");
   const open = holder?.querySelector(".acks-content-prose");
   if (open) return open.remove(); // toggle off — reproduction stays on-demand
-  const prose = proseFor(link.dataset.acksContentId);
+  // Session memory first; else a cookbook id executes lazily from this seat's book.
+  const id = link.dataset.acksContentId;
+  const prose = proseFor(id) ?? (cookbookCanReveal(id) ? await cookbookProse(id) : null);
   if (!prose) return;
   const block = document.createElement("span");
   block.classList.add("acks-content-prose");
@@ -574,13 +586,18 @@ Hooks.once("ready", async () => {
   }
 
   document.body.addEventListener("click", onRevealClick);
+  initCookbook({ sessionDocs, proseMem, importArtForPage: importArt });
+  await loadCookbook();
   const audit = () => auditDialog(allRecipes(), stubFor);
-  const api = { connectBook, browseAndLoad, createSamples: createSamplesAndFill, applyStats, audit, bookStatus, forgetBooks, proseFor, RECIPES, BOOKS };
+  const api = {
+    connectBook, browseAndLoad, createSamples: createSamplesAndFill, applyStats, audit, bookStatus, forgetBooks,
+    proseFor, cookbookImport, cookbookProse, cookbookCount, RECIPES, BOOKS,
+  };
   globalThis.acksContent = api;
   const module = game.modules.get(MODULE_ID);
   if (module) module.api = api;
   console.log(
-    `${MODULE_ID} | ready. PoC macros in "ACKS Content — PoC Macros", or: acksContent.connectBook() · acksContent.browseAndLoad() · acksContent.createSamples() · acksContent.audit().`,
+    `${MODULE_ID} | ready. PoC macros in "ACKS Content — PoC Macros", or: acksContent.connectBook() · acksContent.cookbookImport() · acksContent.browseAndLoad() · acksContent.audit().`,
   );
 
   // Reopen remembered books; offer the unlock gesture for the rest.

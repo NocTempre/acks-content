@@ -11,26 +11,31 @@
 export const BOOKS = {
   rr: {
     label: "ACKS II Revised Rulebook",
+    short: "RR",
     pages: 553,
     titleRe: /Revised Rulebook/i,
   },
   jj: {
     label: "ACKS II Judges Journal",
+    short: "JJ",
     pages: 489,
     titleRe: /Judges Journal/i,
   },
   mm: {
     label: "ACKS II Monstrous Manual",
+    short: "MM",
     pages: 441,
     titleRe: /Monstrous Manual/i,
   },
   cw: {
     label: "ACKS II Codex of Whispers (FAKE — missing-book demo)",
+    short: "CW",
     pages: 999,
     titleRe: /Codex of Whispers/i,
     fake: true,
   },
 };
+
 
 /** Human-readable fingerprint check; returns null when OK, else a warning. */
 export function fingerprintWarning(bookId, numPages, title) {

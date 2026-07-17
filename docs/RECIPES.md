@@ -1,0 +1,204 @@
+# The Recipe Pipeline — register, promotion, and authoring (design, consolidated)
+
+Original design content (in-repo). This spec covers the **offline pipeline**:
+how agents turn the ACKS PDF library into the shipped **cookbook**. The
+cookbook's data format and frozen instruction set live in `docs/COOKBOOK.md`;
+how an engine consumes it lives in a per-consumer binding spec
+(`docs/BINDING-FOUNDRY.md`). Read all three; this one governs authoring.
+
+```
+OFFLINE authoring (agents + resolver + ANY tooling, vs the reference library —
+                   ALL intelligence lives here)
+   │  harvest → author → promote → verify → COMPILE
+   ▼
+COOKBOOK  (ships public; engine-agnostic database; IP-free resultant map:
+           explicit instructions + extraction assists — NO prose, NO values)
+   │  consumed by an engine binding (today: the acks-content Foundry module,
+   │  a DUMB EXECUTOR — no decision trees)
+   ▼
+RUNTIME   values AND prose/art materialize from the seat's own PDF exactly as
+          instructed; stub + citation otherwise
+```
+
+## Governing principles
+
+1. **Dumb runtime, smart cookbook.** If it takes a judgment about content, it
+   happens offline and ships as data. Runtime conditionals are mechanical only
+   (is the book connected? does this id exist?). No detection, inference,
+   normalization, or promotion in the app.
+2. **Values are assisted heavily, never prebaked.** A stat block is a
+   *compilation* — its selection/arrangement of values is grey-zone IP — so the
+   cookbook never ships a value read from a page (numbers, enum tokens, derived
+   booleans). It ships **assists** that make the runtime read deterministic:
+   exact spans, parse patterns, token→key tables, color→meaning maps. Values
+   the GM imports persist in their **world** (the hand-typed-stat-block
+   equivalence lives there, never in the shipped map).
+3. **Helper data is not IP.** Coordinates, claim spans, join/break/hyphen
+   fixes, reading-order maps, color-derived tables — derived structural
+   metadata reproduces nothing without the source. Prose repairs ship as
+   *transformations*, never corrected text; literal strings only under the
+   short-label cap (~60 chars: names, labels, headings).
+4. **Total capture.** Every text run on every page maps to a node or an
+   explicit recorded skip. Line coverage (no unclaimed items after all of a
+   page's nodes apply) is the authoritative completeness check; the book
+   outline is only the coarse checklist.
+5. **The register is a normalized database built by iterative ETL** (~one book
+   a year): nodes are rows, references are foreign keys, promotion is upsert,
+   each book is a batch, editions are revision rows, and a **resolver agent**
+   supplies the judgment pure rules can't.
+
+## The node model
+
+Every line of every page belongs to a **node**. Roles:
+
+- **Composite** — a game entity assembled from fields and references (monster,
+  NPC, location, item). References definitions **by id**; never carries their
+  pages or prose. Field *keys* are refs too (attribute/save *names* point at
+  descriptor nodes; only the number is a seat-extracted value).
+- **Definition** — a thing referenced repeatedly (proficiency, damage type,
+  magic property, spell, class, attribute, save, **procedure** = named
+  multi-step rule). Owns its defining page link(s); defined once.
+  - **Example** (sub-role) — a worked example, presented once, relevant
+    everywhere its concept is used. Carries `illustrates: [conceptId…]`;
+    surfaced contextually via concept→examples reverse lookup.
+- **Note** — non-game text captured for completeness (credits, backer list,
+  colophon, sidebar flavor). Same machinery, flagged non-game (binding routes
+  it to a journal — the "memorial wall").
+- **Table** — a printed table; consumed structurally (binding may route to a
+  roll table or journal).
+
+**Ids.** Composites are book-scoped: `mm.griffon`, `mm.beetleGiantBombardier`.
+Definitions are register-scoped (edition-independent): `def.<class>.<slug>` —
+`def.prof.alertness`, `def.type.monstrosity`, `def.dmg.slashing`,
+`def.nw.talon`. Every node may carry `aliases: [oldId…]`; ids are forever once
+shipped (world documents persist them), so merges/renames redirect via aliases,
+never break.
+
+**Editions.** A definition's pages live under `editions` — the same concept may
+be detailed in ACKS I and revised in ACKS II:
+`{ "editions": { "acks1": {book, pages}, "acks2": {book, pages, revises: "acks1"} } }`.
+Resolution prefers the newest edition the seat owns and falls back to the
+original for unrestated detail. Cross-book and cross-edition references are the
+normal case; every tier degrades to a stub, never an error.
+
+**Graceful degradation (three independent tiers).**
+1. *Structure & refs — always*: the graph renders bookless as stubs+citations.
+2. *Values — with the citing book*: materialized via assists, deterministic.
+3. *Descriptor prose — with the defining book* (whichever book that is).
+Registry-miss (unknown token → keyword, no ref) and book-not-owned (known id →
+stub) are orthogonal degradations; neither can fail.
+
+## Registers and promotion
+
+`register/` is the pipeline's source-of-truth database (see Layout). Reference
+registers come in three shapes: **open name-indexed** (proficiency name → def
+node), **descriptor enum** (small set, each value a def node with pages —
+tooltip-able), **keyword enum** (repeated tag, no descriptor, no tooltip —
+e.g. monster subtypes).
+
+**Register promotion** is the load-bearing mechanism: the first time any
+cross-cutting thing is met (keyword, descriptor, proficiency, procedure,
+example, kind), it is promoted to a register row and referenced by id forever
+after. Reuse-check → link-or-promote; idempotent; dedup on the normalized key;
+conflicts flagged, never silently forked; coverage-tracked (a promoted row
+missing its page link is a warning). **Ambiguity escalates to the resolver
+agent** (fuzzy/renamed match, variant-vs-new, same-key/two-pages, revision-vs-
+new); its ruling is recorded on the row. Promotion is **offline only** — the
+shipped cookbook is read-only; a token it doesn't know renders as plain text
+until the next release. A worker's miss degrades to a keyword row, never a
+failed batch.
+
+**Kinds are register rows too** (`register/_kinds/`): a kind is a learned
+structural signature + field template (authoring-side compression and
+contextual understanding). Minting a new kind is resolver-gated (high blast
+radius). The runtime never interprets kinds — the compiler flattens each entry
+into explicit instructions; the binding maps kinds to engine documents.
+
+## Seeding and coverage
+
+`tools/harvest-index.mjs <book> --write` walks the book's own page-accurate
+outline into `register/_manifest/<book>.json` (local, regenerable): the
+must-define list and coarse coverage denominator. The MM yields 281 monster
+entries with exact pages, the descriptor enums pre-located (Monster Types →
+p11–12), 87 tables, and **974 book-authored sub-blocks** (Combat / Ecology /
+Spoils per monster) — the labeled ground truth for paragraph/block
+segmentation. Fine-grained coverage is the **line-coverage residue** reported
+by verify: unclaimed items per page → toward zero; residue is triaged into new
+nodes (often notes) or recorded skips (page furniture).
+
+## Authoring-side senses (offline — anything goes)
+
+Nothing authoring-side ships, so use every signal: pdf.js text items
+(+`hasEOL`), y-gap/indent paragraph analysis, the **operator-list color walk**
+(proven: MM legend p14 shows the same 13 damage glyphs under body-black
+`#2c2e35` = mundane and red `#ff2e17` = extraordinary; maroon `#61122f` =
+display headings; white = table headers), image XObjects, and any external
+tool (PyMuPDF etc.). Structure trees are absent (untagged PDFs), so
+segmentation is heuristic — calibrated against the 974 outline blocks. The
+*conclusions* ship as assists; the executor performs instructed reads only.
+
+## Pipeline stages (per wave)
+
+1. **Seed** — manifest from the outline; ledger batches (`register/_ledger.json`).
+2. **Author** — a worker per page-batch: harvest report → register entries
+   (id, kind, pages, anchor, per-entry assists) + register upkeep (reuse-check;
+   keyword rows; page links when authoring the defining page) + note nodes for
+   non-game text. Escalate ambiguity to the resolver agent; never transcribe
+   prose (harvest snippets are diagnostics).
+3. **Promote/merge** — workers write register proposals; the orchestrator (with
+   the resolver agent) merges into `register/_refs/**` between waves.
+4. **Compile** — `tools/compile-cookbook.mjs` resolves every entry against the
+   reference PDFs into explicit geometry-addressed instructions and emits the
+   cookbook (see `docs/COOKBOOK.md`).
+5. **Verify** — `tools/verify-cookbook.mjs` executes the compiled cookbook
+   through the **shipping dumb executor** against the reference PDFs: expect
+   checks, value materialization, ref FK integrity, per-page residue. Warnings
+   for unfilled descriptor stubs; failures for broken instructions.
+6. **Gate** — lint (`tools/lint-register.mjs`, inside `npm run validate`)
+   enforces the IP caps and schema on everything that ships.
+
+## Layout
+
+```
+register/                  source DB (authored, committed)
+  <book>/p<a>-p<b>.json      entry rows per page batch
+  _kinds/<kind>.json         kind rows (learned templates)
+  _refs/<registry>.json      reference registers (open/descriptor/keyword)
+  _manifest/<book>.json      outline seed (gitignored, regenerable)
+  _ledger.json               wave ledger (gitignored)
+  _proposals/                worker register proposals (gitignored, merged)
+cookbook/                  compiled shipped artifact (committed)
+  <book>.json                per-book entries (instructions)
+  registers.json             tables + definition nodes
+docs/COOKBOOK.md           cookbook schema + frozen instruction set
+docs/BINDING-FOUNDRY.md    how the Foundry module consumes the cookbook
+```
+
+## What Opus builds vs. what Sonnet authors vs. the resolver
+
+- **Opus (once):** the specs, the compiler, the executor + instruction set, the
+  verify/lint gates, kind rows' initial shape, register schemas.
+- **Sonnet (per page batch):** entry rows, per-entry assists, register
+  proposals, note nodes, residue triage. Judgment over harvest reports — never
+  re-implementing extraction, never copying prose.
+- **Resolver agent (per merge):** adjudicates promotions — link vs promote vs
+  revise vs alias-merge; rulings recorded on rows.
+
+## Implementation status (2026-07-17)
+
+- **Built and pilot-proven** (mm p170–178, 9 monsters): `register/` layout +
+  seeds; `tools/compile-cookbook.mjs` (anchor/column resolution on the MM's
+  mirrored spreads, paragraph segmentation, per-stat boxes with baseline-skew
+  shift, executor-parity space/hyphen fixes, glyph→color pick matching by
+  position, margin/running-head skips); `scripts/executor.mjs` (frozen
+  instruction set v1); `tools/verify-cookbook.mjs` (expects, values, FK +
+  stub warnings, promotion candidates, residue/DUP ledger);
+  `tools/lint-register.mjs` in `npm run validate`; fleet runbook + worker
+  prompt. Registers grow by the promotion loop (verify candidates → upserts).
+- **Not yet:** the swarm run itself; note/table kinds (residue currently
+  flags the per-monster "Primary Characteristics" tables — by design);
+  compound-type tokens (e.g. "Enchanted Monstrosity" — needs a typeList
+  pattern); the Foundry binding rewire from the PoC recipes to the cookbook
+  (docs/BINDING-FOUNDRY.md); ACKS I books in `scripts/books.mjs` for edition
+  chains; per-entry `assists` consumption for authored overrides (schema
+  reserved; compiler flags cases via warnings today).

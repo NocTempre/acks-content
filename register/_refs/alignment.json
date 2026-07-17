@@ -1,0 +1,13 @@
+{
+  "registry": "alignment",
+  "shape": "keyword",
+  "note": "Lowercase duplicates are smallcaps surface forms (the font's unicode is lowercase) — exact-match tables carry every form seen.",
+  "tokens": {
+    "Lawful": { "key": "lawful" },
+    "Neutral": { "key": "neutral" },
+    "Chaotic": { "key": "chaotic" },
+    "lawful": { "key": "lawful" },
+    "neutral": { "key": "neutral" },
+    "chaotic": { "key": "chaotic" }
+  }
+}

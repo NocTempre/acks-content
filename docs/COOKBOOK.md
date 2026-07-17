@@ -1,0 +1,126 @@
+# Cookbook schema v1 — the shipped, engine-agnostic database
+
+Original design content (in-repo). The cookbook is the pipeline's **output
+artifact**: a versioned database (plain JSON) that any engine binding can
+consume. It contains **no engine vocabulary** (no Foundry types, no `system.*`
+paths, no UI concepts), **no prose**, and **no values read from a page** — only
+structure, pointers, and extraction assists. See `docs/RECIPES.md` for the
+pipeline that produces it and `docs/BINDING-FOUNDRY.md` for the first consumer.
+
+Schema id: `"acks-cookbook/1"`. A binding declares which schema versions it
+consumes; the instruction set below is **frozen per schema version** — old
+cookbooks must keep executing forever.
+
+## Files
+
+- `cookbook/<book>.json` — the entries anchored in one book.
+- `cookbook/registers.json` — shared lookup tables + definition/keyword nodes.
+
+### `cookbook/<book>.json`
+
+```jsonc
+{
+  "schema": "acks-cookbook/1",
+  "book": { "id": "mm", "label": "ACKS II Monstrous Manual", "short": "MM",
+            "pages": 441, "titleRe": "Monstrous Manual" },   // fingerprint
+  "entries": {
+    "mm.griffon": {
+      "kind": "kind.monster",          // register kind id (opaque to the executor)
+      "name": "Griffon",               // short label
+      "cite": "MM p.171",
+      "pages": [171],
+      "fields": { "<fieldName>": <instruction>, … }
+    }
+  }
+}
+```
+
+### `cookbook/registers.json`
+
+```jsonc
+{
+  "schema": "acks-cookbook/1",
+  "tables": {                          // exact-match lookup tables (assists)
+    "damageGlyph": { "": { "key": "slashing", "ref": "def.dmg.slashing" }, … },
+    "damageColor": { "#ff2e17": "extraordinary", "#2c2e35": "mundane" },
+    "proficiency": { "Alertness": { "key": "alertness", "ref": "def.prof.alertness" }, … },
+    "creatureType": { "Monstrosity": { "key": "monstrosity", "ref": "def.type.monstrosity" }, … },
+    "subtype":     { "Bestial": { "key": "bestial" } }      // keyword: no ref
+  },
+  "nodes": {                           // definition/keyword/note nodes
+    "def.type.monstrosity": {
+      "role": "definition", "name": "Monstrosity",
+      "aliases": [],
+      "editions": { "acks2": { "book": "mm", "pages": [12],
+                               "anchor": { "runin": "Monstrosity:" } } }
+    },
+    "def.prof.alertness": { "role": "definition", "name": "Alertness",
+                            "editions": { "acks2": { "book": "rr", "pages": [] } } } // stub: page unfilled (verify warns)
+  }
+}
+```
+
+Lookup is **exact-match only** (every surface form the pipeline met is a table
+row; aliases included). The executor never normalizes, fuzzy-matches, or
+promotes. A token absent from its table renders as plain text.
+
+## Addressing: geometry, not indexes
+
+All content addressing uses **page geometry over the footer-filtered text
+items** (`{x0,x1,y0,y1}` boxes in top-origin page points, the same space
+`extract.mjs pageItems` emits). DTRPG watermarks each customer's copy with
+different footer text, so raw item indexes differ per seat — geometry inside
+the body region is identical across copies of a printing. The book fingerprint
+(page count + title) gates edition mismatch before any instruction runs.
+
+## Instruction set v1 (frozen)
+
+An **instruction** is `{ "op": …, "page": n, … }`. The executor performs it
+mechanically; every judgment already happened at compile time.
+
+| op | inputs | output | semantics |
+|---|---|---|---|
+| `expect` | `box`, `text` | ok/mismatch | integrity check: the runs in `box` start with `text` (short label). Used for names/anchors; a mismatch marks the entry unresolvable this session (stub), never an error. |
+| `text` | `paras: [ { box } … ]`, `fixes?` | `[{text}]` | assemble prose: for each para box, take items in reading order (y, then x), join, apply `fixes` (see below). Paragraph boundaries were computed offline. |
+| `value` | `box`, `pattern`, `table?`, `split?` | typed value(s) | join the runs in `box`, apply `pattern` (below); if `split`, divide first and apply per segment; if `table`, map each token through `tables[table]` → `{text, key, ref?}` (miss ⇒ `{text}` only). |
+| `attacks` | `attacksBox`, `damageBox`, `names`, `glyphTable`, `colors?`, `colorTable?` | attack list | extract routine/throw/segments from the seat's book; per segment, glyph → damage type via `glyphTable`, and quality from the shipped per-segment **color annotation** (`colors[i]`, e.g. `"#ff2e17"`) mapped through `colorTable` — applied only when the seat's book yields the segment. |
+| `art` | `select: {minW,minH,maxW,maxRatio}`, `name?` | image pointer | pick the page's illustration by the shipped criteria (or exact XObject `name`); the binding decides upload/usage. The image itself is seat-extracted. |
+
+**Observations over runtime derivation.** When the compiler can observe a
+presentation attribute (ink color, emphasis, position), the cookbook ships the
+*observation* — "this glyph prints red" — never machinery for the runtime to
+re-derive it. The runtime performs no operator-list walks and no visual
+scraping; it maps shipped observations through shipped tables, gated on the
+seat's book yielding the content they annotate. Observations are plain data, so
+a chef can hand-author one wherever automatic attribution fails.
+
+**Patterns** (fixed library, part of the frozen set): `raw` (joined, trimmed),
+`int` (first integer), `dice` (first `NdM±k`), `refList` (split on `,`,
+tokens trimmed), `spoilList` (component regex → `{name, weight6, cost,
+effects[]}`), `statValue` (short run up to the next label).
+
+**Fixes** (text-assembly transformations; never corrected text): 
+`{"joinSpace": [i]}` insert a space between adjacent runs; `{"mergeHyphen": [i]}`
+merge across a line-break hyphen; `{"drop": [i]}` discard a decorative run.
+Indexes are run-ordinals *within the instruction's box* (geometry-stable).
+
+**Executor contract:** pure lookup + mechanical execution; no heuristics, no
+promotion, no writes. Inputs: cookbook + the seat's opened PDF. Output: the
+node's extract JSON (values, typed blocks, `{text,key,ref}` triples). Every
+failure degrades to a stub or plain text — the executor cannot throw on
+content.
+
+## Claims and coverage (pipeline-facing)
+
+Each instruction's boxes are its **claim** on the page. Verify replays every
+entry of a page and reports **residue** — body items claimed by no instruction
+— and cross-entry double-claims. The cookbook may include a per-page
+`skips: [ { box, reason } ]` list (recorded page furniture: letter-divider
+ornaments etc.) so residue can reach zero honestly.
+
+## Size & loading
+
+Per-book files so a binding lazy-loads only connected books; `registers.json`
+always loads (it is small: tables + def nodes). Everything is plain JSON,
+committed, shipped in the release zip, and lint-gated (`tools/lint-register.mjs`
+caps every literal at 60 chars and whitelists every key).

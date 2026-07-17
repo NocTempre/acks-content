@@ -9,7 +9,13 @@
   },
   "scripts": {
     "build:packs": "node tools/build-packs.mjs",
-    "validate": "node tools/validate.mjs"
+    "validate": "node tools/validate.mjs && node tools/lint-register.mjs",
+    "lint:register": "node tools/lint-register.mjs",
+    "harvest": "node tools/harvest-page.mjs",
+    "harvest:index": "node tools/harvest-index.mjs",
+    "compile": "node tools/compile-cookbook.mjs",
+    "verify:cookbook": "node tools/verify-cookbook.mjs",
+    "ledger": "node tools/ledger-init.mjs"
   },
   "devDependencies": {
     "@foundryvtt/foundryvtt-cli": "^1.0.0",

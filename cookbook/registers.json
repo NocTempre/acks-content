@@ -1,0 +1,643 @@
+{
+  "schema": "acks-cookbook/1",
+  "tables": {
+    "alignment": {
+      "Lawful": {
+        "key": "lawful"
+      },
+      "Neutral": {
+        "key": "neutral"
+      },
+      "Chaotic": {
+        "key": "chaotic"
+      },
+      "lawful": {
+        "key": "lawful"
+      },
+      "neutral": {
+        "key": "neutral"
+      },
+      "chaotic": {
+        "key": "chaotic"
+      }
+    },
+    "creatureType": {
+      "Animal": {
+        "key": "animal",
+        "ref": "def.type.animal"
+      },
+      "Beastman": {
+        "key": "beastman",
+        "ref": "def.type.beastman"
+      },
+      "Construct": {
+        "key": "construct",
+        "ref": "def.type.construct"
+      },
+      "Enchanted": {
+        "key": "enchanted",
+        "ref": "def.type.enchanted"
+      },
+      "Enchanted Creature": {
+        "key": "enchanted",
+        "ref": "def.type.enchanted"
+      },
+      "Giant": {
+        "key": "giant",
+        "ref": "def.type.giant"
+      },
+      "Giants": {
+        "key": "giant",
+        "ref": "def.type.giant"
+      },
+      "Humanoid": {
+        "key": "humanoid",
+        "ref": "def.type.humanoid"
+      },
+      "Incarnation": {
+        "key": "incarnation",
+        "ref": "def.type.incarnation"
+      },
+      "Monstrosity": {
+        "key": "monstrosity",
+        "ref": "def.type.monstrosity"
+      },
+      "Ooze": {
+        "key": "ooze",
+        "ref": "def.type.ooze"
+      },
+      "Plant": {
+        "key": "plant",
+        "ref": "def.type.plant"
+      },
+      "Undead": {
+        "key": "undead",
+        "ref": "def.type.undead"
+      },
+      "Vermin": {
+        "key": "vermin",
+        "ref": "def.type.vermin"
+      },
+      "animal": {
+        "key": "animal",
+        "ref": "def.type.animal"
+      },
+      "beastman": {
+        "key": "beastman",
+        "ref": "def.type.beastman"
+      },
+      "construct": {
+        "key": "construct",
+        "ref": "def.type.construct"
+      },
+      "enchanted": {
+        "key": "enchanted",
+        "ref": "def.type.enchanted"
+      },
+      "giant": {
+        "key": "giant",
+        "ref": "def.type.giant"
+      },
+      "humanoid": {
+        "key": "humanoid",
+        "ref": "def.type.humanoid"
+      },
+      "incarnation": {
+        "key": "incarnation",
+        "ref": "def.type.incarnation"
+      },
+      "monstrosity": {
+        "key": "monstrosity",
+        "ref": "def.type.monstrosity"
+      },
+      "ooze": {
+        "key": "ooze",
+        "ref": "def.type.ooze"
+      },
+      "plant": {
+        "key": "plant",
+        "ref": "def.type.plant"
+      },
+      "undead": {
+        "key": "undead",
+        "ref": "def.type.undead"
+      },
+      "vermin": {
+        "key": "vermin",
+        "ref": "def.type.vermin"
+      }
+    },
+    "damageColor": {
+      "#ff2e17": "extraordinary",
+      "#2c2e35": "mundane"
+    },
+    "damageGlyph": {
+      "": {
+        "key": "acidic",
+        "ref": "def.dmg.acidic"
+      },
+      "": {
+        "key": "arcane",
+        "ref": "def.dmg.arcane"
+      },
+      "": {
+        "key": "bludgeoning",
+        "ref": "def.dmg.bludgeoning"
+      },
+      "": {
+        "key": "necrotic",
+        "ref": "def.dmg.necrotic"
+      },
+      "": {
+        "key": "cold",
+        "ref": "def.dmg.cold"
+      },
+      "": {
+        "key": "electrical",
+        "ref": "def.dmg.electrical"
+      },
+      "": {
+        "key": "fire",
+        "ref": "def.dmg.fire"
+      },
+      "": {
+        "key": "luminous",
+        "ref": "def.dmg.luminous"
+      },
+      "": {
+        "key": "slashing",
+        "ref": "def.dmg.slashing"
+      },
+      "": {
+        "key": "piercing",
+        "ref": "def.dmg.piercing"
+      },
+      "": {
+        "key": "poisonous",
+        "ref": "def.dmg.poisonous"
+      },
+      "": {
+        "key": "seismic",
+        "ref": "def.dmg.seismic"
+      },
+      "": {
+        "key": "varies",
+        "ref": "def.dmg.varies"
+      }
+    },
+    "magicProperty": {},
+    "naturalWeapon": {
+      "bite": {
+        "key": "bite"
+      },
+      "stinger": {
+        "key": "stinger"
+      },
+      "sting": {
+        "key": "sting"
+      },
+      "gore": {
+        "key": "gore"
+      },
+      "horn": {
+        "key": "horn"
+      },
+      "tusk": {
+        "key": "tusk"
+      },
+      "spine": {
+        "key": "spine"
+      },
+      "claw": {
+        "key": "claw"
+      },
+      "talon": {
+        "key": "talon"
+      },
+      "pincer": {
+        "key": "pincer"
+      },
+      "hoof": {
+        "key": "hoof"
+      },
+      "tail": {
+        "key": "tail"
+      },
+      "tentacle": {
+        "key": "tentacle"
+      },
+      "tongue": {
+        "key": "tongue"
+      },
+      "constriction": {
+        "key": "constriction"
+      },
+      "ram": {
+        "key": "ram"
+      },
+      "feeler": {
+        "key": "feeler"
+      },
+      "envelopment": {
+        "key": "envelopment"
+      },
+      "weapon": {
+        "key": "weapon"
+      }
+    },
+    "proficiency": {
+      "Alertness": {
+        "key": "alertness",
+        "ref": "def.prof.alertness"
+      }
+    },
+    "size": {
+      "Small": {
+        "key": "small"
+      },
+      "Man-sized": {
+        "key": "man"
+      },
+      "Man-Sized": {
+        "key": "man"
+      },
+      "Large": {
+        "key": "large"
+      },
+      "Huge": {
+        "key": "huge"
+      },
+      "Gigantic": {
+        "key": "gigantic"
+      },
+      "Colossal": {
+        "key": "colossal"
+      }
+    },
+    "subtype": {
+      "bestial": {
+        "key": "bestial"
+      },
+      "angel": {
+        "key": "angel"
+      },
+      "wild": {
+        "key": "wild"
+      },
+      "sapient": {
+        "key": "sapient"
+      },
+      "demi-human": {
+        "key": "demiHuman"
+      }
+    }
+  },
+  "nodes": {
+    "def.type.animal": {
+      "role": "definition",
+      "name": "Animal",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            11
+          ],
+          "anchor": {
+            "runin": "Animal:"
+          }
+        }
+      }
+    },
+    "def.type.beastman": {
+      "role": "definition",
+      "name": "Beastman",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            11
+          ],
+          "anchor": {
+            "runin": "Beastman:"
+          }
+        }
+      }
+    },
+    "def.type.construct": {
+      "role": "definition",
+      "name": "Construct",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            11
+          ],
+          "anchor": {
+            "runin": "Construct:"
+          }
+        }
+      }
+    },
+    "def.type.enchanted": {
+      "role": "definition",
+      "name": "Enchanted Creature",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            11
+          ],
+          "anchor": {
+            "runin": "Enchanted Creature:"
+          }
+        }
+      }
+    },
+    "def.type.giant": {
+      "role": "definition",
+      "name": "Giant",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            11
+          ],
+          "anchor": {
+            "runin": "Giants:"
+          }
+        }
+      }
+    },
+    "def.type.humanoid": {
+      "role": "definition",
+      "name": "Humanoid",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            11
+          ],
+          "anchor": {
+            "runin": "Humanoid:"
+          }
+        }
+      }
+    },
+    "def.type.incarnation": {
+      "role": "definition",
+      "name": "Incarnation",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            11
+          ],
+          "anchor": {
+            "runin": "Incarnation:"
+          }
+        }
+      }
+    },
+    "def.type.monstrosity": {
+      "role": "definition",
+      "name": "Monstrosity",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            12
+          ],
+          "anchor": {
+            "runin": "Monstrosity:"
+          }
+        }
+      }
+    },
+    "def.type.ooze": {
+      "role": "definition",
+      "name": "Ooze",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            12
+          ],
+          "anchor": {
+            "runin": "Ooze:"
+          }
+        }
+      }
+    },
+    "def.type.plant": {
+      "role": "definition",
+      "name": "Plant",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            12
+          ],
+          "anchor": {
+            "runin": "Plant:"
+          }
+        }
+      }
+    },
+    "def.type.undead": {
+      "role": "definition",
+      "name": "Undead",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            12
+          ],
+          "anchor": {
+            "runin": "Undead:"
+          }
+        }
+      }
+    },
+    "def.type.vermin": {
+      "role": "definition",
+      "name": "Vermin",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            12
+          ],
+          "anchor": {
+            "runin": "Vermin:"
+          }
+        }
+      }
+    },
+    "def.dmg.acidic": {
+      "role": "definition",
+      "name": "Acidic",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            14
+          ]
+        }
+      }
+    },
+    "def.dmg.arcane": {
+      "role": "definition",
+      "name": "Arcane",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            14
+          ]
+        }
+      }
+    },
+    "def.dmg.bludgeoning": {
+      "role": "definition",
+      "name": "Bludgeoning",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            14
+          ]
+        }
+      }
+    },
+    "def.dmg.necrotic": {
+      "role": "definition",
+      "name": "Necrotic",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            14
+          ]
+        }
+      }
+    },
+    "def.dmg.cold": {
+      "role": "definition",
+      "name": "Cold",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            14
+          ]
+        }
+      }
+    },
+    "def.dmg.electrical": {
+      "role": "definition",
+      "name": "Electrical",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            14
+          ]
+        }
+      }
+    },
+    "def.dmg.fire": {
+      "role": "definition",
+      "name": "Fire",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            14
+          ]
+        }
+      }
+    },
+    "def.dmg.luminous": {
+      "role": "definition",
+      "name": "Luminous",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            14
+          ]
+        }
+      }
+    },
+    "def.dmg.slashing": {
+      "role": "definition",
+      "name": "Slashing",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            14
+          ]
+        }
+      }
+    },
+    "def.dmg.piercing": {
+      "role": "definition",
+      "name": "Piercing",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            14
+          ]
+        }
+      }
+    },
+    "def.dmg.poisonous": {
+      "role": "definition",
+      "name": "Poisonous",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            14
+          ]
+        }
+      }
+    },
+    "def.dmg.seismic": {
+      "role": "definition",
+      "name": "Seismic",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            14
+          ]
+        }
+      }
+    },
+    "def.dmg.varies": {
+      "role": "definition",
+      "name": "Varies",
+      "editions": {
+        "acks2": {
+          "book": "mm",
+          "pages": [
+            14
+          ]
+        }
+      }
+    },
+    "def.prof.alertness": {
+      "role": "definition",
+      "name": "Alertness",
+      "editions": {
+        "acks2": {
+          "book": "rr",
+          "pages": []
+        }
+      }
+    }
+  }
+}

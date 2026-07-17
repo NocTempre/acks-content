@@ -33,6 +33,13 @@
   "ACKS-CONTENT.ui.kind.ability": "Ability item",
   "ACKS-CONTENT.ui.kind.item": "Generic item",
 
+  "ACKS-CONTENT.ui.cookbookTitle": "Cookbook — import monsters from your book",
+  "ACKS-CONTENT.ui.cookbookIntro": "{n} cookbook entries for {book}. Each import reads YOUR connected copy: stats, attacks (damage types + printed-color quality), spoils, and art. Descriptions stay lazy — actors carry only a page tag.",
+  "ACKS-CONTENT.ui.cookbookFilter": "Type to filter…",
+  "ACKS-CONTENT.ui.cookbookGo": "Import selected",
+  "ACKS-CONTENT.ui.cookbookDone": "{done}/{picked} imported into the \"{folder}\" folder (details in console).",
+  "ACKS-CONTENT.ui.cookbookStub": "{name} — full text: {cite}. Connect your PDF on this seat to read it here.",
+
   "ACKS-CONTENT.pdftext.mm.griffon": "Monster — Griffon. Full entry: ACKS II Monstrous Manual, PDF p. 171. Connect your PDF (acksContent.connectBook) to read it here.",
 
   "ACKS-CONTENT.pdftext.prof.combatReflexes": "Proficiency — Combat Reflexes. Full text: ACKS II Revised Rulebook, PDF p. 110. Connect your PDF to read it here.",

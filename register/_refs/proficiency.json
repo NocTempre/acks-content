@@ -1,0 +1,11 @@
+{
+  "registry": "proficiency",
+  "shape": "open",
+  "note": "Open name-index: monster/NPC proficiency tokens -> definition nodes. Page links fill as the RR proficiency pages are authored (unfilled = verify warning, not failure).",
+  "tokens": {
+    "Alertness": { "key": "alertness", "ref": "def.prof.alertness" }
+  },
+  "nodes": {
+    "def.prof.alertness": { "name": "Alertness", "editions": { "acks2": { "book": "rr", "pages": [] } } }
+  }
+}
