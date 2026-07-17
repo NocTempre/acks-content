@@ -51,5 +51,11 @@ compatibility guidelines — see the ACKS II system repository for license texts
    (persisted stub + reference) with B (reproduced on demand per seat).
 5. The two Codex of Whispers entries are INTENTIONAL FAKES — they demo the
    missing-book path and can never resolve.
-6. Engine regression vs the local library: `node tools/dev-extract-check.mjs`
+6. "PoC 5 — Apply Stats from Book" (GM, after PoC 1+2 with MM connected):
+   parses the monster stat block from your PDF into the world actor (AC, HD,
+   saves via F-band, morale, XP, alignment, movement, appearing, attacks);
+   unmapped labels stored raw under flags.acks-content. Browse-loaded (PoC 3)
+   monsters get stats automatically. Combat Reflexes demonstrates a shipped
+   mechanical payload: +1 initiative Active Effect alongside streamed prose.
+7. Engine regression vs the local library: `node tools/dev-extract-check.mjs`
    (dev-only; requires C:\Proj\acks-reference).

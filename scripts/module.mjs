@@ -25,6 +25,7 @@ import { MODULE_ID, LANG_PREFIX } from "./constants.mjs";
 import { BOOKS, fingerprintWarning } from "./books.mjs";
 import { RECIPES, recipesForBook, recipeById } from "./recipes.mjs";
 import { openBook, pageItems, extractRecipe, extractDisplay, extractRunin, listHeadings, setWorker } from "./extract.mjs";
+import { extractStatPairs, mapPairs } from "./stats.mjs";
 import { createSamples, createDocFor, audit as auditDialog } from "./poc.mjs";
 
 const SETTING_CACHE = "contentCache";
@@ -240,7 +241,8 @@ async function loadHeadings(bookId, page, pageData, picked, kindChoice, title) {
     };
     dyn[recipe.id] = recipe;
     entries[recipe.id] = prose;
-    await createDocFor(recipe);
+    const doc = await createDocFor(recipe);
+    if (recipe.kind === "monster") await applyStatsToActor(doc, pageData, recipe);
     created++;
   }
   if (!created) return;
@@ -249,6 +251,42 @@ async function loadHeadings(bookId, page, pageData, picked, kindChoice, title) {
   ui.notifications.info(
     game.i18n.format(`${LANG_PREFIX}.ui.browseDone`, { n: created, book: BOOKS[bookId].label, page }),
   );
+}
+
+/* -------------------------------------------- */
+/*  Stat setup (numbers → world actor data)     */
+/* -------------------------------------------- */
+
+async function applyStatsToActor(actor, pageData, recipe) {
+  const pairs = extractStatPairs(pageData);
+  if (!pairs.length) return ui.notifications.warn(`acks-content | ${recipe.name}: no stat rows found on PDF p. ${recipe.page}.`);
+  const { system, applied, unmapped } = mapPairs(pairs);
+  await actor.update({ system, [`flags.${MODULE_ID}.statPairs`]: pairs });
+  console.log(`${MODULE_ID} | ${actor.name}: stats applied [${applied.join(", ")}]${unmapped.length ? ` — unmapped: ${unmapped.join(", ")}` : ""}`);
+  ui.notifications.info(`acks-content | ${actor.name}: ${applied.length} stat fields set, ${unmapped.length} labels stored raw (see console).`);
+}
+
+/** Fill stats on already-created monster actors (e.g. the Griffon sample). */
+async function applyStats() {
+  if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only.");
+  const monsters = allRecipes().filter((r) => r.kind === "monster" && !BOOKS[r.book]?.fake);
+  let touched = 0;
+  for (const recipe of monsters) {
+    const session = sessionDocs.get(recipe.book);
+    if (!session) continue;
+    const actor = game.actors.find(
+      (a) => a.type === "monster" && (a.name === recipe.name || a.name === `${recipe.name} (PoC)`),
+    );
+    if (!actor) continue;
+    const pageData = await pageItems(session.doc, recipe.page);
+    await applyStatsToActor(actor, pageData, recipe);
+    touched++;
+  }
+  if (!touched) {
+    ui.notifications.warn(
+      "acks-content | nothing to fill — connect the monster's book this session (PoC 2) and create the samples (PoC 1) first.",
+    );
+  }
 }
 
 /* -------------------------------------------- */
@@ -305,7 +343,7 @@ Hooks.once("init", () => {
 Hooks.once("ready", () => {
   document.body.addEventListener("click", onRevealClick);
   const audit = () => auditDialog(allRecipes(), stubFor);
-  const api = { connectBook, browseAndLoad, createSamples, audit, clearCache, proseFor, RECIPES, BOOKS };
+  const api = { connectBook, browseAndLoad, createSamples, applyStats, audit, clearCache, proseFor, RECIPES, BOOKS };
   globalThis.acksContent = api;
   const module = game.modules.get(MODULE_ID);
   if (module) module.api = api;

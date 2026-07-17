@@ -57,9 +57,16 @@ export async function createSamples() {
   // One character carrying the proficiency page as ability items (+ fake-book dummy).
   const carrier = await Actor.create({ name: "Content Carrier (PoC)", type: "character", folder: actorFolder.id });
   const abilityRecipes = RECIPES.filter((r) => r.kind === "ability");
+  // payload.effects = shipped mechanical interpretation (embedded math);
+  // the description prose still streams per seat.
   await carrier.createEmbeddedDocuments(
     "Item",
-    abilityRecipes.map((r) => ({ name: r.name, type: "ability", system: { description: tagP(r.id) } })),
+    abilityRecipes.map((r) => ({
+      name: r.name,
+      type: "ability",
+      system: { description: tagP(r.id) },
+      effects: r.payload?.effects ?? [],
+    })),
   );
 
   // One page of items as world items (+ fake-book dummy).

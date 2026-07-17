@@ -59,6 +59,12 @@ function buildMacros() {
       GUARD + `api.audit();`,
     ),
     macro(
+      "ackscMacStats000",
+      "PoC 5 — Apply Stats from Book (GM)",
+      "icons/svg/combat.svg",
+      GUARD + `api.applyStats();`,
+    ),
+    macro(
       "ackscMacStatus00",
       "PoC — Cache Status (this seat)",
       "icons/svg/chest.svg",
