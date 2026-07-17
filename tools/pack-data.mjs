@@ -65,6 +65,12 @@ function buildMacros() {
       GUARD + `api.applyStats();`,
     ),
     macro(
+      "ackscMacCookbook",
+      "Cookbook — Import Monsters (GM)",
+      "icons/svg/book.svg",
+      GUARD + `api.cookbookImport();`,
+    ),
+    macro(
       "ackscMacStatus00",
       "PoC — Book Status (this seat)",
       "icons/svg/chest.svg",
