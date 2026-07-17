@@ -1,8 +1,5 @@
-2026/07/17-00:49:45.796 652c Recovering log #4
-2026/07/17-00:49:45.809 652c Delete type=0 #4
-2026/07/17-00:49:45.809 652c Delete type=3 #2
-2026/07/17-00:56:29.980 1778 Level-0 table #9: started
-2026/07/17-00:56:29.981 1778 Level-0 table #9: 0 bytes OK
-2026/07/17-00:56:29.982 1778 Delete type=0 #7
-2026/07/17-00:56:29.983 1778 Manual compaction at level-0 from '!macros!ackscMacAudit000' @ 72057594037927935 : 1 .. '!macros!ackscMacStatus00' @ 0 : 0; will stop at (end)
-2026/07/17-00:56:29.983 1778 Manual compaction at level-1 from '!macros!ackscMacAudit000' @ 72057594037927935 : 1 .. '!macros!ackscMacStatus00' @ 0 : 0; will stop at (end)
+2026/07/17-01:22:11.457 87c Delete type=3 #1
+2026/07/17-01:22:11.473 7808 Level-0 table #5: started
+2026/07/17-01:22:11.473 7808 Level-0 table #5: 1084 bytes OK
+2026/07/17-01:22:11.473 7808 Delete type=0 #3
+2026/07/17-01:22:11.473 7808 Manual compaction at level-0 from '!macros!ackscMacAudit000' @ 72057594037927935 : 1 .. '!macros!ackscMacStatus00' @ 0 : 0; will stop at (end)

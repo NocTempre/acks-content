@@ -5,7 +5,7 @@
   "type": "script",
   "img": "icons/svg/chest.svg",
   "scope": "global",
-  "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\nconst cache = game.settings.get(\"acks-content\", \"contentCache\");\nconst lines = Object.entries(api.BOOKS).map(([id, book]) => {\n  const have = Object.keys(cache?.[id]?.entries ?? {}).length;\n  const want = api.RECIPES.filter((r) => r.book === id).length;\n  return `${book.label}: ${have}/${want}${book.fake ? \" (fake — always 0)\" : \"\"}`;\n});\nui.notifications.info(`acks-content cache — ${lines.join(\" · \")}`);\nconsole.log(\"acks-content cache status:\\n\" + lines.join(\"\\n\"));",
+  "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\napi.cacheStatus();",
   "folder": null,
   "sort": 0,
   "ownership": {
