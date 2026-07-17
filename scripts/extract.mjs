@@ -8,7 +8,7 @@
  *
  * Nothing here persists — callers receive plain strings and decide caching.
  */
-import { getDocument, GlobalWorkerOptions } from "../vendor/pdf.mjs";
+import { getDocument, GlobalWorkerOptions, OPS } from "../vendor/pdf.mjs";
 
 const HEADING_MIN_H = 12; // display headings are >=14pt; body is 9-10pt
 const FOOTER_BAND = 32; // pt from page bottom: folios + DTRPG watermark line
@@ -193,6 +193,100 @@ export function extractSpoils({ items, height }) {
     });
   }
   return spoils;
+}
+
+
+/* -------------------------------------------- */
+/*  Page artwork                                */
+/* -------------------------------------------- */
+
+/** Image XObjects painted on a page: [{ name, width, height, kind, bitmap }]. */
+export async function pageArtInfo(doc, pageNo) {
+  const page = await doc.getPage(pageNo);
+  const ops = await page.getOperatorList();
+  const names = new Set();
+  for (let i = 0; i < ops.fnArray.length; i++) {
+    if (ops.fnArray[i] === OPS.paintImageXObject) names.add(ops.argsArray[i][0]);
+  }
+  const out = [];
+  for (const name of names) {
+    // Timeout-guarded: Node's fake pdf.js worker can stall object delivery on
+    // pages after the first (the browser's real worker resolves normally) —
+    // never hang, just report the image as unavailable.
+    const img = await new Promise((resolve) => {
+      let done = false;
+      const finish = (value) => {
+        if (!done) {
+          done = true;
+          resolve(value ?? null);
+        }
+      };
+      try {
+        page.objs.get(name, finish);
+      } catch {
+        try {
+          page.commonObjs.get(name, finish);
+        } catch {
+          finish(null);
+        }
+      }
+      setTimeout(() => finish(null), 3000);
+    });
+    if (img) out.push({ name, width: img.width, height: img.height, kind: img.kind, img });
+  }
+  return out;
+}
+
+/**
+ * Pick the page's illustration: exclude page-background rasters (very wide)
+ * and ornament strips (extreme aspect), take the largest remainder above a
+ * minimum size. Returns the info entry or null.
+ */
+export function pickArt(infos) {
+  return (
+    infos
+      .filter((i) => i.width >= 200 && i.height >= 200 && i.width < 1500)
+      .filter((i) => i.width / i.height < 3 && i.height / i.width < 3)
+      .sort((a, b) => b.width * b.height - a.width * a.height)[0] ?? null
+  );
+}
+
+/**
+ * Extract the page illustration as a PNG blob (browser only — needs canvas).
+ * Handles pdf.js bitmap images and raw RGB/RGBA/gray data.
+ */
+export async function extractPageArt(doc, pageNo) {
+  if (typeof document === "undefined") return null;
+  const chosen = pickArt(await pageArtInfo(doc, pageNo));
+  if (!chosen) return null;
+  const { img, width, height } = chosen;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (img.bitmap) {
+    ctx.drawImage(img.bitmap, 0, 0, width, height);
+  } else if (img.data) {
+    const rgba = new Uint8ClampedArray(width * height * 4);
+    const d = img.data;
+    if (img.kind === 3) {
+      rgba.set(d.subarray(0, rgba.length));
+    } else if (img.kind === 2) {
+      for (let i = 0, j = 0; j < rgba.length; i += 3, j += 4) {
+        rgba[j] = d[i];
+        rgba[j + 1] = d[i + 1];
+        rgba[j + 2] = d[i + 2];
+        rgba[j + 3] = 255;
+      }
+    } else {
+      return null; // exotic formats: recipe-direction territory
+    }
+    ctx.putImageData(new ImageData(rgba, width, height), 0, 0);
+  } else {
+    return null;
+  }
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  return blob ? { blob, width, height } : null;
 }
 
 /** Run one recipe against an open document. Returns prose string or null. */

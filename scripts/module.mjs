@@ -24,7 +24,7 @@
 import { MODULE_ID, LANG_PREFIX } from "./constants.mjs";
 import { BOOKS, fingerprintWarning } from "./books.mjs";
 import { RECIPES, recipeById } from "./recipes.mjs";
-import { openBook, pageItems, extractRecipe, extractDisplay, extractRunin, extractSpoils, listHeadings, setWorker } from "./extract.mjs";
+import { openBook, pageItems, extractRecipe, extractDisplay, extractRunin, extractSpoils, extractPageArt, listHeadings, setWorker } from "./extract.mjs";
 import { extractStatPairs } from "./stats.mjs";
 import { mapPairs } from "./stats-map.mjs";
 import { createSamples, createDocFor, audit as auditDialog } from "./poc.mjs";
@@ -349,8 +349,8 @@ async function loadHeadings(bookId, page, pageData, picked, kindChoice) {
     };
     dyn[recipe.id] = recipe;
     mem[recipe.id] = prose; // this seat's session memory — other seats resolve via their own book
-    const doc = await createDocFor(recipe);
-    if (recipe.kind === "monster") await applyStatsToActor(doc, pageData, recipe);
+    const created0 = await createDocFor(recipe);
+    if (recipe.kind === "monster") await applyStatsToActor(created0, sessionDocs.get(bookId).doc, pageData, recipe);
     created++;
   }
   if (!created) return;
@@ -363,7 +363,34 @@ async function loadHeadings(bookId, page, pageData, picked, kindChoice) {
 /*  Stat setup (numbers → world actor data)     */
 /* -------------------------------------------- */
 
-async function applyStatsToActor(actor, pageData, recipe) {
+/** Extract the page illustration from the GM's book and set it as actor+token
+ *  art. NOTE the deliberate asymmetry with prose: art must render on every
+ *  client's canvas, so it uploads into world data (acks-content-art/) — a
+ *  world asset sourced from the GM's own book, like a scan the GM saved. */
+async function importArt(actor, doc, recipe) {
+  try {
+    const art = await extractPageArt(doc, recipe.page);
+    if (!art) {
+      console.log(`${MODULE_ID} | ${actor.name}: no suitable illustration found on PDF p. ${recipe.page}.`);
+      return false;
+    }
+    const FP = foundry.applications?.apps?.FilePicker?.implementation ?? globalThis.FilePicker;
+    const dir = "acks-content-art";
+    await FP.createDirectory("data", dir).catch(() => {});
+    const filename = `${recipe.id.replaceAll(".", "-")}.png`;
+    const file = new File([art.blob], filename, { type: "image/png" });
+    const res = await FP.upload("data", dir, file, {}, { notify: false });
+    if (!res?.path) return false;
+    await actor.update({ img: res.path, "prototypeToken.texture.src": res.path });
+    console.log(`${MODULE_ID} | ${actor.name}: art imported (${art.width}x${art.height}) -> ${res.path}`);
+    return true;
+  } catch (err) {
+    console.warn(`${MODULE_ID} | ${actor.name}: art import failed`, err);
+    return false;
+  }
+}
+
+async function applyStatsToActor(actor, doc, pageData, recipe) {
   const pairs = extractStatPairs(pageData);
   if (!pairs.length) return ui.notifications.warn(`acks-content | ${recipe.name}: no stat rows found on PDF p. ${recipe.page}.`);
   const { system, extras, items, applied, unmapped } = mapPairs(pairs);
@@ -405,11 +432,13 @@ async function applyStatsToActor(actor, pageData, recipe) {
     );
   }
 
+  const gotArt = await importArt(actor, doc, recipe);
+
   console.log(
     `${MODULE_ID} | ${actor.name}: stats [${applied.join(", ")}]; ${spoils.length} spoils${unmapped.length ? `; unmapped: ${unmapped.join(", ")}` : ""}`,
   );
   ui.notifications.info(
-    `acks-content | ${actor.name}: ${applied.length} stat fields, ${items.length} attack/ability items, ${spoils.length} spoils, ${unmapped.length} labels stored raw (console has details).`,
+    `acks-content | ${actor.name}: ${applied.length} stat fields, ${items.length} attack/ability items, ${spoils.length} spoils${gotArt ? ", art imported" : ""}, ${unmapped.length} labels stored raw (console has details).`,
   );
 }
 
@@ -426,7 +455,7 @@ async function applyStats() {
     );
     if (!actor) continue;
     const pageData = await pageItems(session.doc, recipe.page);
-    await applyStatsToActor(actor, pageData, recipe);
+    await applyStatsToActor(actor, session.doc, pageData, recipe);
     touched++;
   }
   if (!touched) {
