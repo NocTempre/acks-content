@@ -9,7 +9,7 @@
  * (diagnostics only — never dumps passages).
  */
 import fs from "node:fs";
-import { openBook, extractRecipe, pageItems } from "../scripts/extract.mjs";
+import { openBook, extractRecipe, pageItems, extractSpoils } from "../scripts/extract.mjs";
 import { extractStatPairs } from "../scripts/stats.mjs";
 import { mapPairs } from "../scripts/stats-map.mjs";
 import { RECIPES } from "../scripts/recipes.mjs";
@@ -77,6 +77,8 @@ for (const recipe of STAT_RECIPES) {
   );
   console.log(`      throw=${system.thac0?.throw} items=${res.items.map((i) => `${i.type}:${i.name}(${i.system.damage ?? ""})`).join(" ")}`);
   if (unmapped.length) console.log(`      unmapped (stored raw): ${unmapped.join(", ")}`);
+  const spoils = extractSpoils(await pageItems(doc, recipe.page));
+  console.log(`      spoils(${spoils.length}): ${spoils.map((s) => `${s.name} ${s.weight6}/6st ${s.cost}gp fx=${s.effects.length}`).join(" | ")}`);
   if (!applied.length) failed = true;
 }
 

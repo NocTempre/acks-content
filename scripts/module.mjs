@@ -8,29 +8,30 @@
  * reproduced only on explicit demand ("show book text") and only for seats
  * that connected the book — per-player enforcement by construction.
  *
- * Recipes come in two flavours:
- *   static  — shipped in recipes.mjs with lang-file stubs
- *   dynamic — created at the table via browseAndLoad() (pick book + page,
- *             tick detected headings); pointers only (name/book/page/heading)
- *             stored in a world setting, stubs generated from a template.
+ * The prose cache lives in a direct localStorage key (NOT game.settings) and
+ * every write is verified by reading back — notifications report what is
+ * actually on disk, never just what was attempted.
  *
  * PoC api (globalThis.acksContent / game.modules.get("acks-content").api):
  *   connectBook()    pick a book + your local PDF; extracts all recipes
  *   browseAndLoad()  GM: pick a page, choose headings, load actors/items
  *   createSamples()  load the fixed sample set (GM, acks system)
+ *   applyStats()     fill monster actors from the connected book
  *   audit()          popout contrasting language options A and B
+ *   cacheStatus()    truthful on-disk cache report for this browser
  *   clearCache()     forget this browser's extracted prose
  */
 import { MODULE_ID, LANG_PREFIX } from "./constants.mjs";
 import { BOOKS, fingerprintWarning } from "./books.mjs";
-import { RECIPES, recipesForBook, recipeById } from "./recipes.mjs";
-import { openBook, pageItems, extractRecipe, extractDisplay, extractRunin, listHeadings, setWorker } from "./extract.mjs";
+import { RECIPES, recipeById } from "./recipes.mjs";
+import { openBook, pageItems, extractRecipe, extractDisplay, extractRunin, extractSpoils, listHeadings, setWorker } from "./extract.mjs";
 import { extractStatPairs } from "./stats.mjs";
 import { mapPairs } from "./stats-map.mjs";
 import { createSamples, createDocFor, audit as auditDialog } from "./poc.mjs";
 
-const SETTING_CACHE = "contentCache";
+const SETTING_CACHE = "contentCache"; // legacy game.settings location (migrated once)
 const SETTING_DYNAMIC = "dynamicRecipes";
+const CACHE_KEY = "acks-content.proseCache"; // direct localStorage: deterministic + verifiable
 
 /** PDFs opened this session (memory only — file handles don't persist). */
 const sessionDocs = new Map();
@@ -43,6 +44,7 @@ const dynamicRecipes = () => game.settings.get(MODULE_ID, SETTING_DYNAMIC) ?? {}
 const resolveRecipe = (id) => recipeById(id) ?? dynamicRecipes()[id] ?? null;
 const allRecipes = () => [...RECIPES, ...Object.values(dynamicRecipes())];
 const recipesForBookAll = (bookId) => allRecipes().filter((r) => r.book === bookId);
+const tagHtmlFor = (recipe) => `<p>@PdfText[${recipe.id}]{${recipe.cite}}</p>`;
 
 function stubFor(recipe) {
   if (!recipe.dynamic) return game.i18n.localize(`${LANG_PREFIX}.pdftext.${recipe.id}`);
@@ -54,23 +56,63 @@ function stubFor(recipe) {
 }
 
 /* -------------------------------------------- */
-/*  Per-browser prose cache                     */
+/*  Per-browser prose cache (localStorage)      */
 /* -------------------------------------------- */
+
+function readCache() {
+  try {
+    return JSON.parse(localStorage.getItem(CACHE_KEY) ?? "{}");
+  } catch {
+    return {};
+  }
+}
+
+/** Write, then VERIFY by reading back. Returns total entries on disk, or -1. */
+function writeCache(cache) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+    const back = JSON.parse(localStorage.getItem(CACHE_KEY) ?? "{}");
+    return Object.values(back).reduce((n, b) => n + Object.keys(b?.entries ?? {}).length, 0);
+  } catch (err) {
+    console.error(`${MODULE_ID} | cache persist FAILED`, err);
+    return -1;
+  }
+}
 
 function proseFor(recipeId) {
   const recipe = resolveRecipe(recipeId);
   if (!recipe) return null;
-  const cache = game.settings.get(MODULE_ID, SETTING_CACHE);
-  return cache?.[recipe.book]?.entries?.[recipeId] ?? null;
+  return readCache()?.[recipe.book]?.entries?.[recipeId] ?? null;
 }
 
-async function cacheEntries(bookId, title, newEntries) {
-  const cache = foundry.utils.deepClone(game.settings.get(MODULE_ID, SETTING_CACHE));
-  const bucket = (cache[bookId] ??= { title, entries: {} });
+/** Merge entries into the on-disk cache. Returns verified on-disk total (-1 on failure). */
+function cacheEntries(bookId, title, newEntries) {
+  const cache = readCache();
+  const bucket = (cache[bookId] ??= { entries: {} });
   bucket.title = title;
   bucket.when = Date.now();
   Object.assign(bucket.entries, newEntries);
-  await game.settings.set(MODULE_ID, SETTING_CACHE, cache);
+  return writeCache(cache);
+}
+
+function cacheStatus() {
+  const cache = readCache();
+  const bytes = (localStorage.getItem(CACHE_KEY) ?? "").length;
+  const lines = Object.entries(BOOKS).map(([id, book]) => {
+    const have = Object.keys(cache?.[id]?.entries ?? {}).length;
+    const want = allRecipes().filter((r) => r.book === id).length;
+    const when = cache?.[id]?.when ? new Date(cache[id].when).toLocaleString() : "never";
+    return `${book.label}: ${have}/${want}${book.fake ? " (fake)" : ""} — extracted ${when}`;
+  });
+  ui.notifications.info(`acks-content | on-disk cache for this browser (${bytes} bytes). Console has per-book detail.`);
+  console.log(`${MODULE_ID} | on-disk cache (${bytes} bytes):\n${lines.join("\n")}`);
+  return cache;
+}
+
+async function clearCache() {
+  localStorage.removeItem(CACHE_KEY);
+  await game.settings.set(MODULE_ID, SETTING_CACHE, {}); // legacy location too
+  ui.notifications.info("acks-content | this browser's extracted-prose cache cleared (verified empty).");
 }
 
 async function ingestBook(bookId, buffer) {
@@ -84,11 +126,17 @@ async function ingestBook(bookId, buffer) {
     const prose = await extractRecipe(doc, recipe).catch(() => null);
     if (prose) entries[recipe.id] = prose;
   }
-  await cacheEntries(bookId, title, entries);
   const hits = Object.keys(entries).length;
-  ui.notifications.info(
-    `acks-content | ${BOOKS[bookId].label}: ${hits}/${recipes.length} entries extracted into THIS browser's cache. Re-open sheets to see them.`,
-  );
+  const onDisk = cacheEntries(bookId, title, entries);
+  if (onDisk < 0) {
+    ui.notifications.error(
+      `acks-content | ${BOOKS[bookId].label}: ${hits}/${recipes.length} extracted but PERSIST FAILED — the cache will NOT survive a reload (see console).`,
+    );
+  } else {
+    ui.notifications.info(
+      `acks-content | ${BOOKS[bookId].label}: ${hits}/${recipes.length} extracted; verified on disk (${onDisk} total entries survive reloads on this browser). Re-open sheets.`,
+    );
+  }
   return hits;
 }
 
@@ -116,11 +164,6 @@ async function connectBook() {
       },
     },
   });
-}
-
-async function clearCache() {
-  await game.settings.set(MODULE_ID, SETTING_CACHE, {});
-  ui.notifications.info("acks-content | this browser's extracted-prose cache cleared.");
 }
 
 /* -------------------------------------------- */
@@ -248,9 +291,10 @@ async function loadHeadings(bookId, page, pageData, picked, kindChoice, title) {
   }
   if (!created) return;
   await game.settings.set(MODULE_ID, SETTING_DYNAMIC, dyn);
-  await cacheEntries(bookId, title, entries);
+  const onDisk = cacheEntries(bookId, title, entries);
   ui.notifications.info(
-    game.i18n.format(`${LANG_PREFIX}.ui.browseDone`, { n: created, book: BOOKS[bookId].label, page }),
+    game.i18n.format(`${LANG_PREFIX}.ui.browseDone`, { n: created, book: BOOKS[bookId].label, page }) +
+      (onDisk < 0 ? " — WARNING: prose cache persist FAILED." : ""),
   );
 }
 
@@ -265,24 +309,38 @@ async function applyStatsToActor(actor, pageData, recipe) {
 
   const update = { system, [`flags.${MODULE_ID}.statPairs`]: pairs };
   // Full Monster Sheet extras only when acks-monsters is active (its schema).
-  if (Object.keys(extras).length && game.modules.get("acks-monsters")?.active) {
-    update["flags.acks-monsters.extras"] = extras;
+  // Its Description tab reads extras.description.* — stream the entry prose
+  // there too (the tag enriches per seat like everywhere else).
+  if (game.modules.get("acks-monsters")?.active) {
+    update["flags.acks-monsters.extras"] = { ...extras, description: { appearance: tagHtmlFor(recipe) } };
   }
   await actor.update(update);
 
-  // Embedded attacks/proficiencies: replace previously generated ones (idempotent re-apply).
+  // Spoils subsection -> spoil-flagged items (Full Monster Sheet Spoils tab).
+  const spoils = extractSpoils(pageData).map((s) => ({
+    name: s.name.charAt(0).toUpperCase() + s.name.slice(1),
+    type: "item",
+    img: "icons/svg/item-bag.svg",
+    system: { description: "", subtype: "item", quantity: { value: 1, max: 0 }, cost: s.cost, weight: 0, weight6: s.weight6 },
+    flags: { "acks-monsters": { spoil: true, component: true, researchEffects: s.effects } },
+  }));
+
+  // Embedded attacks/abilities/spoils: replace previously generated ones (idempotent re-apply).
   const stale = actor.items.filter((i) => i.getFlag(MODULE_ID, "generated")).map((i) => i.id);
   if (stale.length) await actor.deleteEmbeddedDocuments("Item", stale);
-  if (items.length) {
+  const embed = [...items, ...spoils];
+  if (embed.length) {
     await actor.createEmbeddedDocuments(
       "Item",
-      items.map((i) => ({ ...i, flags: { ...(i.flags ?? {}), [MODULE_ID]: { generated: true } } })),
+      embed.map((i) => ({ ...i, flags: { ...(i.flags ?? {}), [MODULE_ID]: { ...(i.flags?.[MODULE_ID] ?? {}), generated: true } } })),
     );
   }
 
-  console.log(`${MODULE_ID} | ${actor.name}: stats applied [${applied.join(", ")}]${unmapped.length ? ` — unmapped: ${unmapped.join(", ")}` : ""}`);
+  console.log(
+    `${MODULE_ID} | ${actor.name}: stats [${applied.join(", ")}]; ${spoils.length} spoils${unmapped.length ? `; unmapped: ${unmapped.join(", ")}` : ""}`,
+  );
   ui.notifications.info(
-    `acks-content | ${actor.name}: ${applied.length} stat fields, ${items.length} attack/ability items, ${unmapped.length} labels stored raw (console has details).`,
+    `acks-content | ${actor.name}: ${applied.length} stat fields, ${items.length} attack/ability items, ${spoils.length} spoils, ${unmapped.length} labels stored raw (console has details).`,
   );
 }
 
@@ -361,9 +419,20 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", () => {
+  // One-time migration from the legacy game.settings cache location.
+  try {
+    const legacy = game.settings.get(MODULE_ID, SETTING_CACHE);
+    if (legacy && Object.keys(legacy).length && !Object.keys(readCache()).length) {
+      const moved = writeCache(legacy);
+      console.log(`${MODULE_ID} | migrated legacy settings cache -> localStorage (${moved} entries).`);
+    }
+  } catch (err) {
+    console.warn(`${MODULE_ID} | legacy cache migration skipped`, err);
+  }
+
   document.body.addEventListener("click", onRevealClick);
   const audit = () => auditDialog(allRecipes(), stubFor);
-  const api = { connectBook, browseAndLoad, createSamples, applyStats, audit, clearCache, proseFor, RECIPES, BOOKS };
+  const api = { connectBook, browseAndLoad, createSamples, applyStats, audit, cacheStatus, clearCache, proseFor, RECIPES, BOOKS };
   globalThis.acksContent = api;
   const module = game.modules.get(MODULE_ID);
   if (module) module.api = api;

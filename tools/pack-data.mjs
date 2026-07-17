@@ -68,15 +68,7 @@ function buildMacros() {
       "ackscMacStatus00",
       "PoC — Cache Status (this seat)",
       "icons/svg/chest.svg",
-      GUARD +
-        `const cache = game.settings.get("acks-content", "contentCache");
-const lines = Object.entries(api.BOOKS).map(([id, book]) => {
-  const have = Object.keys(cache?.[id]?.entries ?? {}).length;
-  const want = api.RECIPES.filter((r) => r.book === id).length;
-  return \`\${book.label}: \${have}/\${want}\${book.fake ? " (fake — always 0)" : ""}\`;
-});
-ui.notifications.info(\`acks-content cache — \${lines.join(" · ")}\`);
-console.log("acks-content cache status:\\n" + lines.join("\\n"));`,
+      GUARD + `api.cacheStatus();`,
     ),
     macro(
       "ackscMacClear000",

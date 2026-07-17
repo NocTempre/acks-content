@@ -156,6 +156,40 @@ export function extractRunin({ items, height }, heading) {
   return prose.length > 20 ? prose : null;
 }
 
+
+/**
+ * Spoils subsection: a bold run-in "Spoils" header followed by component
+ * bullets like "beak (2 3/6 st, 150gp, sharpness, striking, swift sword)".
+ * Self-calibrating like extractRunin. Returns [{name, weight6, cost, effects}].
+ */
+export function extractSpoils({ items, height }) {
+  const cols = detectColumns(items);
+  const anchor = items.find((it) => it.h < HEADING_MIN_H && it.str.trim() === "Spoils");
+  if (!anchor) return [];
+  const col = colOf(anchor.x, cols);
+  const stop = items
+    .filter(
+      (it) =>
+        it !== anchor &&
+        it.y > anchor.y + 2 &&
+        colOf(it.x, cols) === col &&
+        (it.h >= HEADING_MIN_H || (it.alias === anchor.alias && Math.abs(it.x - cols[col]) < 15)),
+    )
+    .sort((a, b) => a.y - b.y)[0];
+  const yMax = stop ? stop.y : height;
+  const text = joinProse(items.filter((it) => colOf(it.x, cols) === col && it.y > anchor.y && it.y < yMax));
+  const spoils = [];
+  for (const m of text.matchAll(/([A-Za-z][A-Za-z' -]*?)\s*\((\d+)(?:\s*(\d)\/6)?\s*st,\s*([\d,]+)\s*gp(?:,\s*([^)]+))?\)/g)) {
+    spoils.push({
+      name: m[1].trim(),
+      weight6: parseInt(m[2], 10) * 6 + (m[3] ? parseInt(m[3], 10) : 0),
+      cost: parseInt(m[4].replace(/,/g, ""), 10),
+      effects: (m[5] ?? "").split(",").map((s) => s.trim()).filter(Boolean),
+    });
+  }
+  return spoils;
+}
+
 /** Run one recipe against an open document. Returns prose string or null. */
 export async function extractRecipe(doc, recipe) {
   if (recipe.page < 1 || recipe.page > doc.numPages) return null;
