@@ -126,7 +126,7 @@ for (const file of bookFiles) {
     checkRefs(f, id, "");
     const atk = f.attacks;
     const atkStr = atk
-      ? `atk[${atk.segments.map((s) => `${s.name ?? "?"} ${s.damage} ${s.damageType?.key ?? "?"}${s.quality ? ` ${s.quality.toUpperCase()}` : ""}`).join(" | ")}] throw=${atk.throw}`
+      ? `atk[${(atk.modes ?? []).map((m) => m.segments.map((s) => `${s.name ?? "?"} ${s.damage} ${s.damageType?.key ?? "?"}${s.quality ? ` ${s.quality.toUpperCase()}` : ""}`).join(" + ")).join(" OR ")}] throw=${atk.throw}`
       : "no-attacks";
     const type = f.stats.type;
     console.log(

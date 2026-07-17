@@ -82,8 +82,11 @@ for (const id of ids) {
   console.log(`stats:`);
   for (const [k, v] of Object.entries(f.stats ?? {})) console.log(`  ${k}: ${JSON.stringify(v)}`);
   if (f.attacks) {
-    console.log(`attacks: text=${JSON.stringify(f.attacks.text)} throw=${f.attacks.throw} routines=${f.attacks.routines}`);
-    for (const s of f.attacks.segments) console.log(`  seg: ${JSON.stringify(s)}`);
+    console.log(`attacks: text=${JSON.stringify(f.attacks.text)} throw=${f.attacks.throw} alternatives=${f.attacks.alternatives}`);
+    (f.attacks.modes ?? []).forEach((m, mi) => {
+      console.log(`  mode ${mi} (count=${m.count} throw=${m.throw}):`);
+      for (const s of m.segments) console.log(`    ${JSON.stringify(s)}`);
+    });
   }
   console.log(`spoils: ${JSON.stringify(f.spoils ?? null)}`);
   console.log(`art: ${JSON.stringify(f.art ?? null)}`);

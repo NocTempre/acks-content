@@ -145,24 +145,33 @@ export function bindMonster(node) {
     if (atk.text) system.attacks = atk.text;
   }
 
+  // Each attack MODE is an OR-alternative (weapon OR claws+bite). Build a
+  // weapon item per segment; only mode 0 is equipped by default, later modes
+  // are tagged so the GM can swap. Duplicate names within a mode get a #suffix.
   const items = [];
-  for (const seg of atk?.segments ?? []) {
-    items.push({
-      name: seg.name ?? "Attack",
-      type: "weapon",
-      img: "icons/svg/sword.svg",
-      flags: {
-        "acks-monsters": {
-          ...(seg.naturalWeapon ? { naturalWeapon: seg.naturalWeapon } : {}),
-          ...(seg.damageType?.key ? { damageType: seg.damageType.key } : {}),
-          extraordinary: seg.quality === "extraordinary",
+  for (const [mi, mode] of (atk?.modes ?? []).entries()) {
+    const seen = {};
+    for (const seg of mode.segments) {
+      const base = seg.name ?? "Attack";
+      seen[base] = (seen[base] ?? 0) + 1;
+      items.push({
+        name: seen[base] > 1 ? `${base} ${seen[base]}` : base,
+        type: "weapon",
+        img: "icons/svg/sword.svg",
+        flags: {
+          "acks-monsters": {
+            ...(seg.naturalWeapon ? { naturalWeapon: seg.naturalWeapon } : {}),
+            ...(seg.damageType?.key ? { damageType: seg.damageType.key } : {}),
+            extraordinary: seg.quality === "extraordinary",
+            ...(mi > 0 ? { attackMode: mi } : {}),
+          },
         },
-      },
-      system: {
-        description: "", damage: seg.damage, bonus: 0, melee: true, missile: false, equipped: true,
-        pattern: "transparent", tags: [], counter: { value: 1, max: 1 }, cost: 0, weight: 0, weight6: 0,
-      },
-    });
+        system: {
+          description: "", damage: seg.damage, bonus: 0, melee: true, missile: false, equipped: mi === 0,
+          pattern: "transparent", tags: [], counter: { value: 1, max: 1 }, cost: 0, weight: 0, weight6: 0,
+        },
+      });
+    }
   }
   for (const prof of f.stats?.proficiencies ?? []) {
     if (!prof.text || /^none/i.test(prof.text)) continue;

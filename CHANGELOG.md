@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.2
+
+- **Attacks reworked into modes.** The Attacks and Damage lines are now parsed
+  into aligned *alternatives* ("1 weapon **or** 2 claws + bite"), and names pair
+  correctly with their damage within each mode. Fixes monsters whose names and
+  damage were mismatched (lizardman, thrassian, redcap …) and recovers dropped
+  alternative attacks (e.g. a dragon turtle's `36d6` breath). Imported actors
+  get one weapon item per attack, with alternate modes tagged (mode 0 equipped).
+
 ## 0.3.1
 
 - **QA cleanup pass** (8-agent audit of all 280 MM entries against raw

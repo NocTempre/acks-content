@@ -16,7 +16,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { openBook, pageItems, listHeadings, detectColumns, colOf, glyphColorRuns } from "../scripts/extract.mjs";
-import { runsIn, joinRuns } from "../scripts/executor.mjs";
+import { runsIn, joinRuns, attackModel } from "../scripts/executor.mjs";
 import { BOOKS, fingerprintWarning } from "../scripts/books.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -183,18 +183,6 @@ function paragraphBoxes(lines, x0, x1) {
 /*  Attack-name stemming (compiler judgment)    */
 /* -------------------------------------------- */
 
-const NW_STEMS = [
-  ["bite", /^bit/], ["stinger", /^stinger/], ["sting", /^sting/], ["gore", /^gor/],
-  ["horn", /^horn/], ["tusk", /^tusk/], ["spine", /^spine/], ["claw", /^claw/],
-  ["talon", /^talon/], ["pincer", /^pincer/], ["hoof", /^(hoof|hoov)/], ["tail", /^tail/],
-  ["tentacle", /^tentacl/], ["tongue", /^tongue/], ["constriction", /^constrict/],
-  ["ram", /^ram/], ["feeler", /^feeler/], ["envelopment", /^envelop/], ["weapon", /^weapon/],
-];
-const stemNw = (name) => {
-  const n = name.toLowerCase().trim();
-  for (const [key, re] of NW_STEMS) if (re.test(n)) return key;
-  return null;
-};
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const camel = (s) =>
   s.replace(/[^A-Za-z0-9 ]/g, "").split(/\s+/).filter(Boolean)
@@ -427,25 +415,10 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
     const attacksText = joinRuns(aRuns, aFixes ?? {}, attacksInstr.dropText).replace(/\s+/g, " ").trim();
     const damageRaw = joinRuns(dRuns, dFixes ?? {}, damageInstr.dropText);
 
-    // Names from the parenthetical: "2 talons, bite 4+" -> Talon, Talon, Bite
-    const inner = /\(([^)]*)\)/.exec(attacksText)?.[1] ?? "";
-    const names = [];
-    for (let token of inner.replace(/-?\d+\+\s*$/, "").split(",")) {
-      token = token.trim().replace(/-?\d+\+\s*$/, "").trim();
-      const counted = /^(\d+)\s+(.+)$/.exec(token);
-      const push = (t) => {
-        const nw = stemNw(t);
-        if (!nw) warn(`${entry.id}: no naturalWeapon stem for "${t}"`);
-        names.push({ name: cap(t), ...(nw ? { nw } : {}) });
-      };
-      if (counted) {
-        for (let k = 0; k < Math.min(parseInt(counted[1], 10), 8); k++) push(counted[2]);
-      } else if (token) {
-        push(token);
-      }
-    }
-
-    const segments = damageRaw.split("/").map((s) => s.trim()).filter(isDamageSeg);
+    // Names + damage are parsed at RUNTIME by the shared attackModel; the
+    // compiler only needs the ordered flat damage-segment list to align glyph
+    // colours to the same enumeration the executor will produce.
+    const segments = attackModel(attacksText, damageRaw).flatDamage;
     // Per-segment printed COLOR annotation ("this glyph prints red") — an
     // authoring-time observation the executor merely maps through the color
     // table. The runtime never scrapes colors. Attribution of runs to the
@@ -489,7 +462,6 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
       attacksBox: attacksInstr.box, damageBox: damageInstr.box,
       dropText: { attacks: attacksInstr.dropText, damage: damageInstr.dropText },
       ...(aFixes || dFixes ? { fixes: { ...(aFixes ? { attacks: aFixes } : {}), ...(dFixes ? { damage: dFixes } : {}) } } : {}),
-      names,
       glyphTable: kindRow.fields.attacks.glyphTable,
       ...(colors ? { colors, colorTable: kindRow.fields.attacks.colorTable } : {}),
     };
