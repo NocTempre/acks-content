@@ -1,0 +1,20 @@
+{
+  "_id": "ackscMacConnect0",
+  "_key": "!macros!ackscMacConnect0",
+  "name": "PoC 2 — Connect Your Book (this seat)",
+  "type": "script",
+  "img": "icons/svg/book.svg",
+  "scope": "global",
+  "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\napi.connectBook();",
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 2
+  },
+  "flags": {},
+  "_stats": {
+    "coreVersion": "14",
+    "createdTime": 1784332800000,
+    "modifiedTime": 1784332800000
+  }
+}

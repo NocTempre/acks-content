@@ -35,5 +35,13 @@
       "path": "lang/en.json"
     }
   ],
-  "packs": []
+  "packs": [
+    {
+      "name": "macros",
+      "label": "ACKS Content — PoC Macros",
+      "path": "packs/macros",
+      "type": "Macro",
+      "system": "acks"
+    }
+  ]
 }

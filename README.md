@@ -40,7 +40,9 @@ compatibility guidelines — see the ACKS II system repository for license texts
 ## PoC usage (dev)
 
 1. Enable the module in an `acks` world (junction already in place).
-2. As GM, in the console: `acksContent.createSamples()` — creates the
+2. Open the "ACKS Content — PoC Macros" compendium and drag the macros to the
+   hotbar (or run from the compendium). "PoC 1 — Create Sample Actors & Items"
+   (GM) creates the
    "ACKS Content PoC" folders: Griffon (PoC) + Content Carrier (PoC) actors
    and three world items, all carrying only `@PdfText` tags.
 3. `acksContent.connectBook()` — pick a book and your local PDF (read in this
