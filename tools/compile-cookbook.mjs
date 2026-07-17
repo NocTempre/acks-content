@@ -31,7 +31,15 @@ const FILES = {
 
 const HEADING_MIN_H = 12; // mirrors extract.mjs
 const LABEL_RE = /^[A-Z][A-Za-z ()'/]{0,28}:$/;
-const DICE_RE = /\d*d\d+(?:[+-]\d+)?/;
+const DICE_RE = /\d*d\d+(?:[×xX]\d+)?(?:[+-]\d+)?/; // mirrors scripts/executor.mjs
+const cleanSeg = (s) => (s ?? "").replace(/[-′″]/g, "").replace(/\s+/g, " ").trim();
+// A real damage segment: dice, a flat number, or a "by weapon" placeholder
+// (mirror of executor.isDamageSeg — must stay identical so segment COUNT
+// matches at runtime and color picks line up).
+const isDamageSeg = (s) => {
+  const c = cleanSeg(s);
+  return DICE_RE.test(c) || /^\d+$/.test(c) || /weapon/i.test(c);
+};
 const inBoxRaw = (it, box) => it.x >= box.x0 && it.x <= box.x1 && it.y >= box.y0 && it.y <= box.y1;
 
 const warns = [];
@@ -197,6 +205,10 @@ const camel = (s) =>
 /* -------------------------------------------- */
 
 async function compileMonster(doc, entry, kindRow, glyphChars) {
+  // Per-entry ASSISTS (docs/RECIPES.md): chef-authored one-off directions the
+  // compiler honors before its own heuristics. Supported: anchor (exact
+  // display text), statPage, spoilsPage, noSpoils, noArt, descStopHeading.
+  const assists = entry.assists ?? {};
   const page = entry.pages[0];
   const pd = await pageItems(doc, page);
   const cols = detectColumns(pd.items);
@@ -207,7 +219,9 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
   // a "STATUE, ANIMATED" parent; "(Overview)" suffixes never print). Try the
   // full title, then without parentheticals, then progressively shorter word
   // tails. The string that MATCHES becomes the shipped expect text.
-  const candidates = [entry.anchor.display];
+  const candidates = [];
+  if (assists.anchor) candidates.push(assists.anchor);
+  candidates.push(entry.anchor.display);
   const noParen = entry.anchor.display.replace(/\s*\([^)]*\)\s*/g, " ").replace(/\s+/g, " ").trim();
   if (noParen && noParen !== entry.anchor.display) candidates.push(noParen);
   const words = noParen.replace(/,/g, "").split(/\s+/).filter(Boolean);
@@ -227,14 +241,28 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
   const colX = cols[anchor.col];
   const nextX = cols[anchor.col + 1];
   const proseBox = { x0: colX - 5, x1: nextX ? nextX - 6 : pd.width };
-  const laterHeads = anchors.filter((a) => a.col === anchor.col && a.y > anchor.y + 2).sort((a, b) => a.y - b.y);
-  const stopY = laterHeads[0]?.y ? laterHeads[0].y - 4 : pd.height;
+  // Long names WRAP onto a second display line ("FAERIE, BROWNIE" /
+  // "(BOGGART)") — absorb same-column display lines within one heading
+  // line-height into the anchor block instead of treating them as the next
+  // monster's heading (which would empty the description region).
+  let anchorEndY = anchor.y;
+  const laterHeads = [];
+  for (const h of anchors.filter((a) => a.col === anchor.col && a.y > anchor.y + 2).sort((a, b) => a.y - b.y)) {
+    if (h.y - anchorEndY <= 26) anchorEndY = h.y;
+    else laterHeads.push(h);
+  }
+  let stopY = laterHeads[0]?.y ? laterHeads[0].y - 4 : pd.height;
+  if (assists.descStopHeading) {
+    const stopHead = laterHeads.find((h) => h.text.toLowerCase().startsWith(assists.descStopHeading.toLowerCase()));
+    if (stopHead) stopY = stopHead.y - 4;
+    else warn(`${entry.id}: assists.descStopHeading "${assists.descStopHeading}" not found`);
+  }
 
   const bodyIn = (p, x0, x1, y0, y1) =>
     p.items.filter((it) => it.h < HEADING_MIN_H && it.x >= x0 && it.x <= x1 && it.y > y0 && it.y < y1);
 
   // Prose column body; Spoils splits the region so claims never overlap.
-  const proseItems = bodyIn(pd, proseBox.x0, proseBox.x1, anchor.y + 2, stopY);
+  const proseItems = bodyIn(pd, proseBox.x0, proseBox.x1, anchorEndY + 2, stopY);
   let spoilsAnchor = proseItems.find((it) => it.str.trim() === "Spoils");
   let spoilsPd = pd;
   let spoilsPage = page;
@@ -247,7 +275,7 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
   const fields = {};
   fields.name = {
     op: "expect", page,
-    box: { x0: proseBox.x0, x1: proseBox.x1, y0: anchor.y - 16, y1: anchor.y + 6 },
+    box: { x0: proseBox.x0, x1: proseBox.x1, y0: anchor.y - 16, y1: anchorEndY + 6 },
     text: matchedText,
   };
   fields.description = {
@@ -270,13 +298,13 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
   // Prose column on the stat page, for the value-region bound (anchor page:
   // the anchor's own column).
   let statProseX = colX;
-  if (statLabels.length < 8 && page + 1 <= doc.numPages) {
-    const pd2 = await pageItems(doc, page + 1);
+  if ((assists.statPage && assists.statPage !== page) || (statLabels.length < 8 && page + 1 <= doc.numPages)) {
+    const pd2 = await pageItems(doc, assists.statPage ?? page + 1);
     const cols2 = detectColumns(pd2.items);
     const r2 = labelsOf(pd2, cols2);
-    if (r2.labels.length >= 8) {
+    if (r2.labels.length >= 8 || (assists.statPage && r2.labels.length)) {
       statPd = pd2;
-      statPage = page + 1;
+      statPage = assists.statPage ?? page + 1;
       statCols = cols2;
       statLabels = r2.labels;
       statColIdx = r2.idx;
@@ -295,20 +323,30 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
   // stats on the outer half) values run to the page edge.
   const statX1 = statProseX > statCols[statColIdx] ? statProseX - 6 : statPd.width;
 
-  // Spoils may live near the stat block on the stat page instead.
-  if (!spoilsAnchor && statPd !== pd) {
-    const sp2 = statPd.items.find((it) => it.h < HEADING_MIN_H && it.str.trim() === "Spoils");
+  // Spoils may live near the stat block on the stat page instead — or wherever
+  // an assist points.
+  if (assists.noSpoils) {
+    spoilsAnchor = null;
+    spoilsBox = null;
+  }
+  if (!spoilsAnchor && !assists.noSpoils && (statPd !== pd || assists.spoilsPage)) {
+    const spPd = assists.spoilsPage ? await pageItems(doc, assists.spoilsPage) : statPd;
+    const spPage = assists.spoilsPage ?? statPage;
+    const spCols = assists.spoilsPage ? detectColumns(spPd.items) : statCols;
+    const sp2 = spPd.items.find((it) => it.h < HEADING_MIN_H && it.str.trim() === "Spoils");
     if (sp2) {
-      const spCol = colOf(sp2.x, statCols);
-      const spX0 = statCols[spCol] - 5;
-      const spX1 = statCols[spCol + 1] ? statCols[spCol + 1] - 6 : statPd.width;
-      const laterHeads2 = listHeadings(statPd)
-        .filter((a) => a.mode === "display" && colOf(a.text ? sp2.x : sp2.x, statCols) === spCol && a.y > sp2.y)
+      const spCol = colOf(sp2.x, spCols);
+      const spX0 = spCols[spCol] - 5;
+      const spX1 = spCols[spCol + 1] ? spCols[spCol + 1] - 6 : spPd.width;
+      const later2 = listHeadings(spPd)
+        .filter((a) => a.mode === "display" && a.y > sp2.y)
         .sort((a, b) => a.y - b.y);
       spoilsAnchor = sp2;
-      spoilsPd = statPd;
-      spoilsPage = statPage;
-      spoilsBox = { x0: spX0, x1: spX1, y0: sp2.y - 3, y1: laterHeads2[0]?.y ? laterHeads2[0].y - 4 : statPd.height };
+      spoilsPd = spPd;
+      spoilsPage = spPage;
+      spoilsBox = { x0: spX0, x1: spX1, y0: sp2.y - 3, y1: later2[0]?.y ? later2[0].y - 4 : spPd.height };
+    } else if (assists.spoilsPage) {
+      warn(`${entry.id}: assists.spoilsPage ${assists.spoilsPage} has no "Spoils" header`);
     }
   }
   if (spoilsBox) {
@@ -337,13 +375,17 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
   let damageInstr = null;
   const unmapped = [];
 
-  // Value baselines can sit up to ~4pt ABOVE their label's baseline (font
-  // ascent skew on wrapped values), so each row's band is shifted up by 4.
+  // The MM CENTERS a stat label between its value's lines when a value wraps,
+  // so a wrapped value's first line sits ABOVE its own label (confirmed
+  // p298: Attacks value line y=396.7 vs label y=401.2). Assign each row the
+  // band bounded by the MIDPOINTS to its neighbouring labels — this captures
+  // lines above and below the label and cleanly separates adjacent fields.
   statLabels.forEach((label, i) => {
     const labelText = label.str.trim();
     const name = labelText.slice(0, -1);
-    const y0 = label.y - 4;
-    const y1 = i + 1 < statLabels.length ? statLabels[i + 1].y - 4.01 : statEnd;
+    const prevY = i > 0 ? statLabels[i - 1].y : label.y - 12;
+    const y0 = (prevY + label.y) / 2;
+    const y1 = i + 1 < statLabels.length ? (label.y + statLabels[i + 1].y) / 2 : statEnd;
     const box = { x0: statX0, x1: statX1, y0, y1 };
     const base = { op: "value", page: statPage, box, dropText: labelText };
 
@@ -367,6 +409,7 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
         pattern: row.pattern,
         ...(row.table ? { table: row.table } : {}),
         ...(row.parenTable ? { parenTable: row.parenTable } : {}),
+        ...(row.stripRoll ? { stripRoll: true } : {}),
       }, statPd);
     } else {
       unmapped.push(name);
@@ -387,8 +430,8 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
     // Names from the parenthetical: "2 talons, bite 4+" -> Talon, Talon, Bite
     const inner = /\(([^)]*)\)/.exec(attacksText)?.[1] ?? "";
     const names = [];
-    for (let token of inner.replace(/\d+\+\s*$/, "").split(",")) {
-      token = token.trim().replace(/\d+\+\s*$/, "").trim();
+    for (let token of inner.replace(/-?\d+\+\s*$/, "").split(",")) {
+      token = token.trim().replace(/-?\d+\+\s*$/, "").trim();
       const counted = /^(\d+)\s+(.+)$/.exec(token);
       const push = (t) => {
         const nw = stemNw(t);
@@ -402,7 +445,7 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
       }
     }
 
-    const segments = damageRaw.split("/").map((s) => s.trim()).filter((s) => DICE_RE.test(s));
+    const segments = damageRaw.split("/").map((s) => s.trim()).filter(isDamageSeg);
     // Per-segment printed COLOR annotation ("this glyph prints red") — an
     // authoring-time observation the executor merely maps through the color
     // table. The runtime never scrapes colors. Attribution of runs to the
@@ -452,7 +495,7 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
     };
   }
 
-  fields.art = { op: "art", page, select: kindRow.fields.art.select };
+  if (!assists.noArt) fields.art = { op: "art", page, select: kindRow.fields.art.select };
 
   /* --- residue triage: margin furniture -> shipped skips; rest reported.
          Anchor-page instructions only — stat-page residue is verify's job. --- */

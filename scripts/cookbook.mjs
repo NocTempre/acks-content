@@ -237,6 +237,73 @@ async function importOne(bookId, id, folderId) {
   return actor;
 }
 
+/* -------------------------------------------- */
+/*  Debug window: raw executor output           */
+/* -------------------------------------------- */
+
+/**
+ * GM inspection popout: execute one cookbook entry against the connected book
+ * and show the RAW extract JSON next to nothing — exactly what the binder
+ * receives. Ephemeral (session memory only), so binder errors can be traced to
+ * either the extraction (wrong here) or the binding (right here, wrong on the
+ * actor).
+ */
+export async function cookbookDebug(entryId) {
+  if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only.");
+  const esc = foundry.utils.escapeHTML ?? ((x) => x);
+
+  if (!entryId) {
+    const openBooks = [...data.books.keys()].filter((b) => ctx.sessionDocs.has(b));
+    if (!openBooks.length) return ui.notifications.warn("acks-content | connect a cookbook book first (PoC 2 / unlock).");
+    const cb = data.books.get(openBooks[0]);
+    const rows = Object.entries(cb.entries)
+      .sort((a, b) => a[1].pages[0] - b[1].pages[0])
+      .map(([id, e]) => `<option value="${esc(id)}">${esc(e.name)} — ${esc(e.cite)}</option>`)
+      .join("");
+    return foundry.applications.api.DialogV2.prompt({
+      window: { title: game.i18n.localize(`${LANG_PREFIX}.ui.debugTitle`) },
+      content: `<div class="form-group"><label>${game.i18n.localize(`${LANG_PREFIX}.ui.debugPick`)}</label>
+        <select name="entry">${rows}</select></div>`,
+      ok: {
+        label: game.i18n.localize(`${LANG_PREFIX}.ui.debugGo`),
+        callback: (event, button) => cookbookDebug(button.form.elements.entry.value),
+      },
+    });
+  }
+
+  const found = cookbookEntry(entryId);
+  if (!found) return ui.notifications.warn(`acks-content | unknown cookbook id "${entryId}".`);
+  const session = ctx.sessionDocs.get(found.cb.book.id);
+  if (!session) return ui.notifications.warn(`acks-content | ${found.cb.book.label} is not open this session.`);
+
+  const node = await executeEntry(session.doc, found.cb, data.registers, entryId);
+  const f = node.fields;
+  const pre = (v) => `<pre class="acks-content-debug-pre">${esc(JSON.stringify(v, null, 1) ?? "null")}</pre>`;
+  const statRows = Object.entries(f.stats ?? {})
+    .map(([k, v]) => `<tr><td>${esc(k)}</td><td><code>${esc(JSON.stringify(v))}</code></td></tr>`)
+    .join("");
+  const paras = (f.description ?? [])
+    .map((p, i) => `<p class="acks-content-debug-para"><b>[${i}]</b> ${esc(p.text)}</p>`)
+    .join("");
+  const content = `<div class="acks-content-debug" style="max-height:70vh;overflow-y:auto;">
+    <p><b>${esc(node.name)}</b> — ${esc(node.cite)} · pages ${esc(JSON.stringify(found.entry.pages))} · ok=${node.ok}</p>
+    <details open><summary>expect</summary>${pre(f.name)}</details>
+    <details open><summary>stats (${Object.keys(f.stats ?? {}).length})</summary>
+      <table class="acks-content-debug-table">${statRows}</table></details>
+    <details open><summary>attacks</summary>${pre(f.attacks ?? null)}</details>
+    <details open><summary>spoils</summary>${pre(f.spoils ?? null)}</details>
+    <details><summary>art</summary>${pre(f.art ?? null)}</details>
+    <details><summary>description (${(f.description ?? []).length} paras — this seat's book, session only)</summary>${paras}</details>
+    <details><summary>misses (${node.misses.length})</summary>${pre(node.misses)}</details>
+  </div>`;
+  return foundry.applications.api.DialogV2.prompt({
+    window: { title: `${game.i18n.localize(`${LANG_PREFIX}.ui.debugTitle`)} — ${node.name}`, resizable: true },
+    position: { width: 640, height: 720 },
+    content,
+    ok: { label: game.i18n.localize(`${LANG_PREFIX}.ui.close`) },
+  });
+}
+
 export async function cookbookImport() {
   if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only (creates actors).");
   const openBooks = [...data.books.keys()].filter((b) => ctx.sessionDocs.has(b));

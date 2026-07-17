@@ -29,7 +29,7 @@ import { extractStatPairs } from "./stats.mjs";
 import { mapPairs } from "./stats-map.mjs";
 import { createSamples, createDocFor, audit as auditDialog } from "./poc.mjs";
 import {
-  initCookbook, loadCookbook, cookbookImport, cookbookStub, cookbookCanReveal, cookbookProse, cookbookCount,
+  initCookbook, loadCookbook, cookbookImport, cookbookDebug, cookbookStub, cookbookCanReveal, cookbookProse, cookbookCount,
 } from "./cookbook.mjs";
 
 const SETTING_DYNAMIC = "dynamicRecipes";
@@ -591,7 +591,7 @@ Hooks.once("ready", async () => {
   const audit = () => auditDialog(allRecipes(), stubFor);
   const api = {
     connectBook, browseAndLoad, createSamples: createSamplesAndFill, applyStats, audit, bookStatus, forgetBooks,
-    proseFor, cookbookImport, cookbookProse, cookbookCount, RECIPES, BOOKS,
+    proseFor, cookbookImport, cookbookDebug, cookbookProse, cookbookCount, RECIPES, BOOKS,
   };
   globalThis.acksContent = api;
   const module = game.modules.get(MODULE_ID);

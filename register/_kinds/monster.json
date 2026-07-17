@@ -24,7 +24,7 @@
         "Other Senses": { "field": "otherSenses", "pattern": "raw" },
         "Normal Load": { "field": "normalLoad", "pattern": "int" },
         "Max Load": { "field": "maxLoad", "pattern": "int" },
-        "Proficiencies": { "field": "proficiencies", "pattern": "refList", "table": "proficiency" }
+        "Proficiencies": { "field": "proficiencies", "pattern": "refList", "table": "proficiency", "stripRoll": true }
       },
       "speedRows": { "prefix": "Speed", "pattern": "raw" },
       "attackRows": { "attacks": "Attacks", "damage": "Damage" }

@@ -39,6 +39,9 @@
   "ACKS-CONTENT.ui.cookbookGo": "Import selected",
   "ACKS-CONTENT.ui.cookbookDone": "{done}/{picked} imported into the \"{folder}\" folder (details in console).",
   "ACKS-CONTENT.ui.cookbookStub": "{name} — full text: {cite}. Connect your PDF on this seat to read it here.",
+  "ACKS-CONTENT.ui.debugTitle": "Cookbook debug — raw extraction",
+  "ACKS-CONTENT.ui.debugPick": "Entry",
+  "ACKS-CONTENT.ui.debugGo": "Extract & inspect",
 
   "ACKS-CONTENT.pdftext.mm.griffon": "Monster — Griffon. Full entry: ACKS II Monstrous Manual, PDF p. 171. Connect your PDF (acksContent.connectBook) to read it here.",
 

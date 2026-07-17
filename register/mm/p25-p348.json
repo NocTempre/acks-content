@@ -57,6 +57,9 @@
     "name": "Attercop, Demonic",
     "anchor": {
       "display": "Attercop, Demonic"
+    },
+    "assists": {
+      "spoilsPage": 30
     }
   },
   {
@@ -264,6 +267,78 @@
     }
   },
   {
+    "id": "mm.beastmanBugbear",
+    "kind": "kind.monster",
+    "book": "mm",
+    "pages": [
+      50
+    ],
+    "name": "Beastman, Bugbear",
+    "anchor": {
+      "display": "Beastman, Bugbear"
+    }
+  },
+  {
+    "id": "mm.beastmanGnoll",
+    "kind": "kind.monster",
+    "book": "mm",
+    "pages": [
+      51
+    ],
+    "name": "Beastman, Gnoll",
+    "anchor": {
+      "display": "Beastman, Gnoll"
+    }
+  },
+  {
+    "id": "mm.beastmanGoblin",
+    "kind": "kind.monster",
+    "book": "mm",
+    "pages": [
+      52
+    ],
+    "name": "Beastman, Goblin",
+    "anchor": {
+      "display": "Beastman, Goblin"
+    }
+  },
+  {
+    "id": "mm.beastmanHobgoblin",
+    "kind": "kind.monster",
+    "book": "mm",
+    "pages": [
+      53
+    ],
+    "name": "Beastman, Hobgoblin",
+    "anchor": {
+      "display": "Beastman, Hobgoblin"
+    }
+  },
+  {
+    "id": "mm.beastmanKobold",
+    "kind": "kind.monster",
+    "book": "mm",
+    "pages": [
+      54
+    ],
+    "name": "Beastman, Kobold",
+    "anchor": {
+      "display": "Beastman, Kobold"
+    }
+  },
+  {
+    "id": "mm.beastmanOrc",
+    "kind": "kind.monster",
+    "book": "mm",
+    "pages": [
+      55
+    ],
+    "name": "Beastman, Orc",
+    "anchor": {
+      "display": "Beastman, Orc"
+    }
+  },
+  {
     "id": "mm.beeGiantKiller",
     "kind": "kind.monster",
     "book": "mm",
@@ -381,7 +456,8 @@
     "name": "Cacodemon",
     "anchor": {
       "display": "Cacodemon"
-    }
+    },
+    "status": "template"
   },
   {
     "id": "mm.cairnDwellers",
@@ -765,7 +841,8 @@
     "name": "Dragon",
     "anchor": {
       "display": "Dragon"
-    }
+    },
+    "status": "template"
   },
   {
     "id": "mm.dragonTurtle",
@@ -801,6 +878,9 @@
     "name": "Draugr",
     "anchor": {
       "display": "Draugr"
+    },
+    "assists": {
+      "spoilsPage": 117
     }
   },
   {
@@ -825,7 +905,8 @@
     "name": "Elemental",
     "anchor": {
       "display": "Elemental"
-    }
+    },
+    "status": "template"
   },
   {
     "id": "mm.elephant",
@@ -946,7 +1027,9 @@
     "anchor": {
       "display": "Faerie, Brownie (Boggart)"
     },
-    "status": "pending"
+    "assists": {
+      "anchor": "Faerie, Brownie(Boggart)"
+    }
   },
   {
     "id": "mm.faerieKnocker",
@@ -1594,6 +1677,9 @@
     "name": "Khepri",
     "anchor": {
       "display": "Khepri"
+    },
+    "assists": {
+      "spoilsPage": 196
     }
   },
   {
@@ -1606,6 +1692,9 @@
     "name": "Kraken",
     "anchor": {
       "display": "Kraken"
+    },
+    "assists": {
+      "spoilsPage": 198
     }
   },
   {
@@ -1654,6 +1743,9 @@
     "name": "Leyak",
     "anchor": {
       "display": "Leyak"
+    },
+    "assists": {
+      "spoilsPage": 203
     }
   },
   {
@@ -1750,6 +1842,70 @@
     "name": "Lycanthrope",
     "anchor": {
       "display": "Lycanthrope"
+    },
+    "assists": {
+      "noSpoils": true,
+      "descStopHeading": "The Disease of Lycanthropy"
+    }
+  },
+  {
+    "id": "mm.lycanthropeWerebear",
+    "kind": "kind.monster",
+    "book": "mm",
+    "pages": [
+      212
+    ],
+    "name": "Lycanthrope, Werebear",
+    "anchor": {
+      "display": "Lycanthrope, Werebear"
+    }
+  },
+  {
+    "id": "mm.lycanthropeWereboar",
+    "kind": "kind.monster",
+    "book": "mm",
+    "pages": [
+      213
+    ],
+    "name": "Lycanthrope, Wereboar",
+    "anchor": {
+      "display": "Lycanthrope, Wereboar"
+    }
+  },
+  {
+    "id": "mm.lycanthropeWererat",
+    "kind": "kind.monster",
+    "book": "mm",
+    "pages": [
+      214
+    ],
+    "name": "Lycanthrope, Wererat",
+    "anchor": {
+      "display": "Lycanthrope, Wererat"
+    }
+  },
+  {
+    "id": "mm.lycanthropeWeretiger",
+    "kind": "kind.monster",
+    "book": "mm",
+    "pages": [
+      215
+    ],
+    "name": "Lycanthrope, Weretiger",
+    "anchor": {
+      "display": "Lycanthrope, Weretiger"
+    }
+  },
+  {
+    "id": "mm.lycanthropeWerewolf",
+    "kind": "kind.monster",
+    "book": "mm",
+    "pages": [
+      216
+    ],
+    "name": "Lycanthrope, Werewolf",
+    "anchor": {
+      "display": "Lycanthrope, Werewolf"
     }
   },
   {
@@ -2050,8 +2206,7 @@
     "name": "Nathaghol (Glintersnatch)",
     "anchor": {
       "display": "Nathaghol (Glintersnatch)"
-    },
-    "status": "pending"
+    }
   },
   {
     "id": "mm.neanderthal",
@@ -2832,7 +2987,9 @@
     "anchor": {
       "display": "Thrassian (Greater Lizardman)"
     },
-    "status": "pending"
+    "assists": {
+      "spoilsPage": 311
+    }
   },
   {
     "id": "mm.tickGiant",
@@ -2976,6 +3133,9 @@
     "name": "Vampire",
     "anchor": {
       "display": "Vampire"
+    },
+    "assists": {
+      "spoilsPage": 324
     }
   },
   {
@@ -2989,7 +3149,7 @@
     "anchor": {
       "display": "Vampire Thrall"
     },
-    "status": "pending"
+    "status": "template"
   },
   {
     "id": "mm.varmintGiantFerret",
@@ -3121,6 +3281,9 @@
     "name": "Wild Huntsman",
     "anchor": {
       "display": "Wild Huntsman"
+    },
+    "assists": {
+      "spoilsPage": 337
     }
   },
   {
@@ -3169,8 +3332,7 @@
     "name": "Worm, Giant (Overview)",
     "anchor": {
       "display": "Worm, Giant (Overview)"
-    },
-    "status": "pending"
+    }
   },
   {
     "id": "mm.wormGiantBlack",

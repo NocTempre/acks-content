@@ -28,6 +28,11 @@ export async function pageItems(doc, pageNo) {
   const page = await doc.getPage(pageNo);
   const vp = page.getViewport({ scale: 1 });
   const content = await page.getTextContent();
+  // Faux-bold section headings are DOUBLE-STRUCK: the same glyph painted twice
+  // at the same coordinates ("eencountersncounters", "Black BlobBlack Blob").
+  // Drop exact (str,x,y) coincident duplicates so headings read once — this
+  // must run identically here for compiler and runtime so boxes still line up.
+  const seen = new Set();
   const items = content.items
     .filter((it) => typeof it.str === "string" && it.str.trim())
     .map((it) => ({
@@ -38,7 +43,13 @@ export async function pageItems(doc, pageNo) {
       h: it.height,
       alias: it.fontName,
     }))
-    .filter((it) => it.y < vp.height - FOOTER_BAND && !/Order #\d+/.test(it.str));
+    .filter((it) => it.y < vp.height - FOOTER_BAND && !/Order #\d+/.test(it.str))
+    .filter((it) => {
+      const key = `${it.str}|${it.x.toFixed(1)}|${it.y.toFixed(1)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   return { items, width: vp.width, height: vp.height };
 }
 

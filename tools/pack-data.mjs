@@ -71,6 +71,12 @@ function buildMacros() {
       GUARD + `api.cookbookImport();`,
     ),
     macro(
+      "ackscMacCkDebug0",
+      "Cookbook — Debug Raw Extraction (GM)",
+      "icons/svg/eye.svg",
+      GUARD + `api.cookbookDebug();`,
+    ),
+    macro(
       "ackscMacStatus00",
       "PoC — Book Status (this seat)",
       "icons/svg/chest.svg",
