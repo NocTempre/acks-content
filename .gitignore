@@ -1,0 +1,14 @@
+# Dev-only artifacts. NOTE: never ignore packs/**/*.log — compiled LevelDB
+# packs store live data in .log files and are committed + shipped.
+node_modules/
+*.zip
+.DS_Store
+npm-debug.log*
+.claude/settings.local.json
+
+# ACKS rules extracts are LOCAL-ONLY (licensed book text; purged from all
+# repo histories 2026-07-16). They live in C:\Proj\acks-rules\<module-id>\ —
+# these armor patterns guard against accidental re-adds.
+docs/RULES.md
+docs/PROFICIENCIES.md
+docs/ACKS-Reactions-Reference.md
