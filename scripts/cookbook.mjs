@@ -703,18 +703,63 @@ function* eachAbility() {
 /** Names vary by punctuation and case between sources, so match folded. */
 const nameKey = (s) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
-/** Folded name -> definition id, across every shipped content cookbook. */
+/**
+ * Resolve an item name to a definition id. Tries the name as printed, then
+ * again with a trailing throw value stripped: a stat block writes its
+ * proficiencies as "climbing 6+", which is the same proficiency as "Climbing"
+ * with its target number attached. Without this, every monster-embedded
+ * proficiency fails to match and never gets adopted.
+ */
+function idForName(index, name) {
+  let ids = index.get(nameKey(name));
+  if (!ids) {
+    const bare = String(name ?? "").replace(/\s*\d+\s*\+?\s*$/, "");
+    ids = bare && bare !== name ? index.get(nameKey(bare)) : undefined;
+  }
+  if (!ids?.length) return null;
+  return { id: preferredId(ids), ambiguous: ids.length > 1 };
+}
+
+/**
+ * Folded name -> every definition id printing that name.
+ *
+ * The books reuse names across categories: 14 of them, "Alertness" and
+ * "Climbing" among them, are both a proficiency and a class power. A name is
+ * therefore only a guess at identity, and the index keeps ALL the candidates so
+ * the caller can choose deliberately instead of silently taking the first.
+ */
 function abilityNameIndex() {
   const index = new Map();
+  const add = (name, id) => {
+    const key = nameKey(name);
+    if (!key) return;
+    const list = index.get(key) ?? index.set(key, []).get(key);
+    if (!list.includes(id)) list.push(id);
+  };
   for (const cb of data.content.values()) {
     for (const [id, e] of Object.entries(cb.entries)) {
-      const key = nameKey(e.name);
-      if (key && !index.has(key)) index.set(key, id);
-      for (const a of e.aliases ?? []) if (nameKey(a) && !index.has(nameKey(a))) index.set(nameKey(a), id);
+      add(e.name, id);
+      for (const a of e.aliases ?? []) add(a, id);
     }
   }
   return index;
 }
+
+/**
+ * Pick among same-named definitions. A stat block's proficiency list and a
+ * hand-made ability both far more often mean the PROFICIENCY than the same-named
+ * class power, so that is the preference — but the choice is a guess and the
+ * caller reports how many it made, rather than hiding it.
+ */
+const CATEGORY_RANK = ["def.prof.", "def.skill.", "def.power.", "def.drawback."];
+const preferredId = (ids) =>
+  [...ids].sort((a, b) => {
+    const r = (x) => {
+      const i = CATEGORY_RANK.findIndex((p) => x.startsWith(p));
+      return i === -1 ? CATEGORY_RANK.length : i;
+    };
+    return r(a) - r(b);
+  })[0];
 
 /** GM: import every shipped ability as a shared, deduped item. */
 export async function cookbookImportAbilities() {
@@ -752,13 +797,19 @@ export async function cookbookUpdateAbilities() {
   let updated = 0;
   let adopted = 0;
   let onActors = 0;
+  let guessed = 0;
   let skipped = 0;
   for (const { doc, extras, on } of eachAbility()) {
     const flagged = doc.getFlag(MODULE_ID, "cookbook")?.id;
-    const id = flagged ?? index.get(nameKey(doc.name));
+    const guess = flagged ? null : idForName(index, doc.name);
+    const id = flagged ?? guess?.id;
     if (!id || !cookbookEntry(id)) {
       skipped++;
       continue;
+    }
+    if (guess?.ambiguous) {
+      guessed++;
+      console.warn(`${MODULE_ID} | "${doc.name}" matches several definitions; adopted ${id}.`);
     }
     const found = cookbookEntry(id);
     // Re-extract once per definition, not once per copy of it.
@@ -788,10 +839,10 @@ export async function cookbookUpdateAbilities() {
     if (on) onActors++;
   }
   ui.notifications.info(
-    `acks-content | abilities updated: ${updated} (${onActors} on actors, ${adopted} matched by name), ` +
-      `${skipped} not in the cookbook.`,
+    `acks-content | abilities updated: ${updated} (${onActors} on actors, ${adopted} matched by name` +
+      `${guessed ? `, ${guessed} of them ambiguous — see console` : ""}), ${skipped} not in the cookbook.`,
   );
-  return { updated, adopted, onActors, skipped };
+  return { updated, adopted, onActors, guessed, skipped };
 }
 
 /**
@@ -834,6 +885,9 @@ export function registerAbilityDirectoryButtons() {
     );
     (root.querySelector(".directory-header") ?? root).prepend(bar);
   });
+  // The sidebar renders before this module's `ready` runs, so the hook above
+  // misses that first pass — re-render once to catch it.
+  if (ui.items?.rendered) ui.items.render();
 }
 
 /* -------------------------------------------- */

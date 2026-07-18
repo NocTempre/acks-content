@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.5.1
+
+- The Item directory buttons now appear on first load. The sidebar renders
+  before this module is ready, so its hook missed that first pass and the
+  buttons only showed up after something else re-rendered the directory.
+- **Update adopts monster stat-block proficiencies.** A stat block writes
+  "climbing 6+", which is the Climbing proficiency with its target number
+  attached; the trailing throw is now stripped before matching, so the copies
+  embedded on monsters get adopted instead of skipped.
+- **Same-named abilities no longer adopt at random.** Fourteen names are both a
+  proficiency and a class power (Alertness, Climbing, Swimming, Loremastery…).
+  Update now prefers the proficiency — what a stat block or a hand-made ability
+  almost always means — logs every ambiguous match to the console, and reports
+  the count, rather than silently taking whichever was indexed first.
+
 ## 0.5.0
 
 - **Cross-referenced abilities are their own entries.** A name the books list
