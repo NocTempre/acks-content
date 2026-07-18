@@ -433,8 +433,8 @@ export function effectScan(paras, registers) {
 
   /* --- Movement grant: "gains a flying movement rate of 30'" --- */
   for (const m of text.matchAll(/\b(flying|climbing|swimming|burrowing)\s+movement rate of\s+(\d+)/gi)) {
-    const mode = { flying: "fly", climbing: "climb", swimming: "swim", burrowing: "burrow" }[m[1].toLowerCase()];
-    push({ type: "movement", mode, value: flat(parseInt(m[2], 10)) });
+    const movementMode = { flying: "fly", climbing: "climb", swimming: "swim", burrowing: "burrow" }[m[1].toLowerCase()];
+    push({ type: "movement", movementMode, value: flat(parseInt(m[2], 10)) });
   }
 
   /* --- Economic rate: "construction rate of 1.33gp per day" --- */
