@@ -14,7 +14,7 @@
  */
 import { MODULE_ID, LANG_PREFIX } from "./constants.mjs";
 import { BOOKS } from "./books.mjs";
-import { executeEntry } from "./executor.mjs";
+import { executeEntry, materializeEffects } from "./executor.mjs";
 import { savesForLevel } from "./stats.mjs";
 
 const FOLDER_NAME = "ACKS Cookbook";
@@ -581,7 +581,13 @@ export function bindAbility(entry, node, id, opts = {}) {
     // ability the scan can't classify is still valid — name + type + lazy prose.
     // An alias reads the TARGET's prose through its pre-baked pointer, so it
     // materializes the same mechanics without the cookbook restating any.
-    effects: [...aliasEffects, ...(node?.fields?.effects ?? [])],
+    //
+    // Without the book there is no prose to classify — but a chef-authored spec
+    // that carries no `from` locator has no value to materialize either. It is
+    // pure structure (a prerequisite, a companion slot), so gating it on the
+    // book would withhold something the cookbook already states. Those apply
+    // either way; anything pointing at a number still waits for the book.
+    effects: [...aliasEffects, ...(node?.fields?.effects ?? materializeEffects(entry.fields?.effects?.specs, []))],
     // Immunity-granting abilities (Divine Health, Wakefulness, Fiery
     // Resistance…) materialize defenses from the seat's OWN prose via the
     // executor's vocabulary scan — nothing about which is shipped.
@@ -979,11 +985,57 @@ export async function cookbookUpdateAbilities() {
     if (!flagged) adopted++;
     if (on) onActors++;
   }
+  const stale = danglingAbilities().length;
   ui.notifications.info(
     `acks-content | abilities updated: ${updated} (${onActors} on actors, ${adopted} matched by name` +
-      `${guessed ? `, ${guessed} of them ambiguous — see console` : ""}), ${skipped} not in the cookbook.`,
+      `${guessed ? `, ${guessed} of them ambiguous — see console` : ""}), ${skipped} not in the cookbook` +
+      `${stale ? `; ${stale} left over from a withdrawn definition — run Prune` : ""}.`,
   );
-  return { updated, adopted, onActors, guessed, skipped };
+  return { updated, adopted, onActors, guessed, skipped, stale };
+}
+
+/**
+ * Ability items this module generated whose definition no longer exists.
+ *
+ * A definition can be withdrawn — ten were, once it turned out the harvest had
+ * read the tail of a spaceless heading as an ability of its own. The items it
+ * already created stay behind in every world that imported them, pointing at
+ * nothing. They are unambiguously ours (generated, with a cookbook id that no
+ * longer resolves), which is what makes them safe to offer for removal.
+ */
+export function danglingAbilities() {
+  const out = [];
+  for (const item of game.items) {
+    if (item.type !== "ability") continue;
+    const flags = item.getFlag(MODULE_ID, "cookbook");
+    if (!flags?.id || !item.getFlag(MODULE_ID, "generated")) continue;
+    if (!cookbookEntry(flags.id)) out.push(item);
+  }
+  return out;
+}
+
+/**
+ * GM: remove those items, after showing exactly what will go. Never silent —
+ * deleting documents out of someone's world on a version bump is not a thing to
+ * do quietly, even when they are certainly stale.
+ */
+export async function cookbookPruneAbilities() {
+  if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only.");
+  const stale = danglingAbilities();
+  if (!stale.length) return ui.notifications.info(game.i18n.localize(`${LANG_PREFIX}.ui.pruneNone`));
+  const esc = foundry.utils.escapeHTML ?? ((x) => x);
+  const rows = stale
+    .map((i) => `<li>${esc(i.name)} <code>${esc(i.getFlag(MODULE_ID, "cookbook").id)}</code></li>`)
+    .join("");
+  const ok = await foundry.applications.api.DialogV2.confirm({
+    window: { title: game.i18n.localize(`${LANG_PREFIX}.ui.pruneTitle`) },
+    content: `<p>${game.i18n.format(`${LANG_PREFIX}.ui.prunePrompt`, { n: stale.length })}</p>
+      <ul class="acks-content-browse-list" style="max-height:280px;overflow-y:auto;">${rows}</ul>`,
+  });
+  if (!ok) return null;
+  await Item.deleteDocuments(stale.map((i) => i.id));
+  ui.notifications.info(game.i18n.format(`${LANG_PREFIX}.ui.pruneDone`, { n: stale.length }));
+  return stale.length;
 }
 
 /**
@@ -1024,6 +1076,7 @@ export function registerAbilityDirectoryButtons() {
       button("browseAbilities", "browseAbilitiesTip", "fa-solid fa-list-check", cookbookImportAbilitiesDialog),
       button("importAllAbilities", "importAllAbilitiesTip", "fa-solid fa-download", cookbookImportAbilities),
       button("updateAllAbilities", "updateAllAbilitiesTip", "fa-solid fa-rotate", cookbookUpdateAbilities),
+      button("pruneAbilities", "pruneAbilitiesTip", "fa-solid fa-broom", cookbookPruneAbilities),
     );
     (root.querySelector(".directory-header") ?? root).prepend(bar);
   });

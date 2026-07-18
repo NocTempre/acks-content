@@ -1,6 +1,5 @@
 {
   "ACKS-CONTENT.Title": "ACKS II — Content Streamer (PoC)",
-
   "ACKS-CONTENT.ui.connectTitle": "Connect a book (this browser only)",
   "ACKS-CONTENT.ui.connectBook": "Book",
   "ACKS-CONTENT.ui.connectFile": "Your PDF copy",
@@ -51,7 +50,6 @@
   "ACKS-CONTENT.ui.kind.monster": "Monster actor",
   "ACKS-CONTENT.ui.kind.ability": "Ability item",
   "ACKS-CONTENT.ui.kind.item": "Generic item",
-
   "ACKS-CONTENT.ui.cookbookTitle": "Cookbook — import monsters from your book",
   "ACKS-CONTENT.ui.cookbookIntro": "{n} cookbook entries for {book}. Each import reads YOUR connected copy: stats, attacks (damage types + printed-color quality), spoils, and art. Descriptions stay lazy — actors carry only a page tag.",
   "ACKS-CONTENT.ui.cookbookFilter": "Type to filter…",
@@ -61,18 +59,20 @@
   "ACKS-CONTENT.ui.debugTitle": "Cookbook debug — raw extraction",
   "ACKS-CONTENT.ui.debugPick": "Entry",
   "ACKS-CONTENT.ui.debugGo": "Extract & inspect",
-
   "ACKS-CONTENT.pdftext.mm.griffon": "Monster — Griffon. Full entry: ACKS II Monstrous Manual, PDF p. 171. Connect your PDF (acksContent.connectBook) to read it here.",
-
   "ACKS-CONTENT.pdftext.prof.combatReflexes": "Proficiency — Combat Reflexes. Full text: ACKS II Revised Rulebook, PDF p. 110. Connect your PDF to read it here.",
   "ACKS-CONTENT.pdftext.prof.blindFighting": "Proficiency — Blind Fighting. Full text: ACKS II Revised Rulebook, PDF p. 110. Connect your PDF to read it here.",
   "ACKS-CONTENT.pdftext.prof.berserkergang": "Proficiency — Berserkergang. Full text: ACKS II Revised Rulebook, PDF p. 110. Connect your PDF to read it here.",
   "ACKS-CONTENT.pdftext.prof.combatFerocity": "Proficiency — Combat Ferocity. Full text: ACKS II Revised Rulebook, PDF p. 110. Connect your PDF to read it here.",
-
   "ACKS-CONTENT.pdftext.item.grapplingHook": "Equipment — Grappling Hook. Full description: ACKS II Revised Rulebook, PDF p. 145. Connect your PDF to read it here.",
   "ACKS-CONTENT.pdftext.item.herbWolfsbane": "Equipment — Herb, Wolfsbane. Full description: ACKS II Revised Rulebook, PDF p. 145. Connect your PDF to read it here.",
   "ACKS-CONTENT.pdftext.item.holyBook": "Equipment — Holy Book. Full description: ACKS II Revised Rulebook, PDF p. 145. Connect your PDF to read it here.",
-
   "ACKS-CONTENT.pdftext.fake.shadowCant": "Proficiency — Shadow Cant. Full text: ACKS II Codex of Whispers, PDF p. 42. NOTE: this book is an intentional PoC fake — no such PDF exists, so this stub is what every seat sees, permanently.",
-  "ACKS-CONTENT.pdftext.fake.whisperglass": "Equipment — Whisperglass Vial. Full description: ACKS II Codex of Whispers, PDF p. 77. NOTE: this book is an intentional PoC fake — no such PDF exists, so this stub is what every seat sees, permanently."
+  "ACKS-CONTENT.pdftext.fake.whisperglass": "Equipment — Whisperglass Vial. Full description: ACKS II Codex of Whispers, PDF p. 77. NOTE: this book is an intentional PoC fake — no such PDF exists, so this stub is what every seat sees, permanently.",
+  "ACKS-CONTENT.ui.pruneTitle": "Remove abilities from withdrawn definitions",
+  "ACKS-CONTENT.ui.prunePrompt": "{n} imported abilit(ies) point at definitions this module no longer ships — they were created by an earlier version and are now inert. Delete them?",
+  "ACKS-CONTENT.ui.pruneDone": "Removed {n} stale abilit(ies).",
+  "ACKS-CONTENT.ui.pruneNone": "No stale abilities — every imported ability still has a definition.",
+  "ACKS-CONTENT.ui.pruneAbilities": "Prune",
+  "ACKS-CONTENT.ui.pruneAbilitiesTip": "Remove imported abilities whose definition this module no longer ships. Lists them for confirmation first."
 }

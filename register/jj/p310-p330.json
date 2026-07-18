@@ -1131,7 +1131,15 @@
     ],
     "meta": {
       "category": "classPower"
-    }
+    },
+    "effects": [
+      {
+        "type": "requires",
+        "refs": [
+          "kw:familiar"
+        ]
+      }
+    ]
   },
   {
     "id": "def.power.conjureDarkPowers",
@@ -1704,7 +1712,16 @@
     ],
     "meta": {
       "category": "classPower"
-    }
+    },
+    "effects": [
+      {
+        "type": "requires",
+        "refs": [
+          "kw:eldritchtalent"
+        ],
+        "condition": "or already an eldritch caster"
+      }
+    ]
   },
   {
     "id": "def.power.elementalConnection",
@@ -2861,7 +2878,15 @@
     ],
     "meta": {
       "category": "classPower"
-    }
+    },
+    "effects": [
+      {
+        "type": "requires",
+        "refs": [
+          "kw:necrosporing"
+        ]
+      }
+    ]
   },
   {
     "id": "def.power.laughAtPain",
@@ -4219,7 +4244,15 @@
     ],
     "meta": {
       "category": "classPower"
-    }
+    },
+    "effects": [
+      {
+        "type": "requires",
+        "refs": [
+          "kw:necrosporing"
+        ]
+      }
+    ]
   },
   {
     "id": "def.power.sporeFermentation",
@@ -4234,7 +4267,15 @@
     ],
     "meta": {
       "category": "classPower"
-    }
+    },
+    "effects": [
+      {
+        "type": "requires",
+        "refs": [
+          "kw:necrosporing"
+        ]
+      }
+    ]
   },
   {
     "id": "def.power.sporePerception",
@@ -4249,7 +4290,15 @@
     ],
     "meta": {
       "category": "classPower"
-    }
+    },
+    "effects": [
+      {
+        "type": "requires",
+        "refs": [
+          "kw:necrosporing"
+        ]
+      }
+    ]
   },
   {
     "id": "def.power.sporeSynchronization",
@@ -4264,7 +4313,15 @@
     ],
     "meta": {
       "category": "classPower"
-    }
+    },
+    "effects": [
+      {
+        "type": "requires",
+        "refs": [
+          "kw:necrosporing"
+        ]
+      }
+    ]
   },
   {
     "id": "def.power.stalwartSoul",

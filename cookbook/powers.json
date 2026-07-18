@@ -4556,6 +4556,17 @@
               }
             }
           ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "requires",
+              "refs": [
+                "kw:familiar"
+              ]
+            }
+          ]
         }
       }
     },
@@ -6846,6 +6857,18 @@
                   0
                 ]
               }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "requires",
+              "refs": [
+                "kw:eldritchtalent"
+              ],
+              "condition": "or already an eldritch caster"
             }
           ]
         }
@@ -11486,6 +11509,17 @@
                   7
                 ]
               }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "requires",
+              "refs": [
+                "kw:necrosporing"
+              ]
             }
           ]
         }
@@ -16782,6 +16816,17 @@
               }
             }
           ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "requires",
+              "refs": [
+                "kw:necrosporing"
+              ]
+            }
+          ]
         }
       }
     },
@@ -16844,6 +16889,17 @@
               }
             }
           ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "requires",
+              "refs": [
+                "kw:necrosporing"
+              ]
+            }
+          ]
         }
       }
     },
@@ -16897,6 +16953,17 @@
                   0
                 ]
               }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "requires",
+              "refs": [
+                "kw:necrosporing"
+              ]
             }
           ]
         }
@@ -16972,6 +17039,17 @@
                   7
                 ]
               }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "requires",
+              "refs": [
+                "kw:necrosporing"
+              ]
             }
           ]
         }

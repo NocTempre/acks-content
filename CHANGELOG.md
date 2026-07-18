@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.8.0
+
+- **Prerequisites are structured.** Seven abilities state a requirement the page
+  spells out — the five spore powers need Necrosporing, Eldritch Warrior needs
+  Eldritch Talent (or to already be an eldritch caster), Conduit to the Esoteric
+  needs a familiar. Each is written against the CAPABILITY, so whichever entry a
+  character took to get it satisfies the gate.
+- **Structure no longer waits for the book.** A chef-authored effect that points
+  at no number — a prerequisite, a companion slot, a reroll rule — is pure
+  structure the cookbook already states, so it now applies without a connected
+  book. Anything that reads a value from the page still waits for the page.
+- **Prune button.** Ten definitions were withdrawn in 0.7.0 as harvest phantoms,
+  and any world that imported before then still holds the items they created,
+  pointing at nothing. Prune lists them and removes them once you confirm —
+  never silently. Update reports the count.
+- Classified effects 63%; 74% of definitions carry some structured data
+  (effects, build cost, capability or classification). The remainder is prose
+  describing a capability with no number in it: across all 119 of them there are
+  38 signed numbers, and most of those are the build cost already captured.
+
 ## 0.7.1
 
 - Reverts the compiled `packs/` to the v0.6.0 build. 0.7.0 was committed while a
