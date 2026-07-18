@@ -39,7 +39,11 @@ finding the per-page peculiarities structure checks can't see.
      "assists": { … }?, "registerTokens": [ { "registry", "token" } ]? }`
   Only entries WITH findings. `note` is short; quote at most 40 chars of book
   text as evidence. Supported assists (compiler-honored): `anchor`, `statPage`,
-  `spoilsPage`, `noSpoils`, `noArt`, `descStopHeading`.
+  `spoilsPage`, `noSpoils`, `noArt`, `descStopHeading`, and `attacks` — a
+  NORMALIZED routine string for a rare attack format the generic parser
+  mishandles (e.g. `"1 (smash 2+) or 1 (throw 0+)"`); names/counts/throws come
+  from it, damage still extracts live from the page. Prefer an `attacks` assist
+  over reporting an attack-parse defect the parser can't fix generically.
 - Touch NOTHING else: no edits to register entries, `_refs/**`, `cookbook/`,
   `scripts/`, `tools/`.
 - Never transcribe prose into any file beyond 40-char evidence quotes.

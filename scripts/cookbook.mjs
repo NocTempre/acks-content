@@ -126,6 +126,10 @@ const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
 const SAVE_CLASS_BY_ABBR = { F: "fighter", C: "crusader", M: "mage", T: "thief", D: "dwarvenVaultguard", E: "elvenSpellsword" };
 const AGE_KEYS = ["baby", "juvenile", "adolescent", "adult", "middleAged", "old", "ancient", "maximum"];
+const TRAINED_ROLE_MAP = {
+  "war mount": "warMount", "work beast": "workbeast", workbeast: "workbeast", guard: "guard",
+  mount: "mount", hunter: "hunter", herald: "herald",
+};
 const DAMAGE_WORDS = {
   acid: "acidic", acidic: "acidic", arcane: "arcane", bludgeoning: "bludgeoning", cold: "cold",
   electrical: "electrical", electricity: "electrical", lightning: "electrical", fire: "fire",
@@ -282,8 +286,14 @@ export function buildExtras(node) {
   const rep = raw("reproduction");
   if (rep && !/^none/i.test(rep)) {
     const count = diceOf(rep) || (firstInt(rep) != null ? String(firstInt(rep)) : "");
-    const yt = /egg/i.test(rep) ? "egg" : /litter/i.test(rep) ? "litter" : /spawn/i.test(rep) ? "spawn" : /live/i.test(rep) ? "live" : /infant/i.test(rep) ? "infant" : /juvenile/i.test(rep) ? "juvenile" : "";
-    if (/egg/i.test(rep)) secondary.oviparous = true;
+    let yt = "";
+    if (/egg|hatchling|clutch/i.test(rep)) {
+      yt = "egg";
+      secondary.oviparous = true;
+    } else if (/litter/i.test(rep)) yt = "litter";
+    else if (/spawn/i.test(rep)) yt = "spawn";
+    else if (/foal|calf|pup|kit|cub|whelp|infant|joey|kid|lamb|piglet|fawn|live/i.test(rep)) yt = "live";
+    else if (/juvenile/i.test(rep)) yt = "juvenile";
     secondary.reproduction = { ...(count ? { count } : {}), ...(yt ? { youngType: yt } : {}) };
     const iv = /every\s+(\d+)?\s*(year|month|week|day)/i.exec(rep);
     if (iv) {
@@ -293,23 +303,34 @@ export function buildExtras(node) {
   }
   const uv = raw("untrainedValue");
   if (uv && !/^none/i.test(uv)) {
-    const bucketOf = (marker) => {
-      const m = new RegExp(`([\\d,]+\\s*gp)\\s*\\((?:${marker})\\)`, "i").exec(uv);
-      return m ? m[1].replace(/\s+/g, "") : undefined;
+    // Schema: adult/juvenile/baby are NUMBERS (gp), keyed by the (A)/(J)/(B|e) marker.
+    const bucketNum = (marker) => {
+      const m = new RegExp(`([\\d,]+)\\s*gp\\s*\\((?:${marker})\\)`, "i").exec(uv);
+      return m ? parseInt(m[1].replace(/,/g, ""), 10) : undefined;
     };
-    const adult = bucketOf("A");
-    const juvenile = bucketOf("J");
-    const baby = bucketOf("B|e|egg");
-    if (adult || juvenile || baby) {
+    const adult = bucketNum("A");
+    const juvenile = bucketNum("J");
+    const baby = bucketNum("B|e|egg");
+    if (adult != null || juvenile != null || baby != null) {
       secondary.untrainedValue = {
-        ...(adult ? { adult } : {}),
-        ...(juvenile ? { juvenile } : {}),
-        ...(baby ? { baby } : {}),
+        ...(adult != null ? { adult } : {}),
+        ...(juvenile != null ? { juvenile } : {}),
+        ...(baby != null ? { baby } : {}),
       };
     }
   }
   const tv = raw("trainedValue");
-  if (tv && !/^none/i.test(tv)) secondary.trainedValue = tv;
+  if (tv && !/^none/i.test(tv)) {
+    // Schema: array of { role (enum), value (gp num), note }. "315gp (war
+    // mount) 40gp (work beast)" -> two rows; unknown roles -> other + note.
+    const list = [];
+    for (const m of tv.matchAll(/([\d,]+)\s*gp\s*(?:\(([^)]+)\))?/g)) {
+      const label = (m[2] ?? "").trim();
+      const role = TRAINED_ROLE_MAP[label.toLowerCase()] ?? "other";
+      list.push({ role, value: parseInt(m[1].replace(/,/g, ""), 10), ...(role === "other" && label ? { note: label } : {}) });
+    }
+    if (list.length) secondary.trainedValue = list;
+  }
   if (Object.keys(secondary).length) extras.secondary = secondary;
 
   /* --- defenses & spellcasting (formulaic prose) --- */

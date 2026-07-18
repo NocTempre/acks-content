@@ -458,8 +458,10 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
 
     // Names + damage are parsed at RUNTIME by the shared attackModel; the
     // compiler only needs the ordered flat damage-segment list to align glyph
-    // colours to the same enumeration the executor will produce.
-    const segments = attackModel(attacksText, damageRaw).flatDamage;
+    // colours to the same enumeration the executor will produce. A chef
+    // `assists.attacks` normalizes the routine string for rare formats.
+    const attacksParsed = assists.attacks ?? attacksText;
+    const segments = attackModel(attacksParsed, damageRaw).flatDamage;
     // Per-segment printed COLOR annotation ("this glyph prints red") — an
     // authoring-time observation the executor merely maps through the color
     // table. The runtime never scrapes colors. Attribution of runs to the
@@ -503,6 +505,7 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
       attacksBox: attacksInstr.box, damageBox: damageInstr.box,
       dropText: { attacks: attacksInstr.dropText, damage: damageInstr.dropText },
       ...(aFixes || dFixes ? { fixes: { ...(aFixes ? { attacks: aFixes } : {}), ...(dFixes ? { damage: dFixes } : {}) } } : {}),
+      ...(assists.attacks ? { attacksOverride: assists.attacks } : {}),
       glyphTable: kindRow.fields.attacks.glyphTable,
       ...(colors ? { colors, colorTable: kindRow.fields.attacks.colorTable } : {}),
     };

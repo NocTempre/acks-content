@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.5
+
+- **Attacks: "1 or 2" is a count, not two modes.** A bare-number attack part
+  ("1 or 2 hooves") is now read as a count range for one attack instead of
+  spawning phantom weapons — fixes the common animal multi-attack line.
+- **Ecology market values match the sheet schema.** Untrained values import as
+  numbers into Adult/Juvenile/Baby; trained values import as the role rows the
+  sheet expects (e.g. War Mount 315gp + Workbeast 40gp); reproduction young
+  type maps foals/pups/etc. to Live Young.
+- **Per-entry attack override.** Rare attack grammars the generic parser can't
+  handle get a chef `assists.attacks` normalized routine string, rather than
+  more branching in the parser.
+
 ## 0.3.4
 
 - **Full Monster Sheet tabs now populate on import.** The binding maps the

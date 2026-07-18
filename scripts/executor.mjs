@@ -173,14 +173,29 @@ function parseRoutine(text) {
  * Shared verbatim by compiler + executor so nothing drifts.
  */
 export function attackModel(attacksText, damageRaw) {
-  const routineStrs = splitOr(attacksText);
-  const damageStrs = splitOr(damageRaw);
-  const n = Math.max(routineStrs.length, damageStrs.length, 1);
+  const damageGroups = splitOr(damageRaw);
+  // Coalesce a BARE-NUMBER attack part ("1 or 2 (hooves 7+)") into the routine
+  // that follows it — it is a count RANGE for one attack, not a separate mode.
+  // The damage "or"-groups are authoritative for how many attack modes exist.
+  const routineStrs = [];
+  let alt = null;
+  for (const part of splitOr(attacksText)) {
+    if (/^\d+$/.test(part.trim())) {
+      alt = parseInt(part, 10);
+      continue;
+    }
+    routineStrs.push({ text: part, alt });
+    alt = null;
+  }
+  if (!routineStrs.length) routineStrs.push({ text: alt != null ? String(alt) : attacksText ?? "", alt: null });
+  const n = Math.max(damageGroups.length, routineStrs.length, 1);
   const modes = [];
   const flatDamage = [];
   for (let i = 0; i < n; i++) {
-    const routine = parseRoutine(routineStrs[i] ?? routineStrs[routineStrs.length - 1] ?? "");
-    const dmgGroup = damageStrs[i] ?? damageStrs[damageStrs.length - 1] ?? "";
+    const r = routineStrs[i] ?? routineStrs[routineStrs.length - 1];
+    const routine = parseRoutine(r.text);
+    if (r.alt != null) routine.altCount = r.alt;
+    const dmgGroup = damageGroups[i] ?? damageGroups[damageGroups.length - 1] ?? "";
     const dmgSegs = dmgGroup.split("/").map((s) => s.trim()).filter(isDamageSeg);
     for (const d of dmgSegs) flatDamage.push(d);
     modes.push({ ...routine, dmgSegs });
@@ -295,10 +310,12 @@ async function execInstruction(instr, ctx) {
       const attacksText = clean(joinRuns(aRuns, instr.fixes?.attacks, instr.dropText?.attacks));
       const damageRaw = joinRuns(dRuns, instr.fixes?.damage, instr.dropText?.damage); // glyphs preserved
       // Parse both fields into aligned MODES ("1 weapon OR 2 claws + bite").
+      // A chef may ship `attacksOverride` — a normalized routine string for a
+      // rare format the generic parser mishandles; damage still extracts live.
       // Quality per segment comes from the shipped COLOR ANNOTATION indexed by
       // GLOBAL segment position (flatDamage order) — an observation the compiler
       // made; the runtime never scrapes colours.
-      const { modes } = attackModel(attacksText, damageRaw);
+      const { modes } = attackModel(instr.attacksOverride ?? attacksText, damageRaw);
       const colors = instr.colors
         ? instr.colors.map((c) => (c ? (registers?.tables?.[instr.colorTable]?.[c] ?? null) : null))
         : null;
