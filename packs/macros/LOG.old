@@ -1,8 +1,0 @@
-2026/07/18-15:20:45.146 bbe0 Recovering log #4
-2026/07/18-15:20:45.153 bbe0 Delete type=0 #4
-2026/07/18-15:20:45.154 bbe0 Delete type=3 #2
-2026/07/18-15:33:12.408 5c7c Level-0 table #9: started
-2026/07/18-15:33:12.408 5c7c Level-0 table #9: 0 bytes OK
-2026/07/18-15:33:12.408 5c7c Delete type=0 #7
-2026/07/18-15:33:12.408 5c7c Manual compaction at level-0 from '!macros!ackscMacAbilAll0' @ 72057594037927935 : 1 .. '!macros!ackscMacStatus00' @ 0 : 0; will stop at (end)
-2026/07/18-15:33:12.408 5c7c Manual compaction at level-1 from '!macros!ackscMacAbilAll0' @ 72057594037927935 : 1 .. '!macros!ackscMacStatus00' @ 0 : 0; will stop at (end)

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.1
+
+- Reverts the compiled `packs/` to the v0.6.0 build. 0.7.0 was committed while a
+  Foundry world was running and swept up LevelDB bookkeeping again; `packs/_source`
+  did not change, so the macros in 0.7.0 are correct either way.
+
 ## 0.7.0
 
 - **Ten phantom abilities removed.** The JJ prints some headings without spaces
