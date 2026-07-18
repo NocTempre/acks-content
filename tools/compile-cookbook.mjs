@@ -34,6 +34,46 @@ const HEADING_MIN_H = 12; // mirrors extract.mjs
 // pull-quote/maxim blocks between entries print at ~10.5pt and are NOT part of
 // the entry, so definition body collection caps below them.
 const DEF_BODY_MAX_H = 10;
+// Body text starts below the running head; definition blocks are COLUMN-FLOWED,
+// so one that reaches the bottom of its column continues at the top of the next.
+const DEF_TOP_BAND = 60;
+
+/**
+ * The continuation of a column-flowed definition block: everything in the NEXT
+ * column above the first anchor there. Returns [] when the block ended normally
+ * (a stop anchor was found in its own column) or there is no next column.
+ * `isAnchor` identifies the heading style that ends a block in this kind.
+ */
+function columnFlow(pd, cols, col, stopFound, isAnchor) {
+  if (stopFound || col + 1 >= cols.length) return [];
+  const next = col + 1;
+  const firstAnchor = pd.items
+    .filter((it) => colOf(it.x, cols) === next && it.y > DEF_TOP_BAND && isAnchor(it))
+    .sort((a, b) => a.y - b.y)[0];
+  const yMax = firstAnchor ? firstAnchor.y - 4 : pd.height;
+  return pd.items.filter(
+    (it) => it.h < DEF_BODY_MAX_H && colOf(it.x, cols) === next && it.y > DEF_TOP_BAND && it.y < yMax,
+  );
+}
+
+/**
+ * The overleaf continuation: a block that reaches the bottom of the LAST column
+ * resumes in the first column of the next page. Returns null when there is
+ * nothing to continue onto.
+ */
+async function pageFlow(doc, page, isAnchor) {
+  if (page + 1 > doc.numPages) return null;
+  const pd2 = await pageItems(doc, page + 1);
+  const cols2 = detectColumns(pd2.items);
+  const first = pd2.items
+    .filter((it) => colOf(it.x, cols2) === 0 && it.y > DEF_TOP_BAND && isAnchor(it))
+    .sort((a, b) => a.y - b.y)[0];
+  const yMax = first ? first.y - 4 : pd2.height;
+  const items = pd2.items.filter(
+    (it) => it.h < DEF_BODY_MAX_H && colOf(it.x, cols2) === 0 && it.y > DEF_TOP_BAND && it.y < yMax,
+  );
+  return { pd: pd2, cols: cols2, items, page: page + 1 };
+}
 const LABEL_RE = /^[A-Z][A-Za-z ()'/]{0,28}:$/;
 const DICE_RE = /\d*d\d+(?:[×xX]\d+)?(?:[+-]\d+)?/; // mirrors scripts/executor.mjs
 const cleanSeg = (s) => (s ?? "").replace(/[-′″]/g, "").replace(/\s+/g, " ").trim();
@@ -559,6 +599,20 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
  * extracts, not the source book — a content type spans every book). */
 const CONTENT_OF = { "kind.proficiency": "proficiencies", "kind.power": "powers", "kind.skill": "skills" };
 
+/** Definition id slug — must match the seeder so alias targets resolve. */
+const slugOf = (s) =>
+  s
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[^A-Za-z0-9 ]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w, i) => (i ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w.toLowerCase()))
+    .join("");
+
+/** Raw reading-order join of a body region (compile-time inspection only). */
+const joinBody = (items) =>
+  [...items].sort((a, b) => a.y - b.y || a.x - b.x).map((it) => it.str).join("").replace(/\s+/g, " ").trim();
+
 /**
  * Compile a role:definition entry (proficiency / power / skill) into
  * expect(name) + text(description). Two locate modes:
@@ -576,14 +630,22 @@ async function compileDefinition(doc, entry, kindRow) {
   const cols = detectColumns(pd.items);
   const mode = kindRow.fields.name.locate;
   const fields = {};
+  let bodyText = "";
 
   if (mode === "display") {
     const heads = listHeadings(pd).filter((a) => a.mode === "display");
     const want = assists.anchor ?? entry.anchor?.display ?? entry.name;
     const noParen = want.replace(/\s*\([^)]*\)\s*/g, " ").replace(/\s+/g, " ").trim();
+    // A long name WRAPS onto a second display line ("Fighting Style" /
+    // "Specialization"), so the printed heading is only a PREFIX of the full
+    // name. Try the whole name, then progressively shorter prefixes — the
+    // continuation line is absorbed into the anchor block below either way.
+    const words = noParen.split(/\s+/).filter(Boolean);
+    const candidates = [want, noParen];
+    for (let i = words.length - 1; i >= 1; i--) candidates.push(words.slice(0, i).join(" "));
     let anchor = null;
     let matched = want;
-    for (const c of [want, noParen].filter(Boolean)) {
+    for (const c of candidates.filter(Boolean)) {
       anchor = heads.find((a) => a.text.toLowerCase().startsWith(c.toLowerCase()));
       if (anchor) {
         matched = c;
@@ -602,12 +664,59 @@ async function compileDefinition(doc, entry, kindRow) {
       else later.push(h);
     }
     const stopY = later[0]?.y ? later[0].y - 4 : pd.height;
-    fields.name = { op: "expect", page, box: { x0: box.x0, x1: box.x1, y0: anchor.y - 16, y1: endY + 6 }, text: matched };
+    // Bound the expect box to the heading's OWN runs. The last column runs to
+    // the page edge, where the vertical chapter-tab glyphs live ("Pro/FI/c/IE"),
+    // and those would otherwise join the heading text and fail the check.
+    const headItems = pd.items.filter(
+      (it) => it.h >= HEADING_MIN_H && colOf(it.x, cols) === anchor.col && it.y >= anchor.y - 2 && it.y <= endY + 2,
+    );
+    const headX1 = headItems.length ? Math.max(...headItems.map((it) => it.x + (it.w ?? 0))) + 2 : box.x1;
+    fields.name = {
+      op: "expect", page,
+      box: { x0: box.x0, x1: Math.min(headX1, box.x1), y0: anchor.y - 16, y1: endY + 6 },
+      text: matched,
+    };
     const body = pd.items.filter((it) => it.h < DEF_BODY_MAX_H && it.x >= box.x0 && it.x <= box.x1 && it.y > endY + 2 && it.y < stopY);
-    fields.description = { op: "text", page, paras: paragraphBoxes(toLines(body), box.x0, box.x1).map((p) => withFixes(p, pd)) };
+    bodyText = joinBody(body);
+    const paras = paragraphBoxes(toLines(body), box.x0, box.x1).map((p) => withFixes(p, pd));
+    // Column-flowed continuation (see the run-in branch): a proficiency that
+    // reaches the bottom of its column resumes at the top of the next.
+    const cont = columnFlow(pd, cols, anchor.col, later.length > 0, (it) => it.h >= HEADING_MIN_H);
+    if (cont.length) {
+      const cx0 = cols[anchor.col + 1] - 5;
+      const cx1 = cols[anchor.col + 2] ? cols[anchor.col + 2] - 6 : pd.width;
+      paras.push(...paragraphBoxes(toLines(cont), cx0, cx1).map((p) => withFixes(p, pd)));
+      bodyText = `${bodyText} ${joinBody(cont)}`.trim();
+    } else if (!later.length && anchor.col + 1 >= cols.length) {
+      const pf = await pageFlow(doc, page, (it) => it.h >= HEADING_MIN_H);
+      if (pf?.items.length) {
+        const px0 = pf.cols[0] - 5;
+        const px1 = pf.cols[1] ? pf.cols[1] - 6 : pf.pd.width;
+        paras.push(...paragraphBoxes(toLines(pf.items), px0, px1).map((p) => withFixes({ ...p, page: pf.page }, pf.pd)));
+        bodyText = `${bodyText} ${joinBody(pf.items)}`.trim();
+      }
+    }
+    fields.description = { op: "text", page, paras };
   } else {
     const want = assists.anchor ?? entry.anchor?.runin ?? `${entry.name}:`;
-    const anchor = pd.items.find((it) => it.h < DEF_BODY_MAX_H && it.str.trim().startsWith(want));
+    let anchor = pd.items.find((it) => it.h < DEF_BODY_MAX_H && it.str.trim().startsWith(want));
+    if (!anchor) {
+      // The PDF splits some headings across runs ("Discern" + "Evil:"), so no
+      // single run starts with the name. Match the JOINED line instead — PER
+      // COLUMN, since lines at the same y span both columns of a spread.
+      const bodyItems = pd.items.filter((it) => it.h < DEF_BODY_MAX_H);
+      search: for (let c = 0; c < cols.length; c++) {
+        const colItems = bodyItems.filter((it) => colOf(it.x, cols) === c);
+        for (const ln of toLines(colItems)) {
+          const sorted = [...ln.items].sort((a, b) => a.x - b.x);
+          const joined = sorted.map((i) => i.str).join("").replace(/\s+/g, " ").trim();
+          if (joined.toLowerCase().startsWith(want.toLowerCase())) {
+            anchor = sorted[0];
+            break search;
+          }
+        }
+      }
+    }
     if (!anchor) throw new Error(`runin anchor "${want}" not found on p.${page}`);
     const col = colOf(anchor.x, cols);
     const colX = cols[col];
@@ -617,22 +726,56 @@ async function compileDefinition(doc, entry, kindRow) {
       .filter((it) => it !== anchor && it.alias === anchor.alias && colOf(it.x, cols) === col && it.y > anchor.y + 2 && Math.abs(it.x - colX) < 15)
       .sort((a, b) => a.y - b.y)[0];
     const yMax = stop ? stop.y - 2 : pd.height;
-    // Narrow to the heading run itself so `found` is the label, not the whole
-    // line. Box membership tests a run's ORIGIN x, and the prose run starts
-    // flush at anchor.x + width — so stop just short of it (still wide enough to
-    // admit a heading split across runs).
+    // The heading may be ONE run or several. Walk the anchor's line rightward
+    // until the accumulated text covers the name — those runs are the heading.
+    const sameLine = pd.items
+      .filter((it) => Math.abs(it.y - anchor.y) <= 2 && colOf(it.x, cols) === col && it.x >= anchor.x)
+      .sort((a, b) => a.x - b.x);
+    const headRuns = new Set();
+    let headEnd = anchor.x + (anchor.w ?? 60) - 1;
+    let acc = "";
+    for (const it of sameLine) {
+      if (acc.replace(/\s+/g, " ").trim().length >= want.length) break;
+      headRuns.add(it);
+      acc += it.str;
+      headEnd = it.x + (it.w ?? 30) - 1;
+    }
+    // Box membership tests a run's ORIGIN x, and the prose run starts flush
+    // after the heading — so stop just short of it.
     fields.name = {
       op: "expect", page,
-      box: { x0: anchor.x - 2, x1: anchor.x + (anchor.w ?? 60) - 1, y0: anchor.y - 5, y1: anchor.y + 4 },
+      box: { x0: anchor.x - 2, x1: headEnd, y0: anchor.y - 5, y1: anchor.y + 4 },
       text: want,
     };
     const body = pd.items.filter((it) => {
-      if (it === anchor || it.h >= DEF_BODY_MAX_H || colOf(it.x, cols) !== col) return false;
+      if (headRuns.has(it) || it.h >= DEF_BODY_MAX_H || colOf(it.x, cols) !== col) return false;
       const sameLineAfter = Math.abs(it.y - anchor.y) <= 2 && it.x >= anchor.x;
       return sameLineAfter || (it.y > anchor.y + 2 && it.y < yMax);
     });
-    const paras = paragraphBoxes(toLines(body), box.x0, box.x1).map((p) => withFixes(p, pd));
-    if (paras[0]) paras[0].dropText = want; // drop the "Name:" heading run at runtime
+    bodyText = joinBody(body);
+    // Drop the heading by run ORDINAL rather than by text: that works whether
+    // the PDF emitted it as one run or split it across several.
+    const paras = paragraphBoxes(toLines(body), box.x0, box.x1).map((p, i) => withFixes(p, pd, i === 0 ? headRuns : undefined));
+    // Column-flowed continuation: an entry reaching the column bottom resumes
+    // at the top of the next column, which is where ~1 in 5 entries lost their
+    // second half.
+    const isRunin = (it) => it.alias === anchor.alias && Math.abs(it.x - cols[colOf(it.x, cols)]) < 15;
+    const cont = columnFlow(pd, cols, col, !!stop, isRunin);
+    if (cont.length) {
+      const cx0 = cols[col + 1] - 5;
+      const cx1 = cols[col + 2] ? cols[col + 2] - 6 : pd.width;
+      paras.push(...paragraphBoxes(toLines(cont), cx0, cx1).map((p) => withFixes(p, pd)));
+      bodyText = `${bodyText} ${joinBody(cont)}`.trim();
+    } else if (!stop && col + 1 >= cols.length) {
+      // Bottom of the LAST column: the block continues overleaf.
+      const pf = await pageFlow(doc, page, (it) => it.alias === anchor.alias);
+      if (pf?.items.length) {
+        const px0 = pf.cols[0] - 5;
+        const px1 = pf.cols[1] ? pf.cols[1] - 6 : pf.pd.width;
+        paras.push(...paragraphBoxes(toLines(pf.items), px0, px1).map((p) => withFixes({ ...p, page: pf.page }, pf.pd)));
+        bodyText = `${bodyText} ${joinBody(pf.items)}`.trim();
+      }
+    }
     fields.description = { op: "text", page, paras };
   }
 
@@ -646,8 +789,47 @@ async function compileDefinition(doc, entry, kindRow) {
     // Authored classification facts (general-list membership, repeatability,
     // custom-power cost) — rules, not values scraped from the page.
     ...(entry.meta ? { meta: entry.meta } : {}),
+    // A "See X." entry is a CROSS-REFERENCE, not an ability of its own. The
+    // raw target is resolved to a real id in a post-pass (once every id is
+    // known) so we never ship a dangling pointer. The conclusion ships; the
+    // sentence never does.
+    ...(seeReference(bodyText) ? { _aliasRaw: seeReference(bodyText) } : {}),
     fields,
   };
+}
+
+/**
+ * The target text of a "See X." cross-reference body, or null. Conservative:
+ * only a SHORT body that is ENTIRELY a see-reference qualifies, so a
+ * description merely mentioning "see Chapter 6" is never mistaken for one.
+ */
+function seeReference(bodyText) {
+  if (!bodyText || bodyText.length > 60) return null;
+  const m = bodyText.match(/^See\s*(.+?)\s*\.?$/i);
+  return m ? m[1] : null;
+}
+
+/**
+ * Resolve a see-reference to a known definition id. Handles the three ways the
+ * naive slug misses: trailing locators ("see alertness ABOVE"), cross-registry
+ * references (a power pointing at a proficiency), and headings the PDF prints
+ * without a space ("DiscernEvil"), which slug differently but compare equal
+ * case-folded. Returns null when unresolvable — better no alias than a wrong one.
+ */
+function resolveAlias(raw, entryId, ids) {
+  const cleaned = raw
+    .replace(/\b(above|below|earlier|later|in this section)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const slug = slugOf(cleaned);
+  if (!slug) return null;
+  const own = entryId.split(".").slice(0, 2).join(".");
+  for (const p of [...new Set([own, "def.power", "def.prof", "def.drawback"])]) {
+    if (ids.has(`${p}.${slug}`)) return `${p}.${slug}`;
+  }
+  const want = slug.toLowerCase();
+  for (const id of ids) if (id.split(".").slice(2).join(".").toLowerCase() === want) return id;
+  return null;
 }
 
 /* -------------------------------------------- */
@@ -739,6 +921,36 @@ async function main() {
       console.error(`wrote ${Object.keys(out.entries).length} entr(ies) -> ${outPath}`);
     }
   }
+
+  // Resolve "See X." cross-references once every id is known. Ids from content
+  // types compiled in an EARLIER run are folded in too, so a per-book compile
+  // still resolves across registries (a power may point at a proficiency).
+  const knownIds = new Set();
+  for (const data of Object.values(contentOut)) for (const id of Object.keys(data.entries)) knownIds.add(id);
+  for (const name of new Set(Object.values(CONTENT_OF))) {
+    const prev = path.join(COOKBOOK, `${name}.json`);
+    if (contentOut[name] || !fs.existsSync(prev)) continue;
+    const old = readJson(prev);
+    for (const id of Object.keys(old?.entries ?? {})) knownIds.add(id);
+  }
+  let aliased = 0;
+  let unresolved = 0;
+  for (const data of Object.values(contentOut)) {
+    for (const [id, e] of Object.entries(data.entries)) {
+      const raw = e._aliasRaw;
+      delete e._aliasRaw;
+      if (!raw) continue;
+      const target = resolveAlias(raw, id, knownIds);
+      if (target && target !== id) {
+        e.aliasOf = target;
+        aliased++;
+      } else {
+        unresolved++;
+        warn(`${id}: see-reference could not be resolved to a known definition`);
+      }
+    }
+  }
+  if (aliased || unresolved) console.error(`aliases: ${aliased} resolved, ${unresolved} unresolved`);
 
   // Content-type cookbooks: named by WHAT they extract, spanning every book
   // (powers appear in JJ and other books; monsters in MM and adventures).

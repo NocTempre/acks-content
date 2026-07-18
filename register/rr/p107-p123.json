@@ -1,0 +1,1858 @@
+[
+  {
+    "id": "def.prof.adventuring",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Adventuring",
+    "anchor": {
+      "display": "Adventuring (G)"
+    },
+    "pages": [
+      107
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.acrobatics",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Acrobatics",
+    "anchor": {
+      "display": "Acrobatics"
+    },
+    "pages": [
+      107
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.alchemy",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Alchemy",
+    "anchor": {
+      "display": "Alchemy (G)"
+    },
+    "pages": [
+      107
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.alertness",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Alertness",
+    "anchor": {
+      "display": "Alertness"
+    },
+    "pages": [
+      107
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.ambushing",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Ambushing",
+    "anchor": {
+      "display": "Ambushing"
+    },
+    "pages": [
+      107
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.animalHusbandry",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Animal Husbandry",
+    "anchor": {
+      "display": "Animal Husbandry (G)"
+    },
+    "pages": [
+      108
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.animalTraining",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Animal Training",
+    "anchor": {
+      "display": "Animal Training (G)"
+    },
+    "pages": [
+      108
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.arcaneDabbling",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Arcane Dabbling",
+    "anchor": {
+      "display": "Arcane Dabbling"
+    },
+    "pages": [
+      108
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.armorTraining",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Armor Training",
+    "anchor": {
+      "display": "Armor Training"
+    },
+    "pages": [
+      109
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.artCraft",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Art/Craft",
+    "anchor": {
+      "display": "Art/Craft (G)"
+    },
+    "pages": [
+      109
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.bargaining",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Bargaining",
+    "anchor": {
+      "display": "Bargaining (G)"
+    },
+    "pages": [
+      109
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.battleMagic",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Battle Magic",
+    "anchor": {
+      "display": "Battle Magic"
+    },
+    "pages": [
+      109
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.beastFriendship",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Beast Friendship",
+    "anchor": {
+      "display": "Beast Friendship"
+    },
+    "pages": [
+      109
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.berserkergang",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Berserkergang",
+    "anchor": {
+      "display": "Berserkergang"
+    },
+    "pages": [
+      110
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.blackLoreOfZahar",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Black Lore of Zahar",
+    "anchor": {
+      "display": "Black Lore of Zahar"
+    },
+    "pages": [
+      110
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.blindFighting",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Blind Fighting",
+    "anchor": {
+      "display": "Blind Fighting"
+    },
+    "pages": [
+      110
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.bribery",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Bribery",
+    "anchor": {
+      "display": "Bribery"
+    },
+    "pages": [
+      110
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.brightLoreOfAura",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Bright Lore of Aura",
+    "anchor": {
+      "display": "Bright Lore of Aura"
+    },
+    "pages": [
+      110
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.catBurglary",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Cat Burglary",
+    "anchor": {
+      "display": "Cat Burglary"
+    },
+    "pages": [
+      110
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.caving",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Caving",
+    "anchor": {
+      "display": "Caving (G)"
+    },
+    "pages": [
+      110
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.climbing",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Climbing",
+    "anchor": {
+      "display": "Climbing"
+    },
+    "pages": [
+      110
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.collegiateWizardry",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Collegiate Wizardry",
+    "anchor": {
+      "display": "Collegiate Wizardry (G)"
+    },
+    "pages": [
+      110
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.combatFerocity",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Combat Ferocity",
+    "anchor": {
+      "display": "Combat Ferocity"
+    },
+    "pages": [
+      110
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.combatReflexes",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Combat Reflexes",
+    "anchor": {
+      "display": "Combat Reflexes"
+    },
+    "pages": [
+      110
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.combatTrickery",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Combat Trickery",
+    "anchor": {
+      "display": "Combat Trickery"
+    },
+    "pages": [
+      111
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.command",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Command",
+    "anchor": {
+      "display": "Command"
+    },
+    "pages": [
+      111
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.contemplation",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Contemplation",
+    "anchor": {
+      "display": "Contemplation"
+    },
+    "pages": [
+      111
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.contortionism",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Contortionism",
+    "anchor": {
+      "display": "Contortionism"
+    },
+    "pages": [
+      111
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.counterspelling",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Counterspelling",
+    "anchor": {
+      "display": "Counterspelling"
+    },
+    "pages": [
+      111
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.diplomacy",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Diplomacy",
+    "anchor": {
+      "display": "Diplomacy (G)"
+    },
+    "pages": [
+      111
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.disguise",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Disguise",
+    "anchor": {
+      "display": "Disguise (G)"
+    },
+    "pages": [
+      111
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.divineBlessing",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Divine Blessing",
+    "anchor": {
+      "display": "Divine Blessing"
+    },
+    "pages": [
+      111
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.divineHealth",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Divine Health",
+    "anchor": {
+      "display": "Divine Health"
+    },
+    "pages": [
+      111
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.driving",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Driving",
+    "anchor": {
+      "display": "Driving (G)"
+    },
+    "pages": [
+      111
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.dungeonbashingExpertise",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Dungeonbashing Expertise",
+    "anchor": {
+      "display": "Dungeonbashing Expertise"
+    },
+    "pages": [
+      111
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.dwarvenBrewing",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Dwarven Brewing",
+    "anchor": {
+      "display": "Dwarven Brewing"
+    },
+    "pages": [
+      112
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.eavesdropping",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Eavesdropping",
+    "anchor": {
+      "display": "Eavesdropping"
+    },
+    "pages": [
+      112
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.elementalism",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Elementalism",
+    "anchor": {
+      "display": "Elementalism"
+    },
+    "pages": [
+      112
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.elvenBloodline",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Elven Bloodline",
+    "anchor": {
+      "display": "Elven Bloodline"
+    },
+    "pages": [
+      112
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.endurance",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Endurance",
+    "anchor": {
+      "display": "Endurance (G)"
+    },
+    "pages": [
+      112
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.engineering",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Engineering",
+    "anchor": {
+      "display": "Engineering (G)"
+    },
+    "pages": [
+      112
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.expandedRepertoire",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Expanded Repertoire",
+    "anchor": {
+      "display": "Expanded Repertoire"
+    },
+    "pages": [
+      112
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.experimenting",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Experimenting",
+    "anchor": {
+      "display": "Experimenting"
+    },
+    "pages": [
+      112
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.familiar",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Familiar",
+    "anchor": {
+      "display": "Familiar"
+    },
+    "pages": [
+      113
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.fightingStyleSpecialization",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Fighting Style Specialization",
+    "anchor": {
+      "display": "Fighting Style Specialization"
+    },
+    "pages": [
+      113
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.folkways",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Folkways",
+    "anchor": {
+      "display": "Folkways (G)"
+    },
+    "pages": [
+      113
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.gambling",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Gambling",
+    "anchor": {
+      "display": "Gambling (G)"
+    },
+    "pages": [
+      113
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.goblinSlaying",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Goblin-Slaying",
+    "anchor": {
+      "display": "Goblin-Slaying"
+    },
+    "pages": [
+      113
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.healing",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Healing",
+    "anchor": {
+      "display": "Healing (G)"
+    },
+    "pages": [
+      114
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.illusionResistance",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Illusion Resistance",
+    "anchor": {
+      "display": "Illusion Resistance"
+    },
+    "pages": [
+      114
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.intimidation",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Intimidation",
+    "anchor": {
+      "display": "Intimidation (G)"
+    },
+    "pages": [
+      114
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.kinSlaying",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Kin-Slaying",
+    "anchor": {
+      "display": "Kin-Slaying"
+    },
+    "pages": [
+      114
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.knowledge",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Knowledge",
+    "anchor": {
+      "display": "Knowledge (G)"
+    },
+    "pages": [
+      114
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.labor",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Labor",
+    "anchor": {
+      "display": "Labor (G)"
+    },
+    "pages": [
+      115
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.landSurveying",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Land Surveying",
+    "anchor": {
+      "display": "Land Surveying"
+    },
+    "pages": [
+      115
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.language",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Language",
+    "anchor": {
+      "display": "Language (G)"
+    },
+    "pages": [
+      115
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.layingOnHands",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Laying on Hands",
+    "anchor": {
+      "display": "Laying on Hands"
+    },
+    "pages": [
+      115
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.leadership",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Leadership",
+    "anchor": {
+      "display": "Leadership (G)"
+    },
+    "pages": [
+      115
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.lipReading",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Lip Reading",
+    "anchor": {
+      "display": "Lip Reading (G)"
+    },
+    "pages": [
+      115
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.lockpickingExpertise",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Lockpicking Expertise",
+    "anchor": {
+      "display": "Lockpicking Expertise"
+    },
+    "pages": [
+      115
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.loremastery",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Loremastery",
+    "anchor": {
+      "display": "Loremastery"
+    },
+    "pages": [
+      115
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.magicalEngineering",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Magical Engineering",
+    "anchor": {
+      "display": "Magical Engineering"
+    },
+    "pages": [
+      115
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.magicalMusic",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Magical Music",
+    "anchor": {
+      "display": "Magical Music"
+    },
+    "pages": [
+      116
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.manualOfArms",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Manual of Arms",
+    "anchor": {
+      "display": "Manual of Arms (G)"
+    },
+    "pages": [
+      116
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.mapping",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Mapping",
+    "anchor": {
+      "display": "Mapping (G)"
+    },
+    "pages": [
+      116
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.martialTraining",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Martial Training",
+    "anchor": {
+      "display": "Martial Training"
+    },
+    "pages": [
+      116
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.masteryOfConjurationSummoning",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Mastery of Conjuration & Summoning",
+    "anchor": {
+      "display": "Mastery of Conjuration & Summoning"
+    },
+    "pages": [
+      117
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.masteryOfEnchantmentsIllusions",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Mastery of Enchantments & Illusions",
+    "anchor": {
+      "display": "Mastery of Enchantments & Illusions"
+    },
+    "pages": [
+      117
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.militaryStrategy",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Military Strategy",
+    "anchor": {
+      "display": "Military Strategy (G)"
+    },
+    "pages": [
+      117
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.mimicry",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Mimicry",
+    "anchor": {
+      "display": "Mimicry (G)"
+    },
+    "pages": [
+      117
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.mountaineering",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Mountaineering",
+    "anchor": {
+      "display": "Mountaineering (G)"
+    },
+    "pages": [
+      117
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.mountedCombat",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Mounted Combat",
+    "anchor": {
+      "display": "Mounted Combat"
+    },
+    "pages": [
+      117
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.mysticAura",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Mystic Aura",
+    "anchor": {
+      "display": "Mystic Aura"
+    },
+    "pages": [
+      117
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.naturalism",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Naturalism",
+    "anchor": {
+      "display": "Naturalism (G)"
+    },
+    "pages": [
+      118
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.navigation",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Navigation",
+    "anchor": {
+      "display": "Navigation (G)"
+    },
+    "pages": [
+      118
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.passingWithoutTrace",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Passing Without Trace",
+    "anchor": {
+      "display": "Passing Without Trace"
+    },
+    "pages": [
+      118
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.performance",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Performance",
+    "anchor": {
+      "display": "Performance (G)"
+    },
+    "pages": [
+      118
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.poisoning",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Poisoning",
+    "anchor": {
+      "display": "Poisoning"
+    },
+    "pages": [
+      118
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.preciseShooting",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Precise Shooting",
+    "anchor": {
+      "display": "Precise Shooting"
+    },
+    "pages": [
+      118
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.prestidigitation",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Prestidigitation",
+    "anchor": {
+      "display": "Prestidigitation"
+    },
+    "pages": [
+      118
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.profession",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Profession",
+    "anchor": {
+      "display": "Profession (G)"
+    },
+    "pages": [
+      119
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.prophecy",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Prophecy",
+    "anchor": {
+      "display": "Prophecy"
+    },
+    "pages": [
+      119
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.prospecting",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Prospecting",
+    "anchor": {
+      "display": "Prospecting"
+    },
+    "pages": [
+      119
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.quietMagic",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Quiet Magic",
+    "anchor": {
+      "display": "Quiet Magic"
+    },
+    "pages": [
+      119
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.reliquarianism",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Reliquarianism",
+    "anchor": {
+      "display": "Reliquarianism"
+    },
+    "pages": [
+      119
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.revelry",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Revelry",
+    "anchor": {
+      "display": "Revelry (G)"
+    },
+    "pages": [
+      119
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.riding",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Riding",
+    "anchor": {
+      "display": "Riding (G)"
+    },
+    "pages": [
+      119
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.righteousRebuke",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Righteous Rebuke",
+    "anchor": {
+      "display": "Righteous Rebuke"
+    },
+    "pages": [
+      119
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.running",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Running",
+    "anchor": {
+      "display": "Running"
+    },
+    "pages": [
+      119
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.seafaring",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Seafaring",
+    "anchor": {
+      "display": "Seafaring (G)"
+    },
+    "pages": [
+      119
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.seduction",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Seduction",
+    "anchor": {
+      "display": "Seduction (G)"
+    },
+    "pages": [
+      119
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.sensingEvil",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Sensing Evil",
+    "anchor": {
+      "display": "Sensing Evil"
+    },
+    "pages": [
+      120
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.sensingGood",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Sensing Good",
+    "anchor": {
+      "display": "Sensing Good"
+    },
+    "pages": [
+      120
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.sensingPower",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Sensing Power",
+    "anchor": {
+      "display": "Sensing Power"
+    },
+    "pages": [
+      120
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.siegeEngineering",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Siege Engineering",
+    "anchor": {
+      "display": "Siege Engineering (G)"
+    },
+    "pages": [
+      120
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.signaling",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Signaling",
+    "anchor": {
+      "display": "Signaling (G)"
+    },
+    "pages": [
+      121
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.skirmishing",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Skirmishing",
+    "anchor": {
+      "display": "Skirmishing"
+    },
+    "pages": [
+      121
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.skulking",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Skulking",
+    "anchor": {
+      "display": "Skulking"
+    },
+    "pages": [
+      121
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.sniping",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Sniping",
+    "anchor": {
+      "display": "Sniping"
+    },
+    "pages": [
+      121
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.soothsaying",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Soothsaying",
+    "anchor": {
+      "display": "Soothsaying"
+    },
+    "pages": [
+      121
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.streetwise",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Streetwise",
+    "anchor": {
+      "display": "Streetwise (G)"
+    },
+    "pages": [
+      121
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.survival",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Survival",
+    "anchor": {
+      "display": "Survival (G)"
+    },
+    "pages": [
+      121
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.swashbuckling",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Swashbuckling",
+    "anchor": {
+      "display": "Swashbuckling"
+    },
+    "pages": [
+      121
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.swimming",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Swimming",
+    "anchor": {
+      "display": "Swimming (G)"
+    },
+    "pages": [
+      121
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.syncretism",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Syncretism",
+    "anchor": {
+      "display": "Syncretism"
+    },
+    "pages": [
+      121
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.theology",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Theology",
+    "anchor": {
+      "display": "Theology (G)"
+    },
+    "pages": [
+      121
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.tracking",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Tracking",
+    "anchor": {
+      "display": "Tracking (G)"
+    },
+    "pages": [
+      122
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.transmogrification",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Transmogrification",
+    "anchor": {
+      "display": "Transmogrification"
+    },
+    "pages": [
+      122
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.trapfinding",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Trapfinding",
+    "anchor": {
+      "display": "Trapfinding"
+    },
+    "pages": [
+      123
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.trapping",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Trapping",
+    "anchor": {
+      "display": "Trapping (G)"
+    },
+    "pages": [
+      123
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": true
+    }
+  },
+  {
+    "id": "def.prof.unarmedFighting",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Unarmed Fighting",
+    "anchor": {
+      "display": "Unarmed Fighting"
+    },
+    "pages": [
+      123
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.unflappableCasting",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Unflappable Casting",
+    "anchor": {
+      "display": "Unflappable Casting"
+    },
+    "pages": [
+      123
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.verminSlaying",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Vermin-Slaying",
+    "anchor": {
+      "display": "Vermin-Slaying"
+    },
+    "pages": [
+      123
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.wakefulness",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Wakefulness",
+    "anchor": {
+      "display": "Wakefulness"
+    },
+    "pages": [
+      123
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.weaponFinesse",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Weapon Finesse",
+    "anchor": {
+      "display": "Weapon Finesse"
+    },
+    "pages": [
+      123
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  },
+  {
+    "id": "def.prof.weaponFocus",
+    "kind": "kind.proficiency",
+    "book": "rr",
+    "name": "Weapon Focus",
+    "anchor": {
+      "display": "Weapon Focus"
+    },
+    "pages": [
+      123
+    ],
+    "meta": {
+      "category": "proficiency",
+      "general": false
+    }
+  }
+]

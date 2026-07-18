@@ -1236,16 +1236,34 @@
       "surprise rolls": {
         "key": "surprise"
       },
+      "surprise roll": {
+        "key": "surprise"
+      },
       "surprise throws": {
+        "key": "surprise"
+      },
+      "surprise throw": {
         "key": "surprise"
       },
       "reaction rolls": {
         "key": "reaction"
       },
+      "reaction roll": {
+        "key": "reaction"
+      },
       "saving throws": {
         "key": "save"
       },
+      "saving throw": {
+        "key": "save"
+      },
       "attack throws": {
+        "key": "attackThrow"
+      },
+      "attack throw": {
+        "key": "attackThrow"
+      },
+      "hit": {
         "key": "attackThrow"
       },
       "armor class": {
@@ -1257,10 +1275,16 @@
       "initiative rolls": {
         "key": "initiative"
       },
+      "initiative roll": {
+        "key": "initiative"
+      },
       "initiative": {
         "key": "initiative"
       },
       "damage rolls": {
+        "key": "damage"
+      },
+      "damage roll": {
         "key": "damage"
       },
       "morale": {
@@ -1281,7 +1305,13 @@
       "magic research throws": {
         "key": "research"
       },
+      "magic research throw": {
+        "key": "research"
+      },
       "research throws": {
+        "key": "research"
+      },
+      "research throw": {
         "key": "research"
       },
       "hit points": {
@@ -1289,6 +1319,24 @@
       },
       "cleaves": {
         "key": "cleaves"
+      },
+      "base speed": {
+        "key": "speed"
+      },
+      "speed": {
+        "key": "speed"
+      },
+      "throws": {
+        "key": "proficiencyThrow"
+      },
+      "throw": {
+        "key": "proficiencyThrow"
+      },
+      "rolls": {
+        "key": "proficiencyThrow"
+      },
+      "roll": {
+        "key": "proficiencyThrow"
       }
     },
     "naturalWeapon": {

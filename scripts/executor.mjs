@@ -295,9 +295,13 @@ export function effectScan(paras, registers) {
   // DataModel directly (a bare number would fail the SchemaField).
   const flat = (n) => ({ kind: "flat", flat: n });
 
-  const OWNER = "(?:all\\s+|his\\s+|their\\s+|its\\s+|the\\s+)?";
+  const OWNER = "(?:all\\s+|his\\s+|her\\s+|their\\s+|its\\s+|the\\s+)?";
+  // The target phrase must be long enough to reach the end of a two-activity
+  // name ("Hiding and Sneaking proficiency throws"), which a shorter cap cuts
+  // mid-word so the vocabulary lookup misses.
+  const TARGET = `${OWNER}[A-Za-z' -]{2,50}`;
   // "gains a +1 bonus to avoid surprise" / "suffers a -2 penalty on reaction rolls"
-  for (const m of text.matchAll(new RegExp(`([+-]?\\d+)\\s+(bonus|penalty)\\s+(?:to|on)\\s+(${OWNER}[A-Za-z' -]{2,34})`, "gi"))) {
+  for (const m of text.matchAll(new RegExp(`([+-]?\\d+)\\s+(bonus|penalty)\\s+(?:to|on)\\s+(${TARGET})`, "gi"))) {
     const key = classify(m[3]);
     if (!key) continue;
     let n = parseInt(m[1], 10);
@@ -306,9 +310,25 @@ export function effectScan(paras, registers) {
     push({ type: "modifier", target: key, value: flat(n), mode: "add" });
   }
   // "gains a +2 to saving throws" (no bonus/penalty word — require an explicit sign)
-  for (const m of text.matchAll(new RegExp(`([+-]\\d+)\\s+(?:to|on)\\s+(${OWNER}[A-Za-z' -]{2,34})`, "gi"))) {
+  for (const m of text.matchAll(new RegExp(`([+-]\\d+)\\s+(?:to|on)\\s+(${TARGET})`, "gi"))) {
     const key = classify(m[2]);
     if (key) push({ type: "modifier", target: key, value: flat(parseInt(m[1], 10)), mode: "add" });
+  }
+  // Reversed order: "+1 initiative bonus" / "-2 saving throw penalty".
+  for (const m of text.matchAll(/([+-]\d+)\s+([a-z][a-z' -]{2,30}?)\s+(bonus|penalty)\b/gi)) {
+    const key = classify(m[2]);
+    if (!key) continue;
+    let n = parseInt(m[1], 10);
+    if (/penalty/i.test(m[3])) n = -Math.abs(n);
+    push({ type: "modifier", target: key, value: flat(n), mode: "add" });
+  }
+  // Verb form: "his maximum number of cleaves is increased by 1", "morale score
+  // is increased by 1". Rejects "increased TO 2x" (a multiplier, not a delta).
+  for (const m of text.matchAll(/([A-Za-z][A-Za-z' -]{2,50}?)\s+(?:is|are)\s+(increased|reduced|decreased)\s+by\s+(\d+)/gi)) {
+    const key = classify(m[1]);
+    if (!key) continue;
+    const n = parseInt(m[3], 10);
+    push({ type: "modifier", target: key, value: flat(/increase/i.test(m[2]) ? n : -n), mode: "add" });
   }
   // "succeeds on a Dungeonbashing proficiency throw of 18+" — the capitalised
   // qualifier says WHICH activity, so a bundle like Adventuring's five throws
@@ -318,9 +338,14 @@ export function effectScan(paras, registers) {
     if (m[1]) e.forWhat = m[1];
     push(e);
   }
-  // "climb as a thief of his class level" / "control undead as a crusader of one half his class level"
-  for (const m of text.matchAll(/as an?\s+(thief|crusader|fighter|mage)\s+of\s+(one[- ]half\s+)?(?:his|their)\s+(?:class|caster)\s+level/gi)) {
-    push({ type: "progressionAs", as: m[1].toLowerCase(), atLevel: m[2] ? "half" : "full" });
+  // "climb as a thief of his class level" / "control undead as a crusader of one
+  // half his class level" / "as thieves of his class level" (plural, no article)
+  // / "as a thief of his level" (the class/caster qualifier is sometimes absent).
+  for (const m of text.matchAll(
+    /as\s+(?:an?\s+)?(thie(?:f|ves)|crusaders?|fighters?|mages?)\s+of\s+(one[- ]half\s+)?(?:his|her|their)\s+(?:(?:class|caster)\s+)?level/gi,
+  )) {
+    const as = m[1].toLowerCase().replace(/^thieves$/, "thief").replace(/s$/, "");
+    push({ type: "progressionAs", as, atLevel: m[2] ? "half" : "full" });
   }
   return out;
 }
@@ -468,7 +493,11 @@ async function execInstruction(instr, ctx) {
     case "text": {
       const paras = [];
       for (const para of instr.paras ?? []) {
-        const runs = runsIn(pd, para);
+        // A paragraph may name its OWN page: definition blocks are column- and
+        // page-flowed, so an entry starting low on a page continues overleaf.
+        // Absent `para.page` this is exactly the old single-page behaviour.
+        const ppd = para.page && para.page !== instr.page ? await getPage(para.page) : pd;
+        const runs = runsIn(ppd, para);
         claim(runs, ctx.field);
         const text = clean(joinRuns(runs, para.fixes ?? instr.fixes, para.dropText));
         if (text) paras.push({ type: "paragraph", ...(para.section ? { section: para.section } : {}), text });

@@ -1,0 +1,167 @@
+[
+  {
+    "id": "def.drawback.boundWaist",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Bound Waist",
+    "anchor": {
+      "runin": "Bound Waist:"
+    },
+    "pages": [
+      331
+    ],
+    "meta": {
+      "category": "drawback"
+    }
+  },
+  {
+    "id": "def.drawback.daggerNails",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Dagger Nails",
+    "anchor": {
+      "runin": "Dagger Nails:"
+    },
+    "pages": [
+      331
+    ],
+    "meta": {
+      "category": "drawback"
+    }
+  },
+  {
+    "id": "def.drawback.darkSoul",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Dark Soul",
+    "anchor": {
+      "runin": "Dark Soul:"
+    },
+    "pages": [
+      331
+    ],
+    "meta": {
+      "category": "drawback"
+    }
+  },
+  {
+    "id": "def.drawback.deadSoul",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Dead Soul",
+    "anchor": {
+      "runin": "Dead Soul:"
+    },
+    "pages": [
+      331
+    ],
+    "meta": {
+      "category": "drawback"
+    }
+  },
+  {
+    "id": "def.drawback.discomfitedByCivilization",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Discomfited by Civilization",
+    "anchor": {
+      "runin": "Discomfited by Civilization:"
+    },
+    "pages": [
+      331
+    ],
+    "meta": {
+      "category": "drawback"
+    }
+  },
+  {
+    "id": "def.drawback.easilyEncumbered",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Easily Encumbered",
+    "anchor": {
+      "runin": "Easily Encumbered:"
+    },
+    "pages": [
+      331
+    ],
+    "meta": {
+      "category": "drawback"
+    }
+  },
+  {
+    "id": "def.drawback.reverseHealing",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Reverse Healing",
+    "anchor": {
+      "runin": "Reverse Healing:"
+    },
+    "pages": [
+      331
+    ],
+    "meta": {
+      "category": "drawback"
+    }
+  },
+  {
+    "id": "def.drawback.shortStatured",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Short-Statured",
+    "anchor": {
+      "runin": "Short-Statured:"
+    },
+    "pages": [
+      331
+    ],
+    "meta": {
+      "category": "drawback"
+    }
+  },
+  {
+    "id": "def.drawback.unholy",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Unholy",
+    "anchor": {
+      "runin": "Unholy:"
+    },
+    "pages": [
+      331
+    ],
+    "meta": {
+      "category": "drawback"
+    }
+  },
+  {
+    "id": "def.drawback.walkOnSpikes",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Walk on Spikes",
+    "anchor": {
+      "runin": "Walk on Spikes:"
+    },
+    "pages": [
+      331
+    ],
+    "meta": {
+      "category": "drawback"
+    }
+  },
+  {
+    "id": "def.drawback.weak",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Weak",
+    "anchor": {
+      "runin": "Weak:"
+    },
+    "pages": [
+      331
+    ],
+    "meta": {
+      "category": "drawback"
+    }
+  }
+]

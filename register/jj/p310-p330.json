@@ -1,0 +1,4667 @@
+[
+  {
+    "id": "def.power.abominableMutation",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Abominable Mutation",
+    "anchor": {
+      "runin": "Abominable Mutation:"
+    },
+    "pages": [
+      310
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.accessToCapital",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Access to Capital",
+    "anchor": {
+      "runin": "Access to Capital:"
+    },
+    "pages": [
+      310
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.accuracy",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Accuracy",
+    "anchor": {
+      "runin": "Accuracy:"
+    },
+    "pages": [
+      310
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.acrobatics",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Acrobatics",
+    "anchor": {
+      "runin": "Acrobatics:"
+    },
+    "pages": [
+      310
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.adhesiveToePads",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Adhesive Toe Pads",
+    "anchor": {
+      "runin": "Adhesive Toe Pads:"
+    },
+    "pages": [
+      310
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.afterTheFlesh",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "After the Flesh",
+    "anchor": {
+      "runin": "After the Flesh:"
+    },
+    "pages": [
+      310
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.ageless",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Ageless",
+    "anchor": {
+      "runin": "Ageless:"
+    },
+    "pages": [
+      310
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.alertness",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Alertness",
+    "anchor": {
+      "runin": "Alertness:"
+    },
+    "pages": [
+      310
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.alienBeings",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Alien Beings",
+    "anchor": {
+      "runin": "Alien Beings:"
+    },
+    "pages": [
+      310
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.alienintuition",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "AlienIntuition",
+    "anchor": {
+      "runin": "AlienIntuition:"
+    },
+    "pages": [
+      310
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.alienLore",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Alien Lore",
+    "anchor": {
+      "runin": "Alien Lore:"
+    },
+    "pages": [
+      310
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.alienSenses",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Alien Senses",
+    "anchor": {
+      "runin": "Alien Senses:"
+    },
+    "pages": [
+      310
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.alluringBeauty",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Alluring Beauty",
+    "anchor": {
+      "runin": "Alluring Beauty:"
+    },
+    "pages": [
+      310
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.ambushing",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Ambushing",
+    "anchor": {
+      "runin": "Ambushing:"
+    },
+    "pages": [
+      311
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.analyzeData",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Analyze Data",
+    "anchor": {
+      "runin": "Analyze Data:"
+    },
+    "pages": [
+      311
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.ancientPacts",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Ancient Pacts",
+    "anchor": {
+      "runin": "Ancient Pacts:"
+    },
+    "pages": [
+      311
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.animalCompanion",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Animal Companion",
+    "anchor": {
+      "runin": "Animal Companion:"
+    },
+    "pages": [
+      311
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.animalFriendship",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Animal Friendship",
+    "anchor": {
+      "runin": "Animal Friendship:"
+    },
+    "pages": [
+      311
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.animalMagnetism",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Animal Magnetism",
+    "anchor": {
+      "runin": "Animal Magnetism:"
+    },
+    "pages": [
+      311
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.animalReflexes",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Animal Reflexes",
+    "anchor": {
+      "runin": "Animal Reflexes:"
+    },
+    "pages": [
+      311
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.antennaeForPotions",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Antennae for Potions",
+    "anchor": {
+      "runin": "Antennae for Potions:"
+    },
+    "pages": [
+      311
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.arcaneDabbling",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Arcane Dabbling",
+    "anchor": {
+      "runin": "Arcane Dabbling:"
+    },
+    "pages": [
+      311
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.arcaneStriking",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Arcane Striking",
+    "anchor": {
+      "runin": "Arcane Striking:"
+    },
+    "pages": [
+      311
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.arenaReputation",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Arena Reputation",
+    "anchor": {
+      "runin": "Arena Reputation:"
+    },
+    "pages": [
+      311
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.armorTraining",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Armor Training",
+    "anchor": {
+      "runin": "Armor Training:"
+    },
+    "pages": [
+      311
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.artificialYouth",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Artificial Youth",
+    "anchor": {
+      "runin": "Artificial Youth:"
+    },
+    "pages": [
+      311
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.attunementToNature",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Attunement to Nature",
+    "anchor": {
+      "runin": "Attunement to Nature:"
+    },
+    "pages": [
+      311
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.avoidGettingLost",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Avoid Getting Lost",
+    "anchor": {
+      "runin": "Avoid Getting Lost:"
+    },
+    "pages": [
+      311
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.awarenessOfTheEarth",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Awareness of the Earth",
+    "anchor": {
+      "runin": "Awareness of the Earth:"
+    },
+    "pages": [
+      311
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.auraOfProtection",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Aura of Protection",
+    "anchor": {
+      "runin": "Aura of Protection:"
+    },
+    "pages": [
+      311
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.balefulTransformation",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Baleful Transformation",
+    "anchor": {
+      "runin": "Baleful Transformation:"
+    },
+    "pages": [
+      312
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.ballisticsExpertise",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Ballistics Expertise",
+    "anchor": {
+      "runin": "Ballistics Expertise:"
+    },
+    "pages": [
+      312
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.battleMagic",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Battle Magic",
+    "anchor": {
+      "runin": "Battle Magic:"
+    },
+    "pages": [
+      312
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.battlefieldProwess",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Battlefield Prowess",
+    "anchor": {
+      "runin": "Battlefield Prowess:"
+    },
+    "pages": [
+      312
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.battlePlan",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Battle Plan",
+    "anchor": {
+      "runin": "Battle Plan:"
+    },
+    "pages": [
+      312
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.bedazzlingGlamour",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Bedazzling Glamour",
+    "anchor": {
+      "runin": "Bedazzling Glamour:"
+    },
+    "pages": [
+      312
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.berserkergangGreater",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Berserkergang, Greater",
+    "anchor": {
+      "runin": "Berserkergang, Greater:"
+    },
+    "pages": [
+      312
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.berserkergangLesser",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Berserkergang, Lesser",
+    "anchor": {
+      "runin": "Berserkergang, Lesser:"
+    },
+    "pages": [
+      312
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.bestialCry",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Bestial Cry",
+    "anchor": {
+      "runin": "Bestial Cry:"
+    },
+    "pages": [
+      312
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.bestialFury",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Bestial Fury",
+    "anchor": {
+      "runin": "Bestial Fury:"
+    },
+    "pages": [
+      312
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.bladeDancing",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Blade-Dancing",
+    "anchor": {
+      "runin": "Blade-Dancing:"
+    },
+    "pages": [
+      312
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.blessingOfTheDead",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Blessing of the Dead",
+    "anchor": {
+      "runin": "Blessing of the Dead:"
+    },
+    "pages": [
+      312
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.blindsight",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Blindsight",
+    "anchor": {
+      "runin": "Blindsight:"
+    },
+    "pages": [
+      312
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.bloodOfKings",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Blood of Kings",
+    "anchor": {
+      "runin": "Blood of Kings:"
+    },
+    "pages": [
+      312
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.bloodyHealing",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Bloody Healing",
+    "anchor": {
+      "runin": "Bloody Healing:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.boneBreakingStrength",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Bone-Breaking Strength",
+    "anchor": {
+      "runin": "Bone-Breaking Strength:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.bonusLanguages",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Bonus Languages",
+    "anchor": {
+      "runin": "Bonus Languages:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.boonCompanion",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Boon Companion",
+    "anchor": {
+      "runin": "Boon Companion:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.brewingQuacksalves",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Brewing Quacksalves",
+    "anchor": {
+      "runin": "Brewing Quacksalves:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.bribery",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Bribery",
+    "anchor": {
+      "runin": "Bribery:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.brightLore",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Bright Lore",
+    "anchor": {
+      "runin": "Bright Lore:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.broadSpectrumInoculations",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Broad Spectrum Inoculations",
+    "anchor": {
+      "runin": "Broad Spectrum Inoculations:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.brutality",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Brutality",
+    "anchor": {
+      "runin": "Brutality:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.castTheRunes",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Cast the Runes",
+    "anchor": {
+      "runin": "Cast the Runes:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.ceremonialMagic",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Ceremonial Magic",
+    "anchor": {
+      "runin": "Ceremonial Magic:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.charismaticFerocity",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Charismatic Ferocity",
+    "anchor": {
+      "runin": "Charismatic Ferocity:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.childLike",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Child-Like",
+    "anchor": {
+      "runin": "Child-Like:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.chitinousCarapace",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Chitinous Carapace",
+    "anchor": {
+      "runin": "Chitinous Carapace:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.chosenweapon",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "ChosenWeapon",
+    "anchor": {
+      "runin": "ChosenWeapon:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.chroniclesOfBattle",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Chronicles of Battle",
+    "anchor": {
+      "runin": "Chronicles of Battle:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.chthonicHegemon",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Chthonic Hegemon",
+    "anchor": {
+      "runin": "Chthonic Hegemon:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.clarionCommander",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Clarion Commander",
+    "anchor": {
+      "runin": "Clarion Commander:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.classicalWeaponsTraining",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Classical Weapons Training",
+    "anchor": {
+      "runin": "Classical Weapons Training:"
+    },
+    "pages": [
+      313
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.clawsAndBite",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Claws and Bite",
+    "anchor": {
+      "runin": "Claws and Bite:"
+    },
+    "pages": [
+      314
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.cleansingTouch",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Cleansing Touch",
+    "anchor": {
+      "runin": "Cleansing Touch:"
+    },
+    "pages": [
+      314
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.closeFriendOfBirdsAndBeasts",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Close Friend of Birds and Beasts",
+    "anchor": {
+      "runin": "Close Friend of Birds and Beasts:"
+    },
+    "pages": [
+      314
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.comfortAndConsoleTheWounded",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Comfort and Console the Wounded",
+    "anchor": {
+      "runin": "Comfort and Console the Wounded:"
+    },
+    "pages": [
+      314
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.commandOfVoice",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Command of Voice",
+    "anchor": {
+      "runin": "Command of Voice:"
+    },
+    "pages": [
+      314
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.commandUndead",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Command Undead",
+    "anchor": {
+      "runin": "Command Undead:"
+    },
+    "pages": [
+      314
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.communeWithAncestralSpirits",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Commune with Ancestral Spirits",
+    "anchor": {
+      "runin": "Commune with Ancestral Spirits:"
+    },
+    "pages": [
+      314
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.compelSubmission",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Compel Submission",
+    "anchor": {
+      "runin": "Compel Submission:"
+    },
+    "pages": [
+      314
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.concealedFromUndead",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Concealed from Undead",
+    "anchor": {
+      "runin": "Concealed from Undead:"
+    },
+    "pages": [
+      314
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.conduitToTheEsoteric",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Conduit to the Esoteric",
+    "anchor": {
+      "runin": "Conduit to the Esoteric:"
+    },
+    "pages": [
+      314
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.conjureDarkPowers",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Conjure Dark Powers (1level)",
+    "anchor": {
+      "runin": "Conjure Dark Powers (1level):"
+    },
+    "pages": [
+      314
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.connectionToNature",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Connection to Nature",
+    "anchor": {
+      "runin": "Connection to Nature:"
+    },
+    "pages": [
+      314
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.consumeSouls",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Consume Souls",
+    "anchor": {
+      "runin": "Consume Souls:"
+    },
+    "pages": [
+      314
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.contactDarkPowers",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Contact Dark Powers",
+    "anchor": {
+      "runin": "Contact Dark Powers:"
+    },
+    "pages": [
+      314
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.courage",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Courage",
+    "anchor": {
+      "runin": "Courage:"
+    },
+    "pages": [
+      314
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.createAdvancedTechnology",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Create Advanced Technology",
+    "anchor": {
+      "runin": "Create Advanced Technology:"
+    },
+    "pages": [
+      314
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.cunningAndFlexibleReconnoiter",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Cunning and Flexible Reconnoiter",
+    "anchor": {
+      "runin": "Cunning and Flexible Reconnoiter:"
+    },
+    "pages": [
+      315
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.curseWithIllFate",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Curse with Ill Fate",
+    "anchor": {
+      "runin": "Curse with Ill Fate:"
+    },
+    "pages": [
+      315
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.daredevil",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Daredevil",
+    "anchor": {
+      "runin": "Daredevil:"
+    },
+    "pages": [
+      315
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.darkBlessing",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Dark Blessing",
+    "anchor": {
+      "runin": "Dark Blessing:"
+    },
+    "pages": [
+      315
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.darkCharisma",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Dark Charisma",
+    "anchor": {
+      "runin": "Dark Charisma:"
+    },
+    "pages": [
+      315
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.deadlyAdditive",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Deadly Additive",
+    "anchor": {
+      "runin": "Deadly Additive:"
+    },
+    "pages": [
+      315
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.deathDealingDance",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Death-Dealing Dance",
+    "anchor": {
+      "runin": "Death-Dealing Dance:"
+    },
+    "pages": [
+      315
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.deathHealing",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Death Healing",
+    "anchor": {
+      "runin": "Death Healing:"
+    },
+    "pages": [
+      315
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.deathlyVisage",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Deathly Visage",
+    "anchor": {
+      "runin": "Deathly Visage:"
+    },
+    "pages": [
+      315
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.deciphering",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Deciphering",
+    "anchor": {
+      "runin": "Deciphering:"
+    },
+    "pages": [
+      315
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.demandSurrender",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Demand Surrender",
+    "anchor": {
+      "runin": "Demand Surrender:"
+    },
+    "pages": [
+      315
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.demiHumanAncestry",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Demi-Human Ancestry",
+    "anchor": {
+      "runin": "Demi-Human Ancestry:"
+    },
+    "pages": [
+      315
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.designBuildAndRepairAutomatons",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Design, Build, and Repair Automatons",
+    "anchor": {
+      "runin": "Design, Build, and Repair Automatons:"
+    },
+    "pages": [
+      315
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.designBuildAndRepairIngeniousDevices",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Design, Build, and Repair Ingenious Devices",
+    "anchor": {
+      "runin": "Design, Build, and Repair Ingenious Devices:"
+    },
+    "pages": [
+      316
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.destined",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Destined",
+    "anchor": {
+      "runin": "Destined:"
+    },
+    "pages": [
+      316
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.detachableTail",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Detachable Tail",
+    "anchor": {
+      "runin": "Detachable Tail:"
+    },
+    "pages": [
+      316
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.detectGood",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Detect Good",
+    "anchor": {
+      "runin": "Detect Good:"
+    },
+    "pages": [
+      316
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.detectEvil",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Detect Evil",
+    "anchor": {
+      "runin": "Detect Evil:"
+    },
+    "pages": [
+      316
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.detectTraps",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Detect Traps",
+    "anchor": {
+      "runin": "Detect Traps:"
+    },
+    "pages": [
+      316
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.determined",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Determined",
+    "anchor": {
+      "runin": "Determined:"
+    },
+    "pages": [
+      316
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.difficultToCorrupt",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Difficult to Corrupt",
+    "anchor": {
+      "runin": "Difficult to Corrupt:"
+    },
+    "pages": [
+      316
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.difficultToSpot",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Difficult to Spot",
+    "anchor": {
+      "runin": "Difficult to Spot:"
+    },
+    "pages": [
+      316
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.divineBlessing",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Divine Blessing",
+    "anchor": {
+      "runin": "Divine Blessing:"
+    },
+    "pages": [
+      316
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.divineHealth",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Divine Health",
+    "anchor": {
+      "runin": "Divine Health:"
+    },
+    "pages": [
+      316
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.divineProficiency",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Divine Proficiency",
+    "anchor": {
+      "runin": "Divine Proficiency:"
+    },
+    "pages": [
+      316
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.discernGood",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Discern Good",
+    "anchor": {
+      "runin": "Discern Good:"
+    },
+    "pages": [
+      316
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.discernevil",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "DiscernEvil",
+    "anchor": {
+      "runin": "DiscernEvil:"
+    },
+    "pages": [
+      316
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.distract",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Distract",
+    "anchor": {
+      "runin": "Distract:"
+    },
+    "pages": [
+      316
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.dominateBeastmen",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Dominate Beastmen",
+    "anchor": {
+      "runin": "Dominate Beastmen:"
+    },
+    "pages": [
+      316
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.dreadShadow",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Dread Shadow",
+    "anchor": {
+      "runin": "Dread Shadow:"
+    },
+    "pages": [
+      316
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.eldritchTalent",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Eldritch Talent",
+    "anchor": {
+      "runin": "Eldritch Talent:"
+    },
+    "pages": [
+      316
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.eldritchWarrior",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Eldritch Warrior",
+    "anchor": {
+      "runin": "Eldritch Warrior:"
+    },
+    "pages": [
+      317
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.elementalConnection",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Elemental Connection",
+    "anchor": {
+      "runin": "Elemental Connection:"
+    },
+    "pages": [
+      317
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.enchantedForest",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Enchanted Forest",
+    "anchor": {
+      "runin": "Enchanted Forest:"
+    },
+    "pages": [
+      317
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.engineeringAptitude",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Engineering Aptitude",
+    "anchor": {
+      "runin": "Engineering Aptitude:"
+    },
+    "pages": [
+      317
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.evilEye",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Evil Eye",
+    "anchor": {
+      "runin": "Evil Eye:"
+    },
+    "pages": [
+      317
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.experimentation",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Experimentation",
+    "anchor": {
+      "runin": "Experimentation:"
+    },
+    "pages": [
+      317
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.exquisiteTorture",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Exquisite Torture",
+    "anchor": {
+      "runin": "Exquisite Torture:"
+    },
+    "pages": [
+      317
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.experienceAndHardiness",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Experience and Hardiness",
+    "anchor": {
+      "runin": "Experience and Hardiness:"
+    },
+    "pages": [
+      317
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.expertBargaining",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Expert Bargaining",
+    "anchor": {
+      "runin": "Expert Bargaining:"
+    },
+    "pages": [
+      317
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.expertTraveler",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Expert Traveler",
+    "anchor": {
+      "runin": "Expert Traveler:"
+    },
+    "pages": [
+      317
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.extensiveFirearmsTraining",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Extensive Firearms Training",
+    "anchor": {
+      "runin": "Extensive Firearms Training:"
+    },
+    "pages": [
+      317
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.exultInGloriousBattle",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Exult in Glorious Battle",
+    "anchor": {
+      "runin": "Exult in Glorious Battle:"
+    },
+    "pages": [
+      317
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.familialLoyalty",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Familial Loyalty",
+    "anchor": {
+      "runin": "Familial Loyalty:"
+    },
+    "pages": [
+      317
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.familiarWithTechnology",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Familiar with Technology",
+    "anchor": {
+      "runin": "Familiar with Technology:"
+    },
+    "pages": [
+      317
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.farseeing",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Farseeing",
+    "anchor": {
+      "runin": "Farseeing:"
+    },
+    "pages": [
+      317
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.favorOfTheGods",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Favor of the Gods",
+    "anchor": {
+      "runin": "Favor of the Gods:"
+    },
+    "pages": [
+      317
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.fellowshipOfAnimals",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Fellowship of Animals",
+    "anchor": {
+      "runin": "Fellowship of Animals:"
+    },
+    "pages": [
+      317
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.fierySpirit",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Fiery Spirit",
+    "anchor": {
+      "runin": "Fiery Spirit:"
+    },
+    "pages": [
+      318
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.fieryCauterization",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Fiery Cauterization",
+    "anchor": {
+      "runin": "Fiery Cauterization:"
+    },
+    "pages": [
+      318
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.fieryResistance",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Fiery Resistance",
+    "anchor": {
+      "runin": "Fiery Resistance:"
+    },
+    "pages": [
+      318
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.fightingFury",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Fighting Fury",
+    "anchor": {
+      "runin": "Fighting Fury:"
+    },
+    "pages": [
+      318
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.fistsOfIron",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Fists of Iron",
+    "anchor": {
+      "runin": "Fists of Iron:"
+    },
+    "pages": [
+      318
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.flagellation",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Flagellation",
+    "anchor": {
+      "runin": "Flagellation:"
+    },
+    "pages": [
+      318
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.flawlessPrecision",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Flawless Precision",
+    "anchor": {
+      "runin": "Flawless Precision:"
+    },
+    "pages": [
+      318
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.fleshRunes",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Flesh-Runes",
+    "anchor": {
+      "runin": "Flesh-Runes:"
+    },
+    "pages": [
+      318
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.flying",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Flying",
+    "anchor": {
+      "runin": "Flying:"
+    },
+    "pages": [
+      318
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.fourArms",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Four Arms",
+    "anchor": {
+      "runin": "Four Arms:"
+    },
+    "pages": [
+      318
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.forbiddenSpells",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Forbidden Spells",
+    "anchor": {
+      "runin": "Forbidden Spells:"
+    },
+    "pages": [
+      319
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.friendOfBirdsAndBeasts",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Friend of Birds and Beasts",
+    "anchor": {
+      "runin": "Friend of Birds and Beasts:"
+    },
+    "pages": [
+      319
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.fungalAwareness",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Fungal Awareness",
+    "anchor": {
+      "runin": "Fungal Awareness:"
+    },
+    "pages": [
+      319
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.fungalCommunion",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Fungal Communion",
+    "anchor": {
+      "runin": "Fungal Communion:"
+    },
+    "pages": [
+      319
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.fungalFriendship",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Fungal Friendship",
+    "anchor": {
+      "runin": "Fungal Friendship:"
+    },
+    "pages": [
+      319
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.fungalImmunity",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Fungal Immunity",
+    "anchor": {
+      "runin": "Fungal Immunity:"
+    },
+    "pages": [
+      319
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.fungalSpawn",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Fungal Spawn (10)",
+    "anchor": {
+      "runin": "Fungal Spawn (10):"
+    },
+    "pages": [
+      319
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.gatherTogetherTheDarkness",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Gather Together the Darkness",
+    "anchor": {
+      "runin": "Gather Together the Darkness:"
+    },
+    "pages": [
+      319
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.giftOfTongues",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Gift of Tongues",
+    "anchor": {
+      "runin": "Gift of Tongues:"
+    },
+    "pages": [
+      319
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.glamorousAura",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Glamorous Aura",
+    "anchor": {
+      "runin": "Glamorous Aura:"
+    },
+    "pages": [
+      319
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.gracefulFighting",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Graceful Fighting",
+    "anchor": {
+      "runin": "Graceful Fighting:"
+    },
+    "pages": [
+      319
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.greaterRiteOfSealing",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Greater Rite of Sealing",
+    "anchor": {
+      "runin": "Greater Rite of Sealing:"
+    },
+    "pages": [
+      319
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.greatnessOfSoul",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Greatness of Soul",
+    "anchor": {
+      "runin": "Greatness of Soul:"
+    },
+    "pages": [
+      319
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.greyLore",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Grey Lore",
+    "anchor": {
+      "runin": "Grey Lore:"
+    },
+    "pages": [
+      319
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.grotesqueArtsOfTransformation",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Grotesque Arts of Transformation (1)",
+    "anchor": {
+      "runin": "Grotesque Arts of Transformation (1):"
+    },
+    "pages": [
+      319
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.guardianSpirit",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Guardian Spirit",
+    "anchor": {
+      "runin": "Guardian Spirit:"
+    },
+    "pages": [
+      319
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.hardToKill",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Hard to Kill",
+    "anchor": {
+      "runin": "Hard to Kill:"
+    },
+    "pages": [
+      320
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.hardyPeople",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Hardy People",
+    "anchor": {
+      "runin": "Hardy People:"
+    },
+    "pages": [
+      320
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.harmonyOfSpirit",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Harmony of Spirit",
+    "anchor": {
+      "runin": "Harmony of Spirit:"
+    },
+    "pages": [
+      320
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.healingTouch",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Healing Touch",
+    "anchor": {
+      "runin": "Healing Touch:"
+    },
+    "pages": [
+      320
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.heartyConstitution",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Hearty Constitution",
+    "anchor": {
+      "runin": "Hearty Constitution:"
+    },
+    "pages": [
+      320
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.heroicBreakfast",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Heroic Breakfast",
+    "anchor": {
+      "runin": "Heroic Breakfast:"
+    },
+    "pages": [
+      320
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.heroicSpirit",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Heroic Spirit",
+    "anchor": {
+      "runin": "Heroic Spirit:"
+    },
+    "pages": [
+      320
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.hideousServant",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Hideous Servant",
+    "anchor": {
+      "runin": "Hideous Servant:"
+    },
+    "pages": [
+      320
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.holyFervor",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Holy Fervor",
+    "anchor": {
+      "runin": "Holy Fervor:"
+    },
+    "pages": [
+      320
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.horribleTruths",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Horrible Truths",
+    "anchor": {
+      "runin": "Horrible Truths:"
+    },
+    "pages": [
+      320
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.impersonateOthers",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Impersonate Others",
+    "anchor": {
+      "runin": "Impersonate Others:"
+    },
+    "pages": [
+      320
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.implacableWill",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Implacable Will",
+    "anchor": {
+      "runin": "Implacable Will:"
+    },
+    "pages": [
+      320
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.inexorable",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Inexorable",
+    "anchor": {
+      "runin": "Inexorable:"
+    },
+    "pages": [
+      320
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.infravision",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Infravision",
+    "anchor": {
+      "runin": "Infravision:"
+    },
+    "pages": [
+      320
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.inhumanity",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Inhumanity",
+    "anchor": {
+      "runin": "Inhumanity:"
+    },
+    "pages": [
+      321
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.initiative",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Initiative",
+    "anchor": {
+      "runin": "Initiative:"
+    },
+    "pages": [
+      321
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.innateIllusionMastery",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Innate Illusion Mastery",
+    "anchor": {
+      "runin": "Innate Illusion Mastery:"
+    },
+    "pages": [
+      321
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.innovativeResearcher",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Innovative Researcher",
+    "anchor": {
+      "runin": "Innovative Researcher:"
+    },
+    "pages": [
+      321
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.inspireCourage",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Inspire Courage",
+    "anchor": {
+      "runin": "Inspire Courage:"
+    },
+    "pages": [
+      321
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.inspireDread",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Inspire Dread",
+    "anchor": {
+      "runin": "Inspire Dread:"
+    },
+    "pages": [
+      321
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.inspireExceptionalPerformance",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Inspire Exceptional Performance",
+    "anchor": {
+      "runin": "Inspire Exceptional Performance:"
+    },
+    "pages": [
+      321
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.inspireHope",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Inspire Hope",
+    "anchor": {
+      "runin": "Inspire Hope:"
+    },
+    "pages": [
+      321
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.instillStrength",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Instill Strength",
+    "anchor": {
+      "runin": "Instill Strength:"
+    },
+    "pages": [
+      321
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.instinctiveDodge",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Instinctive Dodge",
+    "anchor": {
+      "runin": "Instinctive Dodge:"
+    },
+    "pages": [
+      321
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.invulnerable",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Invulnerable",
+    "anchor": {
+      "runin": "Invulnerable:"
+    },
+    "pages": [
+      321
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.ironLeadership",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Iron Leadership",
+    "anchor": {
+      "runin": "Iron Leadership:"
+    },
+    "pages": [
+      321
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.irresistibleVoice",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Irresistible Voice",
+    "anchor": {
+      "runin": "Irresistible Voice:"
+    },
+    "pages": [
+      321
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.jumping",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Jumping",
+    "anchor": {
+      "runin": "Jumping:"
+    },
+    "pages": [
+      321
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.keenEyes",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Keen Eyes",
+    "anchor": {
+      "runin": "Keen Eyes:"
+    },
+    "pages": [
+      321
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.keenInsectSenses",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Keen Insect Senses",
+    "anchor": {
+      "runin": "Keen Insect Senses:"
+    },
+    "pages": [
+      321
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.killingSpree",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Killing Spree",
+    "anchor": {
+      "runin": "Killing Spree:"
+    },
+    "pages": [
+      321
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.kinshipWithArthropodsAndFungi",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Kinship with Arthropods and Fungi",
+    "anchor": {
+      "runin": "Kinship with Arthropods and Fungi:"
+    },
+    "pages": [
+      321
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.kissOfLife",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Kiss of Life",
+    "anchor": {
+      "runin": "Kiss of Life:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.laughAtPain",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Laugh at Pain",
+    "anchor": {
+      "runin": "Laugh at Pain:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.layOnHands",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Lay on Hands",
+    "anchor": {
+      "runin": "Lay on Hands:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.legwork",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Legwork",
+    "anchor": {
+      "runin": "Legwork:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.lightlessVision",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Lightless Vision",
+    "anchor": {
+      "runin": "Lightless Vision:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.lionHeartedLeader",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Lion-Hearted Leader",
+    "anchor": {
+      "runin": "Lion-Hearted Leader:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.lizardBrain",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Lizard Brain",
+    "anchor": {
+      "runin": "Lizard Brain:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.loadbearing",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Loadbearing",
+    "anchor": {
+      "runin": "Loadbearing:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.longeval",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Longeval",
+    "anchor": {
+      "runin": "Longeval:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.lordshipOverTheUndead",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Lordship Over the Undead",
+    "anchor": {
+      "runin": "Lordship Over the Undead:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.loremastery",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Loremastery",
+    "anchor": {
+      "runin": "Loremastery:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.loreOfStarsAndSpheres",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Lore of Stars and Spheres",
+    "anchor": {
+      "runin": "Lore of Stars and Spheres:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.lowLightVision",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Low-Light Vision",
+    "anchor": {
+      "runin": "Low-Light Vision:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.lucky",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Lucky",
+    "anchor": {
+      "runin": "Lucky:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.magicHands",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Magic Hands",
+    "anchor": {
+      "runin": "Magic Hands:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.magicMirror",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Magic Mirror",
+    "anchor": {
+      "runin": "Magic Mirror:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.magicalProficiency",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Magical Proficiency",
+    "anchor": {
+      "runin": "Magical Proficiency:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.majestyOfTheDragon",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Majesty of the Dragon",
+    "anchor": {
+      "runin": "Majesty of the Dragon:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.malevolentReputation",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Malevolent Reputation",
+    "anchor": {
+      "runin": "Malevolent Reputation:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.mapper",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Mapper",
+    "anchor": {
+      "runin": "Mapper:"
+    },
+    "pages": [
+      322
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.martialProficiency",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Martial Proficiency",
+    "anchor": {
+      "runin": "Martial Proficiency:"
+    },
+    "pages": [
+      323
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.martialTalent",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Martial Talent",
+    "anchor": {
+      "runin": "Martial Talent:"
+    },
+    "pages": [
+      323
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.martyrdom",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Martyrdom",
+    "anchor": {
+      "runin": "Martyrdom:"
+    },
+    "pages": [
+      323
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.marvelousmachines",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "MarvelousMachines",
+    "anchor": {
+      "runin": "MarvelousMachines:"
+    },
+    "pages": [
+      323
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.masteryOfEnchantmentsAndIllusions",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Mastery of Enchantments and Illusions",
+    "anchor": {
+      "runin": "Mastery of Enchantments and Illusions:"
+    },
+    "pages": [
+      323
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.masteryofdominationanddeception",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "MasteryofDominationandDeception",
+    "anchor": {
+      "runin": "MasteryofDominationandDeception:"
+    },
+    "pages": [
+      323
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.meditativeFocus",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Meditative Focus",
+    "anchor": {
+      "runin": "Meditative Focus:"
+    },
+    "pages": [
+      323
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.mindfulness",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Mindfulness",
+    "anchor": {
+      "runin": "Mindfulness:"
+    },
+    "pages": [
+      323
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.militaryGenius",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Military Genius",
+    "anchor": {
+      "runin": "Military Genius:"
+    },
+    "pages": [
+      323
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.mitigateDamage",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Mitigate Damage",
+    "anchor": {
+      "runin": "Mitigate Damage:"
+    },
+    "pages": [
+      324
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.modernThought",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Modern Thought",
+    "anchor": {
+      "runin": "Modern Thought:"
+    },
+    "pages": [
+      324
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.mushroomManagement",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Mushroom Management",
+    "anchor": {
+      "runin": "Mushroom Management:"
+    },
+    "pages": [
+      324
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.mushroomOverlord",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Mushroom Overlord",
+    "anchor": {
+      "runin": "Mushroom Overlord:"
+    },
+    "pages": [
+      324
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.mysticalBloodline",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Mystical Bloodline",
+    "anchor": {
+      "runin": "Mystical Bloodline:"
+    },
+    "pages": [
+      324
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.multilingual",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Multilingual",
+    "anchor": {
+      "runin": "Multilingual:"
+    },
+    "pages": [
+      324
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.naturalStealth",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Natural Stealth",
+    "anchor": {
+      "runin": "Natural Stealth:"
+    },
+    "pages": [
+      324
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.necrosporing",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Necrosporing",
+    "anchor": {
+      "runin": "Necrosporing:"
+    },
+    "pages": [
+      324
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.nervousWatchfulness",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Nervous Watchfulness",
+    "anchor": {
+      "runin": "Nervous Watchfulness:"
+    },
+    "pages": [
+      324
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.noseForPotions",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Nose for Potions",
+    "anchor": {
+      "runin": "Nose for Potions:"
+    },
+    "pages": [
+      324
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.onenessOfLandAndLord",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Oneness of Land and Lord",
+    "anchor": {
+      "runin": "Oneness of Land and Lord:"
+    },
+    "pages": [
+      324
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.pathfinding",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Pathfinding",
+    "anchor": {
+      "runin": "Pathfinding:"
+    },
+    "pages": [
+      324
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.perceiveIntentions",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Perceive Intentions",
+    "anchor": {
+      "runin": "Perceive Intentions:"
+    },
+    "pages": [
+      324
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.perfectionOfBody",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Perfection of Body",
+    "anchor": {
+      "runin": "Perfection of Body:"
+    },
+    "pages": [
+      324
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.personalTalisman",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Personal Talisman",
+    "anchor": {
+      "runin": "Personal Talisman:"
+    },
+    "pages": [
+      324
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.placate",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Placate",
+    "anchor": {
+      "runin": "Placate:"
+    },
+    "pages": [
+      325
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.powerOfSacrifice",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Power of Sacrifice",
+    "anchor": {
+      "runin": "Power of Sacrifice:"
+    },
+    "pages": [
+      325
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.preciseShot",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Precise Shot",
+    "anchor": {
+      "runin": "Precise Shot:"
+    },
+    "pages": [
+      325
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.prestidigitation",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Prestidigitation",
+    "anchor": {
+      "runin": "Prestidigitation:"
+    },
+    "pages": [
+      325
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.probabilitytrance",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "ProbabilityTrance",
+    "anchor": {
+      "runin": "ProbabilityTrance:"
+    },
+    "pages": [
+      325
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.profaneEndurance",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Profane Endurance",
+    "anchor": {
+      "runin": "Profane Endurance:"
+    },
+    "pages": [
+      325
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.provokeThePassion",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Provoke the Passion",
+    "anchor": {
+      "runin": "Provoke the Passion:"
+    },
+    "pages": [
+      325
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.publicEducation",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Public Education",
+    "anchor": {
+      "runin": "Public Education:"
+    },
+    "pages": [
+      325
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.publicFlagellation",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Public Flagellation",
+    "anchor": {
+      "runin": "Public Flagellation:"
+    },
+    "pages": [
+      325
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.pugilism",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Pugilism",
+    "anchor": {
+      "runin": "Pugilism:"
+    },
+    "pages": [
+      325
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.purityOfBodyAndSoul",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Purity of Body and Soul",
+    "anchor": {
+      "runin": "Purity of Body and Soul:"
+    },
+    "pages": [
+      325
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.pyroclastics",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Pyroclastics",
+    "anchor": {
+      "runin": "Pyroclastics:"
+    },
+    "pages": [
+      325
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.quickening",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Quickening",
+    "anchor": {
+      "runin": "Quickening:"
+    },
+    "pages": [
+      325
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.rallyTheFaithful",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Rally the Faithful",
+    "anchor": {
+      "runin": "Rally the Faithful:"
+    },
+    "pages": [
+      325
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.ravishingBeauty",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Ravishing Beauty",
+    "anchor": {
+      "runin": "Ravishing Beauty:"
+    },
+    "pages": [
+      325
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.readLanguages",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Read Languages",
+    "anchor": {
+      "runin": "Read Languages:"
+    },
+    "pages": [
+      325
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.relentless",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Relentless",
+    "anchor": {
+      "runin": "Relentless:"
+    },
+    "pages": [
+      325
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.rhetoric",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Rhetoric",
+    "anchor": {
+      "runin": "Rhetoric:"
+    },
+    "pages": [
+      325
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.rightStuff",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Right Stuff",
+    "anchor": {
+      "runin": "Right Stuff:"
+    },
+    "pages": [
+      326
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.rouseToFury",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Rouse to Fury",
+    "anchor": {
+      "runin": "Rouse to Fury:"
+    },
+    "pages": [
+      326
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.rotlessRot",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Rotless Rot",
+    "anchor": {
+      "runin": "Rotless Rot:"
+    },
+    "pages": [
+      326
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.rumormongering",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Rumormongering",
+    "anchor": {
+      "runin": "Rumormongering:"
+    },
+    "pages": [
+      326
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.savageResilience",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Savage Resilience",
+    "anchor": {
+      "runin": "Savage Resilience:"
+    },
+    "pages": [
+      326
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.scalyHide",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Scaly Hide",
+    "anchor": {
+      "runin": "Scaly Hide:"
+    },
+    "pages": [
+      326
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.scientificMindset",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Scientific Mindset",
+    "anchor": {
+      "runin": "Scientific Mindset:"
+    },
+    "pages": [
+      326
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.scionOfKings",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Scion of Kings",
+    "anchor": {
+      "runin": "Scion of Kings:"
+    },
+    "pages": [
+      326
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.secondSight",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Second Sight",
+    "anchor": {
+      "runin": "Second Sight:"
+    },
+    "pages": [
+      326
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.secretKnowledge",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Secret Knowledge",
+    "anchor": {
+      "runin": "Secret Knowledge:"
+    },
+    "pages": [
+      326
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.secretion",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Secretion",
+    "anchor": {
+      "runin": "Secretion:"
+    },
+    "pages": [
+      326
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.secretsOfTheDarkArts",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Secrets of the Dark Arts",
+    "anchor": {
+      "runin": "Secrets of the Dark Arts:"
+    },
+    "pages": [
+      326
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.secretsOfLifeAndDeath",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Secrets of Life and Death",
+    "anchor": {
+      "runin": "Secrets of Life and Death:"
+    },
+    "pages": [
+      326
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.sensitivityToRockAndStone",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Sensitivity to Rock and Stone",
+    "anchor": {
+      "runin": "Sensitivity to Rock and Stone:"
+    },
+    "pages": [
+      326
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.shapechange",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Shapechange",
+    "anchor": {
+      "runin": "Shapechange:"
+    },
+    "pages": [
+      326
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.shapeFleshAndBone",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Shape Flesh and Bone",
+    "anchor": {
+      "runin": "Shape Flesh and Bone:"
+    },
+    "pages": [
+      326
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.sleepless",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Sleepless",
+    "anchor": {
+      "runin": "Sleepless:"
+    },
+    "pages": [
+      326
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.solidityOfRock",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Solidity of Rock",
+    "anchor": {
+      "runin": "Solidity of Rock:"
+    },
+    "pages": [
+      326
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.soulOfTheDragon",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Soul of the Dragon",
+    "anchor": {
+      "runin": "Soul of the Dragon:"
+    },
+    "pages": [
+      327
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.speakWithAnimals",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Speak with Animals",
+    "anchor": {
+      "runin": "Speak with Animals:"
+    },
+    "pages": [
+      327
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.speakWithArthropods",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Speak with Arthropods",
+    "anchor": {
+      "runin": "Speak with Arthropods:"
+    },
+    "pages": [
+      327
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.speedOfThought",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Speed of Thought",
+    "anchor": {
+      "runin": "Speed of Thought:"
+    },
+    "pages": [
+      327
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.spellStoring",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Spell Storing",
+    "anchor": {
+      "runin": "Spell Storing:"
+    },
+    "pages": [
+      327
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.spiritwalk",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Spiritwalk",
+    "anchor": {
+      "runin": "Spiritwalk:"
+    },
+    "pages": [
+      327
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.sporeCalibration",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Spore Calibration",
+    "anchor": {
+      "runin": "Spore Calibration:"
+    },
+    "pages": [
+      327
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.sporeFermentation",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Spore Fermentation",
+    "anchor": {
+      "runin": "Spore Fermentation:"
+    },
+    "pages": [
+      327
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.sporePerception",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Spore Perception",
+    "anchor": {
+      "runin": "Spore Perception:"
+    },
+    "pages": [
+      327
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.sporeSynchronization",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Spore Synchronization",
+    "anchor": {
+      "runin": "Spore Synchronization:"
+    },
+    "pages": [
+      327
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.stalwartSoul",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Stalwart Soul",
+    "anchor": {
+      "runin": "Stalwart Soul:"
+    },
+    "pages": [
+      327
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.steadyTradeRoute",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Steady Trade Route",
+    "anchor": {
+      "runin": "Steady Trade Route:"
+    },
+    "pages": [
+      327
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.strengthOfSpirit",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Strength of Spirit",
+    "anchor": {
+      "runin": "Strength of Spirit:"
+    },
+    "pages": [
+      327
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.stewardOfTheWild",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Steward of the Wild",
+    "anchor": {
+      "runin": "Steward of the Wild:"
+    },
+    "pages": [
+      327
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.stigmata",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Stigmata",
+    "anchor": {
+      "runin": "Stigmata:"
+    },
+    "pages": [
+      327
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.studentOfWar",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Student of War",
+    "anchor": {
+      "runin": "Student of War:"
+    },
+    "pages": [
+      327
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.subtlebeguilement",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "SubtleBeguilement",
+    "anchor": {
+      "runin": "SubtleBeguilement:"
+    },
+    "pages": [
+      328
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.summoninfernalpowers",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "SummonInfernalPowers",
+    "anchor": {
+      "runin": "SummonInfernalPowers:"
+    },
+    "pages": [
+      328
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.supernaturalResilience",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Supernatural Resilience",
+    "anchor": {
+      "runin": "Supernatural Resilience:"
+    },
+    "pages": [
+      328
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.survivabilityOfCockroaches",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Survivability of Cockroaches",
+    "anchor": {
+      "runin": "Survivability of Cockroaches:"
+    },
+    "pages": [
+      328
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.swimming",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Swimming",
+    "anchor": {
+      "runin": "Swimming:"
+    },
+    "pages": [
+      328
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.swornFoe",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Sworn Foe",
+    "anchor": {
+      "runin": "Sworn Foe:"
+    },
+    "pages": [
+      328
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.taintedBlood",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Tainted Blood",
+    "anchor": {
+      "runin": "Tainted Blood:"
+    },
+    "pages": [
+      328
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.taunt",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Taunt",
+    "anchor": {
+      "runin": "Taunt:"
+    },
+    "pages": [
+      328
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.technologicaljargon",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "TechnologicalJargon",
+    "anchor": {
+      "runin": "TechnologicalJargon:"
+    },
+    "pages": [
+      328
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.thieveryproficiency",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "ThieveryProficiency",
+    "anchor": {
+      "runin": "ThieveryProficiency:"
+    },
+    "pages": [
+      328
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.tormentTheMind",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Torment the Mind",
+    "anchor": {
+      "runin": "Torment the Mind:"
+    },
+    "pages": [
+      328
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.totemanimal",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "TotemAnimal",
+    "anchor": {
+      "runin": "TotemAnimal:"
+    },
+    "pages": [
+      328
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.totemBenefit",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Totem Benefit",
+    "anchor": {
+      "runin": "Totem Benefit:"
+    },
+    "pages": [
+      328
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.traditionalMedicine",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Traditional Medicine",
+    "anchor": {
+      "runin": "Traditional Medicine:"
+    },
+    "pages": [
+      328
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.treachery",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Treachery",
+    "anchor": {
+      "runin": "Treachery:"
+    },
+    "pages": [
+      328
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.tribulatingAdversary",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Tribulating Adversary",
+    "anchor": {
+      "runin": "Tribulating Adversary:"
+    },
+    "pages": [
+      330
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.unconquerableSoul",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Unconquerable Soul",
+    "anchor": {
+      "runin": "Unconquerable Soul:"
+    },
+    "pages": [
+      330
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.undeadslaying",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "UndeadSlaying",
+    "anchor": {
+      "runin": "UndeadSlaying:"
+    },
+    "pages": [
+      330
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.unholyFanaticism",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Unholy Fanaticism",
+    "anchor": {
+      "runin": "Unholy Fanaticism:"
+    },
+    "pages": [
+      330
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.unliving",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Unliving",
+    "anchor": {
+      "runin": "Unliving:"
+    },
+    "pages": [
+      330
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.unveilEsotericMeaning",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Unveil Esoteric Meaning",
+    "anchor": {
+      "runin": "Unveil Esoteric Meaning:"
+    },
+    "pages": [
+      330
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.utterDomination",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Utter Domination",
+    "anchor": {
+      "runin": "Utter Domination:"
+    },
+    "pages": [
+      330
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.villageWisdom",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Village Wisdom",
+    "anchor": {
+      "runin": "Village Wisdom:"
+    },
+    "pages": [
+      330
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.weaponsystemsexpert",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "WeaponSystemsExpert",
+    "anchor": {
+      "runin": "WeaponSystemsExpert:"
+    },
+    "pages": [
+      330
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.whiteLuckPresence",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "White Luck Presence",
+    "anchor": {
+      "runin": "White Luck Presence:"
+    },
+    "pages": [
+      330
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.wildernessEvasion",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Wilderness Evasion",
+    "anchor": {
+      "runin": "Wilderness Evasion:"
+    },
+    "pages": [
+      330
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.wisdomOfTheAges",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Wisdom of the Ages",
+    "anchor": {
+      "runin": "Wisdom of the Ages:"
+    },
+    "pages": [
+      330
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.wholenessOfBody",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Wholeness of Body",
+    "anchor": {
+      "runin": "Wholeness of Body:"
+    },
+    "pages": [
+      330
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.widespreadRenown",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Widespread Renown",
+    "anchor": {
+      "runin": "Widespread Renown:"
+    },
+    "pages": [
+      330
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  },
+  {
+    "id": "def.power.wordsOfCommandAndObedience",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Words of Command and Obedience",
+    "anchor": {
+      "runin": "Words of Command and Obedience:"
+    },
+    "pages": [
+      330
+    ],
+    "meta": {
+      "category": "classPower"
+    }
+  }
+]
