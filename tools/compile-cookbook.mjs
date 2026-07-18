@@ -601,7 +601,7 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
 
 /** Content-type cookbook filename for a definition kind (named by WHAT it
  * extracts, not the source book — a content type spans every book). */
-const CONTENT_OF = { "kind.proficiency": "proficiencies", "kind.power": "powers", "kind.skill": "skills" };
+const CONTENT_OF = { "kind.proficiency": "proficiencies", "kind.power": "powers", "kind.skill": "skills", "kind.combatProficiency": "proficiencies" };
 
 /** Definition id slug — must match the seeder so alias targets resolve. */
 const slugOf = (s) =>
@@ -639,6 +639,33 @@ function defColumns(pd) {
   return starts.length > 1 ? starts : cols;
 }
 
+/**
+ * The vertical chapter tab that runs down a page margin ("C H A R A C T E R S"),
+ * set as a stack of tiny runs. They fall inside a column box and otherwise land
+ * in the middle of extracted prose. They are the same size as superscript
+ * ordinals, so size alone cannot separate them — but a tab is a STACK of small
+ * runs sharing an x over a long vertical span, whereas ordinals scatter.
+ * Returned as a Set so it can ship as `fixes.drop` ordinals.
+ */
+function marginTabs(pd) {
+  const small = pd.items.filter((it) => it.h < 7);
+  const byX = new Map();
+  for (const it of small) {
+    // Rotated tab glyphs share an x to a fraction of a point; ordinals do not.
+    const k = Math.round(it.x);
+    if (!byX.has(k)) byX.set(k, []);
+    byX.get(k).push(it);
+  }
+  const out = new Set();
+  for (const arr of byX.values()) {
+    if (arr.length < 3) continue; // two stray ordinals can share an x; three do not
+    const ys = arr.map((i) => i.y);
+    if (Math.max(...ys) - Math.min(...ys) < 20) continue; // a real stack runs down the page
+    for (const it of arr) out.add(it);
+  }
+  return out;
+}
+
 /** Raw reading-order join of a body region (compile-time inspection only). */
 const joinBody = (items) =>
   [...items].sort((a, b) => a.y - b.y || a.x - b.x).map((it) => it.str).join("").replace(/\s+/g, " ").trim();
@@ -658,6 +685,7 @@ async function compileDefinition(doc, entry, kindRow) {
   const page = entry.pages[0];
   const pd = await pageItems(doc, page);
   const cols = defColumns(pd);
+  const tabs = marginTabs(pd); // dropped from every paragraph (see marginTabs)
   const mode = kindRow.fields.name.locate;
   const fields = {};
   let bodyText = "";
@@ -708,23 +736,65 @@ async function compileDefinition(doc, entry, kindRow) {
     };
     const body = pd.items.filter((it) => it.h < DEF_BODY_MAX_H && it.x >= box.x0 && it.x <= box.x1 && it.y > endY + 2 && it.y < stopY);
     bodyText = joinBody(body);
-    const paras = paragraphBoxes(toLines(body), box.x0, box.x1).map((p) => withFixes(p, pd));
+    const paras = paragraphBoxes(toLines(body), box.x0, box.x1).map((p) => withFixes(p, pd, tabs));
     // Column-flowed continuation (see the run-in branch): a proficiency that
     // reaches the bottom of its column resumes at the top of the next.
     const cont = columnFlow(pd, cols, anchor.col, later.length > 0, (it) => it.h >= HEADING_MIN_H);
     if (cont.length) {
       const cx0 = cols[anchor.col + 1] - 5;
       const cx1 = cols[anchor.col + 2] ? cols[anchor.col + 2] - 6 : pd.width;
-      paras.push(...paragraphBoxes(toLines(cont), cx0, cx1).map((p) => withFixes(p, pd)));
+      paras.push(...paragraphBoxes(toLines(cont), cx0, cx1).map((p) => withFixes(p, pd, tabs)));
       bodyText = `${bodyText} ${joinBody(cont)}`.trim();
     } else if (!later.length && anchor.col + 1 >= cols.length) {
       const pf = await pageFlow(doc, page, (it) => it.h >= HEADING_MIN_H);
       if (pf?.items.length) {
         const px0 = pf.cols[0] - 5;
         const px1 = pf.cols[1] ? pf.cols[1] - 6 : pf.pd.width;
-        paras.push(...paragraphBoxes(toLines(pf.items), px0, px1).map((p) => withFixes({ ...p, page: pf.page }, pf.pd)));
+        paras.push(...paragraphBoxes(toLines(pf.items), px0, px1).map((p) => withFixes({ ...p, page: pf.page }, pf.pd, marginTabs(pf.pd))));
         bodyText = `${bodyText} ${joinBody(pf.items)}`.trim();
       }
+    }
+    fields.description = { op: "text", page, paras };
+  } else if (mode === "subheading") {
+    // A bold sub-heading sits ALONE on its line at body size with no colon
+    // (RR Combat: "Armor", "Weapons", "Fighting Styles"). Anchor on the line
+    // that holds exactly that one run; its alias then identifies its siblings,
+    // which is where the block ends.
+    const want = assists.anchor ?? entry.anchor?.subheading ?? entry.name;
+    const lines = new Map();
+    for (const it of pd.items.filter((i) => i.h < DEF_BODY_MAX_H)) {
+      const k = `${colOf(it.x, cols)}:${Math.round(it.y / 3)}`;
+      if (!lines.has(k)) lines.set(k, []);
+      lines.get(k).push(it);
+    }
+    const solo = [...lines.values()].filter((a) => a.length === 1).map((a) => a[0]);
+    const anchor = solo.find((it) => it.str.trim() === want) ?? solo.find((it) => it.str.trim().startsWith(want));
+    if (!anchor) throw new Error(`subheading anchor "${want}" not found on p.${page}`);
+    const col = colOf(anchor.x, cols);
+    const box = { x0: cols[col] - 5, x1: cols[col + 1] ? cols[col + 1] - 6 : pd.width };
+    const stop = solo
+      .filter((it) => it !== anchor && it.alias === anchor.alias && colOf(it.x, cols) === col && it.y > anchor.y + 2)
+      .sort((a, b) => a.y - b.y)[0];
+    const nextHead = pd.items
+      .filter((it) => it.h >= HEADING_MIN_H && colOf(it.x, cols) === col && it.y > anchor.y + 2)
+      .sort((a, b) => a.y - b.y)[0];
+    const yMax = Math.min(stop?.y ?? pd.height, nextHead?.y ?? pd.height) - 2;
+    fields.name = {
+      op: "expect", page,
+      box: { x0: anchor.x - 2, x1: anchor.x + (anchor.w ?? 60) + 2, y0: anchor.y - 5, y1: anchor.y + 4 },
+      text: want,
+    };
+    const body = pd.items.filter(
+      (it) => it !== anchor && it.h < DEF_BODY_MAX_H && colOf(it.x, cols) === col && it.y > anchor.y + 2 && it.y < yMax,
+    );
+    bodyText = joinBody(body);
+    const paras = paragraphBoxes(toLines(body), box.x0, box.x1).map((p) => withFixes(p, pd, tabs));
+    const cont = columnFlow(pd, cols, col, !!stop, (it) => it.alias === anchor.alias);
+    if (cont.length) {
+      const cx0 = cols[col + 1] - 5;
+      const cx1 = cols[col + 2] ? cols[col + 2] - 6 : pd.width;
+      paras.push(...paragraphBoxes(toLines(cont), cx0, cx1).map((p) => withFixes(p, pd, tabs)));
+      bodyText = `${bodyText} ${joinBody(cont)}`.trim();
     }
     fields.description = { op: "text", page, paras };
   } else {
@@ -785,7 +855,7 @@ async function compileDefinition(doc, entry, kindRow) {
     bodyText = joinBody(body);
     // Drop the heading by run ORDINAL rather than by text: that works whether
     // the PDF emitted it as one run or split it across several.
-    const paras = paragraphBoxes(toLines(body), box.x0, box.x1).map((p, i) => withFixes(p, pd, i === 0 ? headRuns : undefined));
+    const paras = paragraphBoxes(toLines(body), box.x0, box.x1).map((p, i) => withFixes(p, pd, i === 0 ? new Set([...headRuns, ...tabs]) : tabs));
     // Column-flowed continuation: an entry reaching the column bottom resumes
     // at the top of the next column, which is where ~1 in 5 entries lost their
     // second half.
@@ -794,7 +864,7 @@ async function compileDefinition(doc, entry, kindRow) {
     if (cont.length) {
       const cx0 = cols[col + 1] - 5;
       const cx1 = cols[col + 2] ? cols[col + 2] - 6 : pd.width;
-      paras.push(...paragraphBoxes(toLines(cont), cx0, cx1).map((p) => withFixes(p, pd)));
+      paras.push(...paragraphBoxes(toLines(cont), cx0, cx1).map((p) => withFixes(p, pd, tabs)));
       bodyText = `${bodyText} ${joinBody(cont)}`.trim();
     } else if (!stop && col + 1 >= cols.length) {
       // Bottom of the LAST column: the block continues overleaf.
@@ -802,7 +872,7 @@ async function compileDefinition(doc, entry, kindRow) {
       if (pf?.items.length) {
         const px0 = pf.cols[0] - 5;
         const px1 = pf.cols[1] ? pf.cols[1] - 6 : pf.pd.width;
-        paras.push(...paragraphBoxes(toLines(pf.items), px0, px1).map((p) => withFixes({ ...p, page: pf.page }, pf.pd)));
+        paras.push(...paragraphBoxes(toLines(pf.items), px0, px1).map((p) => withFixes({ ...p, page: pf.page }, pf.pd, marginTabs(pf.pd))));
         bodyText = `${bodyText} ${joinBody(pf.items)}`.trim();
       }
     }

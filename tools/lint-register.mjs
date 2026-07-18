@@ -98,8 +98,8 @@ for (const dirent of fs.existsSync(REGISTER) ? fs.readdirSync(REGISTER, { withFi
       if (!Array.isArray(e.pages) || !e.pages.every((p) => Number.isInteger(p) && p > 0)) err(`${id}: pages must be positive ints`);
       if (!e.name) err(`${id}: name required`);
       const anchorKeys = Object.keys(e.anchor ?? {});
-      if (anchorKeys.length !== 1 || !["display", "runin", "label"].includes(anchorKeys[0])) {
-        err(`${id}: anchor must have exactly one of display|runin|label`);
+      if (anchorKeys.length !== 1 || !["display", "runin", "label", "subheading"].includes(anchorKeys[0])) {
+        err(`${id}: anchor must have exactly one of display|runin|label|subheading`);
       }
       if (e.aliases && !Array.isArray(e.aliases)) err(`${id}: aliases must be an array`);
       capStrings(e, id);

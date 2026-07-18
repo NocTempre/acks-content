@@ -1,0 +1,38 @@
+[
+  {
+    "id": "def.prof.weaponProficiency",
+    "kind": "kind.combatProficiency",
+    "book": "rr",
+    "name": "Weapons",
+    "anchor": { "subheading": "Weapons" },
+    "pages": [17],
+    "meta": { "category": "weaponProficiency" }
+  },
+  {
+    "id": "def.prof.armorProficiency",
+    "kind": "kind.combatProficiency",
+    "book": "rr",
+    "name": "Armor",
+    "anchor": { "subheading": "Armor" },
+    "pages": [17],
+    "meta": { "category": "armorProficiency" }
+  },
+  {
+    "id": "def.prof.fightingStyles",
+    "kind": "kind.combatProficiency",
+    "book": "rr",
+    "name": "Fighting Styles",
+    "anchor": { "subheading": "Fighting Styles" },
+    "pages": [17],
+    "meta": { "category": "fightingStyle" }
+  },
+  {
+    "id": "def.prof.nonProficientUse",
+    "kind": "kind.combatProficiency",
+    "book": "rr",
+    "name": "Non-Proficient Use of Weapons and Armor",
+    "anchor": { "subheading": "Non-Proficient Use of Weapons and Armor" },
+    "pages": [17],
+    "meta": { "category": "proficiency" }
+  }
+]

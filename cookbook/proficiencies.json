@@ -2,6 +2,349 @@
   "schema": "acks-cookbook/1",
   "content": "proficiencies",
   "entries": {
+    "def.prof.weaponProficiency": {
+      "id": "def.prof.weaponProficiency",
+      "kind": "kind.combatProficiency",
+      "name": "Weapons",
+      "book": "rr",
+      "cite": "RR p.17",
+      "pages": [
+        17
+      ],
+      "meta": {
+        "category": "weaponProficiency"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 17,
+          "box": {
+            "x0": 70,
+            "x1": 122.4371,
+            "y0": 319,
+            "y1": 328
+          },
+          "text": "Weapons"
+        },
+        "description": {
+          "op": "text",
+          "page": 17,
+          "paras": [
+            {
+              "box": {
+                "x0": 65,
+                "x1": 324,
+                "y0": 333,
+                "y1": 359
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 65,
+                "x1": 324,
+                "y0": 373,
+                "y1": 459
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 65,
+                "x1": 324,
+                "y0": 473,
+                "y1": 539
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 65,
+                "x1": 324,
+                "y0": 553,
+                "y1": 569
+              },
+              "fixes": {
+                "joinSpace": [
+                  0
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "def.prof.armorProficiency": {
+      "id": "def.prof.armorProficiency",
+      "kind": "kind.combatProficiency",
+      "name": "Armor",
+      "book": "rr",
+      "cite": "RR p.17",
+      "pages": [
+        17
+      ],
+      "meta": {
+        "category": "armorProficiency"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 17,
+          "box": {
+            "x0": 70,
+            "x1": 110.4851,
+            "y0": 219,
+            "y1": 228
+          },
+          "text": "Armor"
+        },
+        "description": {
+          "op": "text",
+          "page": 17,
+          "paras": [
+            {
+              "box": {
+                "x0": 65,
+                "x1": 324,
+                "y0": 233,
+                "y1": 309
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "def.prof.fightingStyles": {
+      "id": "def.prof.fightingStyles",
+      "kind": "kind.combatProficiency",
+      "name": "Fighting Styles",
+      "book": "rr",
+      "cite": "RR p.17",
+      "pages": [
+        17
+      ],
+      "meta": {
+        "category": "fightingStyle"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 17,
+          "box": {
+            "x0": 70,
+            "x1": 160.3541,
+            "y0": 579,
+            "y1": 588
+          },
+          "text": "Fighting Styles"
+        },
+        "description": {
+          "op": "text",
+          "page": 17,
+          "paras": [
+            {
+              "box": {
+                "x0": 65,
+                "x1": 324,
+                "y0": 593,
+                "y1": 599
+              }
+            },
+            {
+              "box": {
+                "x0": 65,
+                "x1": 324,
+                "y0": 613,
+                "y1": 729
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16,
+                  17,
+                  18,
+                  19,
+                  20
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 325,
+                "x1": 612,
+                "y0": 123.29729999999995,
+                "y1": 160.68329999999992
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "drop": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 325,
+                "x1": 612,
+                "y0": 193,
+                "y1": 299
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "def.prof.nonProficientUse": {
+      "id": "def.prof.nonProficientUse",
+      "kind": "kind.combatProficiency",
+      "name": "Non-Proficient Use of Weapons and Armor",
+      "book": "rr",
+      "cite": "RR p.17",
+      "pages": [
+        17
+      ],
+      "meta": {
+        "category": "proficiency"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 17,
+          "box": {
+            "x0": 326.5,
+            "x1": 567.7832000000001,
+            "y0": 309,
+            "y1": 318
+          },
+          "text": "Non-Proficient Use of Weapons and Armor"
+        },
+        "description": {
+          "op": "text",
+          "page": 17,
+          "paras": [
+            {
+              "box": {
+                "x0": 325,
+                "x1": 612,
+                "y0": 323,
+                "y1": 439
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  4,
+                  5,
+                  6,
+                  8,
+                  10,
+                  11,
+                  12,
+                  14,
+                  15,
+                  16,
+                  17,
+                  18,
+                  19,
+                  20
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
     "def.prof.adventuring": {
       "id": "def.prof.adventuring",
       "kind": "kind.proficiency",
@@ -313,6 +656,14 @@
                 ],
                 "mergeHyphen": [
                   29
+                ],
+                "drop": [
+                  16,
+                  18,
+                  20,
+                  21,
+                  23,
+                  24
                 ]
               }
             },
@@ -1098,6 +1449,14 @@
                   5,
                   6,
                   7
+                ],
+                "drop": [
+                  1,
+                  3,
+                  5,
+                  6,
+                  7,
+                  8
                 ]
               }
             }
@@ -2248,6 +2607,14 @@
                   17,
                   18,
                   19
+                ],
+                "drop": [
+                  5,
+                  7,
+                  9,
+                  10,
+                  11,
+                  13
                 ]
               }
             },
@@ -3177,6 +3544,13 @@
                   5,
                   6,
                   8
+                ],
+                "drop": [
+                  0,
+                  2,
+                  3,
+                  4,
+                  6
                 ]
               }
             },
@@ -4037,6 +4411,11 @@
                 "x1": 612,
                 "y0": 216.77750000000003,
                 "y1": 222.77750000000003
+              },
+              "fixes": {
+                "drop": [
+                  0
+                ]
               }
             },
             {
@@ -4051,6 +4430,12 @@
                   0,
                   1,
                   2
+                ],
+                "drop": [
+                  0,
+                  1,
+                  2,
+                  3
                 ]
               }
             }
@@ -5129,6 +5514,14 @@
                   24,
                   25,
                   26
+                ],
+                "drop": [
+                  1,
+                  2,
+                  4,
+                  5,
+                  7,
+                  8
                 ]
               }
             }
@@ -5941,6 +6334,14 @@
                   5,
                   6,
                   8
+                ],
+                "drop": [
+                  1,
+                  3,
+                  5,
+                  6,
+                  7,
+                  9
                 ]
               }
             },
@@ -6220,7 +6621,12 @@
                 "y0": 216.77750000000003,
                 "y1": 222.77750000000003
               },
-              "page": 120
+              "page": 120,
+              "fixes": {
+                "drop": [
+                  0
+                ]
+              }
             },
             {
               "box": {
@@ -6235,6 +6641,12 @@
                   0,
                   1,
                   2
+                ],
+                "drop": [
+                  0,
+                  1,
+                  2,
+                  3
                 ]
               }
             },
@@ -6245,7 +6657,12 @@
                 "y0": 246.90949999999998,
                 "y1": 252.90949999999998
               },
-              "page": 120
+              "page": 120,
+              "fixes": {
+                "drop": [
+                  0
+                ]
+              }
             }
           ]
         }
@@ -6969,6 +7386,13 @@
                   4,
                   5,
                   6
+                ],
+                "drop": [
+                  1,
+                  3,
+                  5,
+                  6,
+                  7
                 ]
               }
             },
@@ -6978,6 +7402,11 @@
                 "x1": 612,
                 "y0": 246.90949999999998,
                 "y1": 252.90949999999998
+              },
+              "fixes": {
+                "drop": [
+                  0
+                ]
               }
             }
           ]
@@ -7668,6 +8097,14 @@
                   6,
                   7,
                   9
+                ],
+                "drop": [
+                  0,
+                  2,
+                  6,
+                  7,
+                  8,
+                  10
                 ]
               }
             }
