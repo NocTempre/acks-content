@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.4.0
+
+- **Proficiencies, powers and skills extract from your books.** Three new
+  cookbooks — `proficiencies`, `powers`, `skills` — covering the Revised
+  Rulebook proficiency list, thief skills, the combat proficiency rules, and
+  the whole Judges Journal custom power index. 471 definitions compile; a seat
+  with the books imports 407 ability items (the rest are "see X" cross
+  references, which redirect to their target instead of minting a duplicate).
+  Cookbooks are named for *what* they extract, not which book prints it, so a
+  power introduced in a supplement lands in the same file.
+- **Mechanics are shared, prose stays gated.** An imported ability carries its
+  structured effects in world data — usable and visible to everyone at the
+  table — while the literal rules text remains a lazy `@PdfText` descriptor
+  that only renders for a seat with the book loaded. Effects are classified at
+  extraction time against a shipped vocabulary; nothing about a given ability's
+  mechanics is baked into the module.
+- **Abilities are shared objects, not copies.** A monster or class that names a
+  proficiency now binds the one shared ability rather than generating its own,
+  so the same proficiency is one item no matter how many stat blocks cite it.
+- **Retired content is ingested and flagged, never dropped.** 173 conversion
+  mappings from the ACKS II compatibility guidance are applied automatically:
+  renamed content resolves silently to its current name; removed content
+  imports with a caution and names its successor; content that predates ACKS II
+  imports with an informational note. Items and magic are deliberately left
+  unresolved for now.
+- Needs `acks-abilities` (and its `acks-lib`) to display the imported
+  mechanics; without them the items still import, just without the sheet.
+- Extraction fixes behind the above: definitions now follow their text across
+  column and page breaks, headings split by the PDF are re-joined per column,
+  the vertical chapter tabs no longer leak into prose, and superscripts stay on
+  their own line.
+
 ## 0.3.7
 
 - **Type-inherent defenses (ACKS type rules).** The MM states type-wide
