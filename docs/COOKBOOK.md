@@ -86,6 +86,16 @@ mechanically; every judgment already happened at compile time.
 | `attacks` | `attacksBox`, `damageBox`, `glyphTable`, `colors?`, `colorTable?` | attack **modes** | parse Attacks + Damage live; both split on top-level `" or "` into aligned MODES (alternatives like "1 weapon OR 2 claws + bite"); within a mode, damage segments zip 1:1 with expanded attack names (stemmed to natural-weapon keys). Per segment: glyph → damage type via `glyphTable`; quality from the shipped per-segment **color annotation** (`colors[i]` over global segment order, e.g. `"#ff2e17"`) mapped through `colorTable`. Output: `{ text, throw, alternatives, modes:[{ count, throw, segments:[{name,naturalWeapon,damage,damageType,quality}] }] }`. |
 | `art` | `select: {minW,minH,maxW,maxRatio}`, `name?` | image pointer | pick the page's illustration by the shipped criteria (or exact XObject `name`); the binding decides upload/usage. The image itself is seat-extracted. |
 
+**Defenses are materialized, never baked.** Immunities / resistances /
+susceptibilities are not shipped per creature. The executor scans each
+monster's OWN extracted description prose (from the seat's book) against a
+shipped vocabulary — the damage-type keys plus the `defenseEffect` register —
+and emits `fields.defenses`. The cookbook embeds only the enum vocabulary and
+the fixed verb patterns; *which* defenses apply comes from the seat's copy, and
+a bookless seat gets none (the GM who owns the book imports them into world
+data). This keeps the rule: point at where the keyword lives, don't reproduce
+which apply.
+
 **Observations over runtime derivation.** When the compiler can observe a
 presentation attribute (ink color, emphasis, position), the cookbook ships the
 *observation* — "this glyph prints red" — never machinery for the runtime to

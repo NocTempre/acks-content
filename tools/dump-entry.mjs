@@ -88,6 +88,7 @@ for (const id of ids) {
       for (const s of m.segments) console.log(`    ${JSON.stringify(s)}`);
     });
   }
+  console.log(`defenses: ${JSON.stringify(f.defenses ?? null)}`);
   console.log(`spoils: ${JSON.stringify(f.spoils ?? null)}`);
   console.log(`art: ${JSON.stringify(f.art ?? null)}`);
   console.log(`description (${(f.description ?? []).length} paras):`);

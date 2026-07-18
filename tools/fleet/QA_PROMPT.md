@@ -20,6 +20,16 @@ finding the per-page peculiarities structure checks can't see.
 - Deeper probes: a small node script importing `scripts/extract.mjs`
   (`openBook`, `pageItems`) to inspect a page's raw runs (x/y/str).
 
+## Defenses (immunities / resistances / susceptibilities)
+These are NOT baked per creature. The executor scans each monster's OWN prose
+(from the seat's book) against a shipped vocabulary — the damage-type keys plus
+`register/_refs/defenseEffect.json`. Your only defense job: when a page states
+a defense using an effect WORD not in that vocabulary, propose it as a
+`registerTokens` entry `{ "registry": "defenseEffect", "token": "<word>" }`.
+NEVER author which immunities a specific creature has — that materializes from
+the seat's book. If a defense is phrased so unusually the generic verbs miss it,
+report it as a `note` (the GM sees the prose and ticks the box), don't bake it.
+
 ## Defect classes to hunt (per entry)
 1. **Prose jumbles** — run-on words (missing spaces), hyphen artifacts,
    truncated descriptions (entry continues past its page), stat/table text

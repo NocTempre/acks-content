@@ -151,41 +151,6 @@ function encSide(value) {
   return { wandering: wandering ?? { noun: "", number: "" }, lair: lair ?? { noun: "", number: "" } };
 }
 
-/** Scan description paragraphs for the MM's formulaic defense sentences. */
-function scanDefenses(paras) {
-  const text = paras.map((p) => p.text).join(" ");
-  const bucket = () => ({ damage: [], effects: [], mundane: false, extraordinary: false });
-  const out = { immunities: bucket(), resistances: bucket(), susceptibilities: bucket() };
-  const fill = (b, clause) => {
-    for (const token of clause.split(/,|\band\b/)) {
-      const t = token.trim().toLowerCase();
-      if (!t) continue;
-      const dmg = Object.keys(DAMAGE_WORDS).find((w) => t.includes(w));
-      if (dmg && /damage|weapon/.test(t + " damage")) {
-        if (!b.damage.includes(DAMAGE_WORDS[dmg])) b.damage.push(DAMAGE_WORDS[dmg]);
-      } else if (/mundane|ordinary|non-?magical/.test(t)) {
-        b.mundane = true;
-      } else if (/extraordinary|magical weapons/.test(t)) {
-        b.extraordinary = true;
-      } else if (/effect|enchantment|charm|sleep|paralysis|petrification|disease|gaze/.test(t)) {
-        const eff = t.replace(/\beffects?\b/g, "").trim();
-        if (eff && !b.effects.includes(eff)) b.effects.push(eff);
-      }
-    }
-  };
-  for (const m of text.matchAll(/immune to ([^.;]+)/gi)) fill(out.immunities, m[1]);
-  for (const m of text.matchAll(/resistant to ([^.;]+)/gi)) fill(out.resistances, m[1]);
-  for (const m of text.matchAll(/(?:susceptible|vulnerable) to ([^.;]+)/gi)) fill(out.susceptibilities, m[1]);
-  if (/only be (?:harmed|hit|struck) by (?:extraordinary|magic)/i.test(text)) out.immunities.mundane = true;
-  const any = (b) => b.damage.length || b.effects.length || b.mundane || b.extraordinary;
-  const pack = (b) => (any(b) ? { damage: b.damage, effects: b.effects.join(", "), mundane: b.mundane, extraordinary: b.extraordinary } : undefined);
-  const res = {};
-  if (pack(out.immunities)) res.immunities = pack(out.immunities);
-  if (pack(out.resistances)) res.resistances = pack(out.resistances);
-  if (pack(out.susceptibilities)) res.susceptibilities = pack(out.susceptibilities);
-  return Object.keys(res).length ? res : null;
-}
-
 /**
  * Map executor output onto the Full Monster Sheet's extras schema
  * (Classification / Rating & Saves / Vision / Movement / Ecology / Defenses).
@@ -333,10 +298,20 @@ export function buildExtras(node) {
   }
   if (Object.keys(secondary).length) extras.secondary = secondary;
 
-  /* --- defenses & spellcasting (formulaic prose) --- */
+  /* --- defenses (materialized by the executor from this seat's prose) --- */
+  if (node.fields.defenses) {
+    const packSide = (b) =>
+      b ? { damage: b.damage ?? [], effects: (b.effects ?? []).join(", "), mundane: !!b.mundane, extraordinary: !!b.extraordinary } : undefined;
+    const def = {};
+    for (const side of ["immunities", "resistances", "susceptibilities"]) {
+      const p = packSide(node.fields.defenses[side]);
+      if (p) def[side] = p;
+    }
+    if (Object.keys(def).length) extras.defenses = def;
+  }
+
+  /* --- spellcasting (formulaic prose) --- */
   const paras = node.fields.description ?? [];
-  const defenses = scanDefenses(paras);
-  if (defenses) extras.defenses = defenses;
   const castM = /casts? spells(?: and uses magic items)? as (?:an? )?(\d+)(?:st|nd|rd|th)?[- ]level (\w+)/i.exec(
     paras.map((p) => p.text).join(" "),
   );
@@ -370,9 +345,12 @@ export function bindMonster(node) {
     system.saves.wand = { value: row.implements };
   }
 
+  // "N/A" morale (mindless undead) is not 0 (=always flees): leave it unset and
+  // flag it, rather than writing a misleading number.
+  const moraleNA = s.morale === "N/A";
   system.details = {
-    ...(s.morale != null ? { morale: s.morale } : {}),
-    ...(s.xp != null ? { xp: s.xp } : {}),
+    ...(typeof s.morale === "number" ? { morale: s.morale } : {}),
+    ...(s.xp != null && s.xp !== "N/A" ? { xp: s.xp } : {}),
     ...(s.alignment ? { alignment: capitalize(s.alignment.key ?? s.alignment.text ?? "") } : {}),
     ...(s.treasureType ? { treasure: { type: /^none/i.test(s.treasureType) ? "None" : s.treasureType } } : {}),
   };
@@ -440,7 +418,7 @@ export function bindMonster(node) {
     });
   }
 
-  return { system, items };
+  return { system, items, flags: moraleNA ? { [MODULE_ID]: { moraleNA: true } } : {} };
 }
 
 /* -------------------------------------------- */
@@ -462,7 +440,7 @@ async function importOne(bookId, id, folderId) {
     ui.notifications.warn(`acks-content | ${found.entry.name}: page did not match the cookbook (different printing?) — skipped.`);
     return null;
   }
-  const { system, items } = bindMonster(node);
+  const { system, items, flags } = bindMonster(node);
 
   // Prose stays lazy: the actor carries only tags; description reproduces per
   // seat. Cache this GM's extraction in session memory for instant reveal.
@@ -472,7 +450,7 @@ async function importOne(bookId, id, folderId) {
   const fmsActive = game.modules.get("acks-monsters")?.active;
   if (!fmsActive) system.details = { ...(system.details ?? {}), biography: tag(null) };
 
-  const actor = await Actor.create({ name: found.entry.name, type: "monster", folder: folderId, system });
+  const actor = await Actor.create({ name: found.entry.name, type: "monster", folder: folderId, system, ...(Object.keys(flags ?? {}).length ? { flags } : {}) });
   if (fmsActive) {
     // Route description SECTIONS onto the Full Monster Sheet's fields; each
     // field gets its own section-scoped lazy tag. Unrouted sections -> notes.

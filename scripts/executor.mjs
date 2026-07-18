@@ -203,6 +203,61 @@ export function attackModel(attacksText, damageRaw) {
   return { modes, flatDamage };
 }
 
+/* -------------------------------------------- */
+/*  Defense scan (frozen, vocabulary-driven)    */
+/* -------------------------------------------- */
+
+// Damage-word -> type key. Keys mirror the damageGlyph registry; a few English
+// synonyms map to the canonical key. Generic vocabulary, frozen like the rest.
+const DAMAGE_WORDS = {
+  acid: "acidic", acidic: "acidic", arcane: "arcane", bludgeoning: "bludgeoning",
+  necrotic: "necrotic", cold: "cold", frost: "cold", electrical: "electrical",
+  electricity: "electrical", lightning: "electrical", fire: "fire", flame: "fire",
+  luminous: "luminous", slashing: "slashing", piercing: "piercing",
+  poison: "poisonous", poisonous: "poisonous", seismic: "seismic",
+};
+
+/**
+ * Scan a monster's OWN description prose for immunity / resistance /
+ * susceptibility statements, matching a SHIPPED vocabulary (damage words +
+ * the defenseEffect register). Materializes per seat from that seat's book —
+ * nothing about which defenses apply is ever baked. Exported so authoring
+ * tools can preview the same result.
+ */
+export function defenseScan(paras, registers) {
+  const text = (paras ?? []).map((p) => (typeof p === "string" ? p : p.text)).join(" ");
+  if (!text) return null;
+  const effVocab = Object.entries(registers?.tables?.defenseEffect ?? {}); // [surface, {key}]
+  const bucket = () => ({ damage: [], effects: [], mundane: false, extraordinary: false });
+  const scan = (verbRe) => {
+    const b = bucket();
+    for (const m of text.matchAll(verbRe)) {
+      const clause = m[1].toLowerCase();
+      for (const [word, key] of Object.entries(DAMAGE_WORDS)) {
+        if (new RegExp(`\\b${word}\\b`).test(clause) && !b.damage.includes(key)) b.damage.push(key);
+      }
+      for (const [surface, row] of effVocab) {
+        const re = new RegExp(`\\b${surface.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")}\\b`);
+        if (re.test(clause) && !b.effects.includes(row.key)) b.effects.push(row.key);
+      }
+      if (/\b(mundane|ordinary|non-?magical)\b/.test(clause)) b.mundane = true;
+      if (/\b(extraordinary|magical? weapons?)\b/.test(clause)) b.extraordinary = true;
+    }
+    return b;
+  };
+  // "can only be harmed/hit by extraordinary/magic" == immune to mundane damage.
+  const out = {};
+  const imm = scan(/(?:immun(?:e|ity) to|unaffected by|not affected by|cannot be) ([^.;]+)/gi);
+  if (/only be (?:harmed|hit|struck|damaged) by (?:extraordinary|magic)/i.test(text)) imm.mundane = true;
+  const res = scan(/(?:resistan(?:t|ce) to|takes? half (?:damage )?from) ([^.;]+)/gi);
+  const sus = scan(/(?:susceptible|vulnerable|especially vulnerable) to ([^.;]+)/gi);
+  const any = (b) => b.damage.length || b.effects.length || b.mundane || b.extraordinary;
+  if (any(imm)) out.immunities = imm;
+  if (any(res)) out.resistances = res;
+  if (any(sus)) out.susceptibilities = sus;
+  return Object.keys(out).length ? out : null;
+}
+
 /** Fixed pattern library (frozen with the schema). */
 function applyPattern(raw, instr, registers, misses) {
   const text = clean(raw);
@@ -211,6 +266,9 @@ function applyPattern(raw, instr, registers, misses) {
     case "statValue":
       return instr.table ? lookup(registers, instr.table, text, misses) : text;
     case "int": {
+      // A genuine "not applicable" (undead morale prints "N/A") is NOT zero —
+      // preserve it distinctly so the binding leaves the field blank, not 0.
+      if (/^\s*(n\s*[/\\]?\s*a|nil|not applicable|—)\s*$/i.test(text)) return "N/A";
       const m = /(-?[\d,]+)/.exec(text);
       return m ? parseInt(m[1].replace(/,/g, ""), 10) : null;
     }
@@ -409,6 +467,13 @@ export async function executeEntry(doc, bookCookbook, registers, entryId, opts =
     } else {
       fields[field] = result;
     }
+  }
+
+  // Defenses are DERIVED from this seat's own extracted description prose +
+  // the shipped vocabulary — never baked per creature (see defenseScan).
+  if (fields.description?.length) {
+    const defenses = defenseScan(fields.description, registers);
+    if (defenses) fields.defenses = defenses;
   }
 
   return {

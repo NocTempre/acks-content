@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.6
+
+- **Defenses materialize from your book, not baked lists.** Immunities /
+  resistances / susceptibilities are read at extraction time from each
+  monster's own description prose against a shipped keyword vocabulary
+  (damage types + a defense-effect list) — so Death Charger, Skeleton, Wraith
+  etc. tick their immunity boxes on import. Nothing about which defenses apply
+  is shipped; a bookless seat gets none (the GM who owns the book imports them).
+- **True N/A vs 0.** A printed "N/A" value (mindless-undead morale) is kept
+  distinct from 0 — the field is left blank and flagged instead of showing a
+  misleading "always flees" morale of 0.
+
 ## 0.3.5
 
 - **Attacks: "1 or 2" is a count, not two modes.** A bare-number attack part
