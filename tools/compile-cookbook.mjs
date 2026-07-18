@@ -799,6 +799,7 @@ async function compileDefinition(doc, entry, kindRow) {
     // known) so we never ship a dangling pointer. The conclusion ships; the
     // sentence never does.
     ...(seeReference(bodyText) ? { _aliasRaw: seeReference(bodyText) } : {}),
+    ...(replacementPhrase(bodyText) ? { _replacedRaw: replacementPhrase(bodyText) } : {}),
     fields,
   };
 }
@@ -829,6 +830,29 @@ function derivedMeta(bodyText) {
   const v = m ? parseCount(m[1]) : null;
   if (v !== null) out.powerValue = v;
   return out;
+}
+
+/**
+ * What supersedes a power the book retired. A removed power is still INGESTED
+ * (an older or converted source may name it) and flagged; this is the pointer
+ * that lets a reference to it land on the thing that replaced it.
+ */
+function replacementPhrase(bodyText) {
+  if (!bodyText) return null;
+  const spaced =
+    bodyText.match(/In lieu of this power,?\s*the\s*[A-Za-z]+\s*power\s*([a-z][a-z' -]{2,40}?)\s*has\s*been/i) ??
+    bodyText.match(/should be assigned the\s*([a-z][a-z' -]{2,40}?)\s*power instead/i) ??
+    bodyText.match(/Replace it with\s*(?:one rank of\s*)?([A-Za-z][A-Za-z' -]{2,40}?)\s*proficiency/i);
+  if (spaced) return spaced[1].replace(/\s+/g, " ").trim();
+  // The raw join can drop spaces wholesale ("Inlieuofthispower"), so retry
+  // against a whitespace-free form. The squashed name still resolves, because
+  // id matching compares case- and separator-folded.
+  const flat = bodyText.replace(/\s+/g, "");
+  const m =
+    flat.match(/inlieuofthispower,?the[a-z]+power([a-z][a-z'-]{2,40}?)hasbeen/i) ??
+    flat.match(/shouldbeassignedthe([a-z][a-z'-]{2,40}?)powerinstead/i) ??
+    flat.match(/replaceitwith(?:onerankof)?([a-z][a-z'-]{2,40}?)proficiency/i);
+  return m ? m[1] : null;
 }
 
 /**
@@ -970,6 +994,12 @@ async function main() {
   let unresolved = 0;
   for (const data of Object.values(contentOut)) {
     for (const [id, e] of Object.entries(data.entries)) {
+      // A retired power keeps its entry and its flag; this resolves the pointer
+      // to whatever superseded it, falling back to the printed name.
+      const rep = e._replacedRaw;
+      delete e._replacedRaw;
+      if (rep) e.meta = { ...(e.meta ?? {}), replacedBy: resolveAlias(rep, id, knownIds) ?? rep };
+
       const raw = e._aliasRaw;
       delete e._aliasRaw;
       if (!raw) continue;

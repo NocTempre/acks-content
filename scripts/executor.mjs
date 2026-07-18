@@ -103,14 +103,49 @@ export function joinRuns(runs, fixes = {}, dropText) {
   return out;
 }
 
-/** Exact-match table lookup: token -> {text, key?, ref?}; miss -> {text}. */
+/** Names vary by small-caps and spacing between books, so compare folded. */
+const convKey = (s) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/**
+ * Look a name up in the conversion table (harvested offline from the System
+ * Compatibility Guide). Returns `{from, to?, status, category}` for an OGL/OSR
+ * or legacy name, else null. The folded index is memoised on the registers
+ * object so repeated lookups stay cheap.
+ */
+export function convertName(registers, token) {
+  const table = registers?.tables?.conversion;
+  if (!table || !token) return null;
+  let index = registers.__convIndex;
+  if (!index) {
+    index = new Map();
+    for (const [from, row] of Object.entries(table)) index.set(convKey(from), { from, ...row });
+    Object.defineProperty(registers, "__convIndex", { value: index, enumerable: false });
+  }
+  return index.get(convKey(token)) ?? null;
+}
+
+/**
+ * Exact-match table lookup: token -> {text, key?, ref?}; miss -> {text}.
+ *
+ * On a miss the token may be a legacy or foreign (OGL/OSR) name, so the
+ * conversion table is consulted and the ACKS II equivalent retried — that is
+ * what lets a converted source resolve even though the original entry was
+ * renamed. A name the guide marks "deleted"/"absent" resolves to a WARNING
+ * rather than a silent miss: it is understood, just not present.
+ */
 function lookup(registers, tableName, token, misses) {
   const row = registers?.tables?.[tableName]?.[token];
-  if (!row) {
-    if (token && misses) misses.push({ table: tableName, token });
-    return { text: token };
+  if (row) return { text: token, ...row };
+
+  const conv = convertName(registers, token);
+  if (conv?.status === "renamed" && conv.to) {
+    const renamed = registers?.tables?.[tableName]?.[conv.to];
+    if (renamed) return { text: token, ...renamed, convertedFrom: conv.from, convertedTo: conv.to };
   }
-  return { text: token, ...row };
+  if (conv) return { text: token, conversion: conv.status, ...(conv.to ? { convertedTo: conv.to } : {}) };
+
+  if (token && misses) misses.push({ table: tableName, token });
+  return { text: token };
 }
 
 const DICE_RE = /\d*d\d+(?:[×xX]\d+)?(?:[+-]\d+)?/;

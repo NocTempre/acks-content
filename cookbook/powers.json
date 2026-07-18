@@ -5534,7 +5534,8 @@
       ],
       "meta": {
         "category": "classPower",
-        "deprecated": true
+        "deprecated": true,
+        "replacedBy": "def.power.sensitivityToRockAndStone"
       },
       "fields": {
         "name": {
@@ -5701,7 +5702,8 @@
       ],
       "meta": {
         "category": "classPower",
-        "deprecated": true
+        "deprecated": true,
+        "replacedBy": "def.power.naturalStealth"
       },
       "fields": {
         "name": {
@@ -9366,7 +9368,8 @@
       ],
       "meta": {
         "category": "classPower",
-        "deprecated": true
+        "deprecated": true,
+        "replacedBy": "def.prof.disguise"
       },
       "fields": {
         "name": {
@@ -10392,7 +10395,8 @@
       ],
       "meta": {
         "category": "classPower",
-        "deprecated": true
+        "deprecated": true,
+        "replacedBy": "def.power.attunementToNature"
       },
       "fields": {
         "name": {

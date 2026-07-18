@@ -539,7 +539,10 @@ export function bindAbility(entry, node, id) {
     category: meta.category ?? "proficiency",
     general: !!meta.general,
     repeatable: !!meta.repeatable,
+    // A retired entry is still imported — an older or converted source may name
+    // it — but carries the flag and a pointer at whatever superseded it.
     deprecated: !!meta.deprecated,
+    ...(meta.replacedBy ? { replacedBy: meta.replacedBy } : {}),
     ...(meta.powerValue != null ? { powerValue: meta.powerValue } : {}),
     ...(meta.requires ? { requires: meta.requires } : {}),
     // Structured effects are CLASSIFIED from the seat's own prose (type, target
@@ -581,6 +584,9 @@ async function ensureItemFolder() {
 export async function importAbility(id, folderId) {
   const found = cookbookEntry(id);
   if (!found) return null;
+  // A "See X." entry is a cross-reference, not an ability: resolve to the real
+  // one rather than minting a stub whose entire text is "See X."
+  if (found.entry.aliasOf && found.entry.aliasOf !== id) return importAbility(found.entry.aliasOf, folderId);
   const existing = game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id);
   if (existing) return existing;
 
