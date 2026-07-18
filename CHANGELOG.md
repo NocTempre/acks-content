@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.2
+
+- Reverts the compiled `packs/` back to the v0.5.0 build. 0.5.1 accidentally
+  shipped LevelDB bookkeeping churn (log rotation and manifest renumbering)
+  written by a Foundry world that was running during the commit. The pack
+  CONTENT was identical either way — `packs/_source` did not change — so 0.5.1
+  works; this just stops the noise from being carried forward.
+
 ## 0.5.1
 
 - The Item directory buttons now appear on first load. The sidebar renders
