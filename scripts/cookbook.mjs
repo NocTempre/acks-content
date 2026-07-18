@@ -19,8 +19,15 @@ import { savesForLevel } from "./stats.mjs";
 
 const FOLDER_NAME = "ACKS Cookbook";
 
-/** Shipped data, fetched once at ready: { registers, books: {bookId: cookbook} } */
-const data = { registers: null, books: new Map() };
+/**
+ * Shipped data, fetched once at ready. Two cookbook shapes:
+ *  - `books`   per-book files (monsters) — the file names its book.
+ *  - `content` CONTENT-TYPE files (proficiencies/powers/skills), each spanning
+ *    every book that prints that content, so the BOOK is named per entry.
+ */
+const data = { registers: null, books: new Map(), content: new Map() };
+/** Content-type cookbooks, named by WHAT they extract, not the source book. */
+const CONTENT_FILES = ["proficiencies", "powers", "skills"];
 /** Injected module state (session docs + prose memory) — set by initCookbook. */
 let ctx = null;
 
@@ -44,9 +51,21 @@ export async function loadCookbook() {
       /* book without a cookbook yet */
     }
   }
+  for (const name of CONTENT_FILES) {
+    try {
+      const cb = await foundry.utils.fetchJsonWithTimeout(`${base}/${name}.json`);
+      if (cb?.entries) data.content.set(name, cb);
+    } catch {
+      /* this content type isn't compiled yet */
+    }
+  }
   const n = [...data.books.values()].reduce((s, cb) => s + Object.keys(cb.entries).length, 0);
-  console.log(`${MODULE_ID} | cookbook loaded: ${n} entr(ies) across ${data.books.size} book(s).`);
-  return n > 0;
+  const c = [...data.content.values()].reduce((s, cb) => s + Object.keys(cb.entries).length, 0);
+  console.log(
+    `${MODULE_ID} | cookbook loaded: ${n} entr(ies) across ${data.books.size} book(s)` +
+      `${c ? `, ${c} definition(s) across ${data.content.size} content type(s)` : ""}.`,
+  );
+  return n + c > 0;
 }
 
 /** "mm.griffon#combat" -> { id, section } (section null when absent). */
@@ -58,8 +77,15 @@ const splitId = (full) => {
 export const cookbookEntry = (fullId) => {
   const { id } = splitId(fullId);
   for (const cb of data.books.values()) if (cb.entries[id]) return { cb, entry: cb.entries[id], id };
+  for (const cb of data.content.values()) if (cb.entries[id]) return { cb, entry: cb.entries[id], id };
   return null;
 };
+
+/**
+ * Which book an entry is read from. Per-book cookbooks name it on the file;
+ * content-type cookbooks span books, so the entry names its own.
+ */
+const bookOf = (found) => found?.cb?.book?.id ?? found?.entry?.book ?? null;
 export const cookbookCount = (bookId) => Object.keys(data.books.get(bookId)?.entries ?? {}).length;
 
 /* -------------------------------------------- */
@@ -76,7 +102,7 @@ export function cookbookStub(fullId) {
 /** Whether this seat could reveal prose for the id right now. */
 export function cookbookCanReveal(fullId) {
   const found = cookbookEntry(fullId);
-  return !!found && ctx.sessionDocs.has(found.cb.book.id);
+  return !!found && ctx.sessionDocs.has(bookOf(found));
 }
 
 /** Cache an entry's description paragraphs (session memory only). */
@@ -95,7 +121,7 @@ export async function cookbookProse(fullId) {
   const found = cookbookEntry(fullId);
   if (!found) return null;
   const { section } = splitId(fullId);
-  const bookId = found.cb.book.id;
+  const bookId = bookOf(found);
   let paras = (ctx.proseMem.get(bookId) ?? {})[found.id];
   if (!paras) {
     const session = ctx.sessionDocs.get(bookId);
@@ -480,6 +506,98 @@ async function importOne(bookId, id, folderId) {
     await ctx.importArtForPage(actor, session.doc, { id, page: found.entry.pages[0] });
   }
   return actor;
+}
+
+/* -------------------------------------------- */
+/*  Abilities (proficiencies / powers / skills) */
+/* -------------------------------------------- */
+
+/**
+ * Map a definition entry (+ its executed node, when the seat owns the book)
+ * onto a core `ability` item. The FULL literal text stays a lazy @PdfText
+ * descriptor; classification and any materialized mechanics persist in
+ * flags["acks-abilities"].extras, so the ability stays usable without the book.
+ */
+export function bindAbility(entry, node, id) {
+  const meta = entry.meta ?? {};
+  const cite = entry.cite ?? "";
+  const extras = {
+    category: meta.category ?? "proficiency",
+    general: !!meta.general,
+    repeatable: !!meta.repeatable,
+    deprecated: !!meta.deprecated,
+    ...(meta.powerValue != null ? { powerValue: meta.powerValue } : {}),
+    ...(meta.requires ? { requires: meta.requires } : {}),
+    // Structured effects arrive with the per-entry extraction assists; an
+    // ability with none is still valid (name + type + lazy prose).
+    effects: [],
+    // Immunity-granting abilities (Divine Health, Wakefulness, Fiery
+    // Resistance…) materialize defenses from the seat's OWN prose via the
+    // executor's vocabulary scan — nothing about which is shipped.
+    ...(node?.fields?.defenses ? { defenses: node.fields.defenses } : {}),
+  };
+  return {
+    name: entry.name,
+    type: "ability",
+    system: {
+      description: `<p>@PdfText[${id}]{${cite}}</p>`,
+      proficiencytype: meta.general ? "general" : "class",
+    },
+    flags: {
+      [MODULE_ID]: { cookbook: { id, cite }, generated: true },
+      "acks-abilities": { extras },
+    },
+  };
+}
+
+async function ensureItemFolder() {
+  return (
+    game.folders.find((fo) => fo.type === "Item" && fo.name === FOLDER_NAME) ??
+    Folder.create({ name: FOLDER_NAME, type: "Item" })
+  );
+}
+
+/**
+ * Build — or REUSE — the shared ability item for a definition id. Deduped by
+ * cookbook id, so every monster/NPC referencing a proficiency links to the SAME
+ * item instead of minting a per-actor copy. Works bookless: without the citing
+ * book the item still imports with its structure and lazy descriptor.
+ */
+export async function importAbility(id, folderId) {
+  const found = cookbookEntry(id);
+  if (!found) return null;
+  const existing = game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id);
+  if (existing) return existing;
+
+  const bookId = bookOf(found);
+  const session = ctx.sessionDocs.get(bookId);
+  let node = null;
+  if (session) {
+    node = await executeEntry(session.doc, found.cb, data.registers, id);
+    if (node?.ok) cookbookCacheParas(bookId, id, node.fields.description ?? []);
+    else node = null;
+  }
+  const folder = folderId ?? (await ensureItemFolder())?.id ?? null;
+  return Item.create({ ...bindAbility(found.entry, node, id), folder });
+}
+
+/** Every definition id the shipped content-type cookbooks carry. */
+export const cookbookAbilityIds = () => [...data.content.values()].flatMap((cb) => Object.keys(cb.entries));
+
+/** GM: import every shipped ability as a shared, deduped item. */
+export async function cookbookImportAbilities() {
+  if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only.");
+  const ids = cookbookAbilityIds();
+  if (!ids.length) return ui.notifications.warn("acks-content | no abilities in the shipped cookbook.");
+  const folder = (await ensureItemFolder())?.id ?? null;
+  let made = 0;
+  let reused = 0;
+  for (const id of ids) {
+    if (game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id)) reused++;
+    else made++;
+    await importAbility(id, folder);
+  }
+  ui.notifications.info(`acks-content | abilities: ${made} imported, ${reused} already present.`);
 }
 
 /* -------------------------------------------- */
