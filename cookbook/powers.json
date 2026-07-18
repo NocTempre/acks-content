@@ -1540,6 +1540,21 @@
               }
             }
           ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifies",
+              "refs": [
+                "kw:armorproficiency"
+              ],
+              "domain": "armor",
+              "value": 1,
+              "mode": "add",
+              "note": "One weight category heavier than the class permits."
+            }
+          ]
         }
       }
     },

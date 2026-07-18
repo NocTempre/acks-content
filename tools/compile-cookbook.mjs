@@ -1279,6 +1279,14 @@ async function main() {
         continue;
       }
       e.fields.description = desc;
+      // The prose alone only carries what the SCAN can classify. Anything the
+      // chef authored on the target — a prerequisite, a companion slot, a
+      // progression column — is equally part of the capability, and an alias
+      // that shares the capability shares those too. Its own authored specs
+      // always win; this only fills what it did not state for itself.
+      const tf = entryById.get(target)?.fields ?? {};
+      if (tf.effects && !e.fields.effects) e.fields.effects = tf.effects;
+      if (tf.progression && !e.fields.progression) e.fields.progression = tf.progression;
       // The citation labels the PROSE, and the prose is the target's — so cite
       // where a reader would actually turn to read it.
       e.cite = citeOf.get(target) ?? e.cite;

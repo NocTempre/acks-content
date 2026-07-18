@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.10.0
+
+- **The combat proficiencies are abilities, and generals upgrade them.** Weapons,
+  Armor and Fighting Styles are the three axes a class is rated on, not inert
+  rules text — the tell is that general proficiencies raise them. Armor Training
+  moves armor one weight category, Martial Training adds a weapon group, and
+  Fighting Style Specialization requires a style you already have and
+  specializes it. Each is written against the axis's CAPABILITY, so the upgrade
+  finds it however the character holds it.
+- **A cross-reference inherits its target's authored mechanics.** It already
+  read the target's prose, so anything the prose scan could classify came
+  through — but a prerequisite, companion slot or progression column the chef
+  authored on the target did not. Those are equally part of the shared
+  capability and now carry over, with the alias's own specs always winning.
+  Latent until now (only one alias had such a target, and it had its own copy).
+
 ## 0.9.0
 
 - **Thief skills finally have their numbers.** All thirteen carried no mechanics

@@ -1276,6 +1276,21 @@
               }
             }
           ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifies",
+              "refs": [
+                "kw:armorproficiency"
+              ],
+              "domain": "armor",
+              "value": 1,
+              "mode": "add",
+              "note": "One weight category heavier than the class permits."
+            }
+          ]
         }
       }
     },
@@ -3507,6 +3522,27 @@
               }
             }
           ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "requires",
+              "refs": [
+                "kw:fightingstyles"
+              ]
+            },
+            {
+              "type": "modifies",
+              "refs": [
+                "kw:fightingstyles"
+              ],
+              "domain": "fightingStyle",
+              "mode": "add",
+              "choose": 1,
+              "note": "Specializes one style the character is already proficient in."
+            }
+          ]
         }
       }
     },
@@ -5124,6 +5160,22 @@
                   4
                 ]
               }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifies",
+              "refs": [
+                "kw:weaponproficiency"
+              ],
+              "domain": "weapon",
+              "breadth": "narrow",
+              "mode": "add",
+              "choose": 1,
+              "note": "Adds one selected weapon group to the class list."
             }
           ]
         }

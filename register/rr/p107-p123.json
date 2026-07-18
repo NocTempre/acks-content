@@ -141,7 +141,19 @@
     "meta": {
       "category": "proficiency",
       "general": false
-    }
+    },
+    "effects": [
+      {
+        "type": "modifies",
+        "refs": [
+          "kw:armorproficiency"
+        ],
+        "domain": "armor",
+        "value": 1,
+        "mode": "add",
+        "note": "One weight category heavier than the class permits."
+      }
+    ]
   },
   {
     "id": "def.prof.artCraft",
@@ -724,7 +736,25 @@
     "meta": {
       "category": "proficiency",
       "general": false
-    }
+    },
+    "effects": [
+      {
+        "type": "requires",
+        "refs": [
+          "kw:fightingstyles"
+        ]
+      },
+      {
+        "type": "modifies",
+        "refs": [
+          "kw:fightingstyles"
+        ],
+        "domain": "fightingStyle",
+        "mode": "add",
+        "choose": 1,
+        "note": "Specializes one style the character is already proficient in."
+      }
+    ]
   },
   {
     "id": "def.prof.folkways",
@@ -1060,7 +1090,20 @@
     "meta": {
       "category": "proficiency",
       "general": false
-    }
+    },
+    "effects": [
+      {
+        "type": "modifies",
+        "refs": [
+          "kw:weaponproficiency"
+        ],
+        "domain": "weapon",
+        "breadth": "narrow",
+        "mode": "add",
+        "choose": 1,
+        "note": "Adds one selected weapon group to the class list."
+      }
+    ]
   },
   {
     "id": "def.prof.masteryOfConjurationSummoning",
