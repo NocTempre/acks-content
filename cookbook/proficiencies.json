@@ -1,0 +1,570 @@
+{
+  "schema": "acks-cookbook/1",
+  "content": "proficiencies",
+  "entries": {
+    "def.prof.adventuring": {
+      "id": "def.prof.adventuring",
+      "kind": "kind.proficiency",
+      "name": "Adventuring",
+      "book": "rr",
+      "cite": "RR p.107",
+      "pages": [
+        107
+      ],
+      "meta": {
+        "category": "proficiency",
+        "general": true
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 107,
+          "box": {
+            "x0": 65,
+            "x1": 324,
+            "y0": 153,
+            "y1": 175
+          },
+          "text": "Adventuring (G)"
+        },
+        "description": {
+          "op": "text",
+          "page": 107,
+          "paras": [
+            {
+              "box": {
+                "x0": 65,
+                "x1": 324,
+                "y0": 183,
+                "y1": 239
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 65,
+                "x1": 324,
+                "y0": 253,
+                "y1": 269
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 65,
+                "x1": 324,
+                "y0": 283,
+                "y1": 299
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 65,
+                "x1": 324,
+                "y0": 313,
+                "y1": 349
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 65,
+                "x1": 324,
+                "y0": 363,
+                "y1": 389
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 65,
+                "x1": 324,
+                "y0": 403,
+                "y1": 419
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 65,
+                "x1": 324,
+                "y0": 433,
+                "y1": 479
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  3,
+                  4,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "def.prof.acrobatics": {
+      "id": "def.prof.acrobatics",
+      "kind": "kind.proficiency",
+      "name": "Acrobatics",
+      "book": "rr",
+      "cite": "RR p.107",
+      "pages": [
+        107
+      ],
+      "meta": {
+        "category": "proficiency",
+        "general": false
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 107,
+          "box": {
+            "x0": 65,
+            "x1": 324,
+            "y0": 483,
+            "y1": 505
+          },
+          "text": "Acrobatics"
+        },
+        "description": {
+          "op": "text",
+          "page": 107,
+          "paras": [
+            {
+              "box": {
+                "x0": 65,
+                "x1": 324,
+                "y0": 513,
+                "y1": 569
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 65,
+                "x1": 324,
+                "y0": 583,
+                "y1": 719
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "def.prof.alchemy": {
+      "id": "def.prof.alchemy",
+      "kind": "kind.proficiency",
+      "name": "Alchemy",
+      "book": "rr",
+      "cite": "RR p.107",
+      "pages": [
+        107
+      ],
+      "meta": {
+        "category": "proficiency",
+        "general": true,
+        "repeatable": true
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 107,
+          "box": {
+            "x0": 325,
+            "x1": 612,
+            "y0": 73,
+            "y1": 95
+          },
+          "text": "Alchemy (G)"
+        },
+        "description": {
+          "op": "text",
+          "page": 107,
+          "paras": [
+            {
+              "box": {
+                "x0": 325,
+                "x1": 612,
+                "y0": 103,
+                "y1": 129
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 325,
+                "x1": 612,
+                "y0": 143,
+                "y1": 309
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16,
+                  17,
+                  18,
+                  20,
+                  21,
+                  22,
+                  23,
+                  24,
+                  25,
+                  26,
+                  27,
+                  28,
+                  30,
+                  31
+                ],
+                "mergeHyphen": [
+                  29
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 325,
+                "x1": 612,
+                "y0": 323,
+                "y1": 399
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 325,
+                "x1": 612,
+                "y0": 413,
+                "y1": 499
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  12
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "def.prof.alertness": {
+      "id": "def.prof.alertness",
+      "kind": "kind.proficiency",
+      "name": "Alertness",
+      "book": "rr",
+      "cite": "RR p.107",
+      "pages": [
+        107
+      ],
+      "meta": {
+        "category": "proficiency",
+        "general": false
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 107,
+          "box": {
+            "x0": 325,
+            "x1": 612,
+            "y0": 553,
+            "y1": 575
+          },
+          "text": "Alertness"
+        },
+        "description": {
+          "op": "text",
+          "page": 107,
+          "paras": [
+            {
+              "box": {
+                "x0": 325,
+                "x1": 612,
+                "y0": 583,
+                "y1": 629
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "def.prof.ambushing": {
+      "id": "def.prof.ambushing",
+      "kind": "kind.proficiency",
+      "name": "Ambushing",
+      "book": "rr",
+      "cite": "RR p.107",
+      "pages": [
+        107
+      ],
+      "meta": {
+        "category": "proficiency",
+        "general": false
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 107,
+          "box": {
+            "x0": 325,
+            "x1": 612,
+            "y0": 633,
+            "y1": 655
+          },
+          "text": "Ambushing"
+        },
+        "description": {
+          "op": "text",
+          "page": 107,
+          "paras": [
+            {
+              "box": {
+                "x0": 325,
+                "x1": 612,
+                "y0": 663,
+                "y1": 719
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "def.prof.divineBlessing": {
+      "id": "def.prof.divineBlessing",
+      "kind": "kind.proficiency",
+      "name": "Divine Blessing",
+      "book": "rr",
+      "cite": "RR p.111",
+      "pages": [
+        111
+      ],
+      "meta": {
+        "category": "proficiency",
+        "general": false
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 111,
+          "box": {
+            "x0": 325,
+            "x1": 612,
+            "y0": 373,
+            "y1": 395
+          },
+          "text": "Divine Blessing"
+        },
+        "description": {
+          "op": "text",
+          "page": 111,
+          "paras": [
+            {
+              "box": {
+                "x0": 325,
+                "x1": 612,
+                "y0": 403,
+                "y1": 419
+              },
+              "fixes": {
+                "joinSpace": [
+                  0
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "def.prof.divineHealth": {
+      "id": "def.prof.divineHealth",
+      "kind": "kind.proficiency",
+      "name": "Divine Health",
+      "book": "rr",
+      "cite": "RR p.111",
+      "pages": [
+        111
+      ],
+      "meta": {
+        "category": "proficiency",
+        "general": false
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 111,
+          "box": {
+            "x0": 325,
+            "x1": 612,
+            "y0": 513,
+            "y1": 535
+          },
+          "text": "Divine Health"
+        },
+        "description": {
+          "op": "text",
+          "page": 111,
+          "paras": [
+            {
+              "box": {
+                "x0": 325,
+                "x1": 612,
+                "y0": 543,
+                "y1": 569
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

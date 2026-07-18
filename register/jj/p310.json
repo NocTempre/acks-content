@@ -1,0 +1,47 @@
+[
+  {
+    "id": "def.power.abominableMutation",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Abominable Mutation",
+    "anchor": { "runin": "Abominable Mutation:" },
+    "pages": [310],
+    "meta": { "category": "classPower" }
+  },
+  {
+    "id": "def.power.accessToCapital",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Access to Capital",
+    "anchor": { "runin": "Access to Capital:" },
+    "pages": [310],
+    "meta": { "category": "classPower" }
+  },
+  {
+    "id": "def.power.accuracy",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Accuracy",
+    "anchor": { "runin": "Accuracy:" },
+    "pages": [310],
+    "meta": { "category": "classPower" }
+  },
+  {
+    "id": "def.power.adhesiveToePads",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Adhesive Toe Pads",
+    "anchor": { "runin": "Adhesive Toe Pads:" },
+    "pages": [310],
+    "meta": { "category": "classPower", "powerValue": 2 }
+  },
+  {
+    "id": "def.power.alertness",
+    "kind": "kind.power",
+    "book": "jj",
+    "name": "Alertness",
+    "anchor": { "runin": "Alertness:" },
+    "pages": [310],
+    "meta": { "category": "classPower" }
+  }
+]

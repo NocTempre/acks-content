@@ -51,6 +51,7 @@ function capStrings(obj, label, keyPath = "") {
 /* --- register entries --- */
 const seenIds = new Set();
 const kindIds = new Set();
+const kindRoles = new Map(); // kind id -> role (composite | definition | note | table)
 
 const kindsDir = path.join(REGISTER, "_kinds");
 if (fs.existsSync(kindsDir)) {
@@ -60,6 +61,7 @@ if (fs.existsSync(kindsDir)) {
     if (!k) continue;
     if (!KIND_ID.test(k.id ?? "")) err(`_kinds/${f}: bad kind id "${k.id}"`);
     kindIds.add(k.id);
+    kindRoles.set(k.id, k.role);
     capStrings(k, `_kinds/${f}`);
   }
 }
@@ -79,10 +81,18 @@ for (const dirent of fs.existsSync(REGISTER) ? fs.readdirSync(REGISTER, { withFi
     }
     for (const e of arr) {
       const id = e.id ?? "?";
-      if (!COMPOSITE_ID.test(id)) err(`${label}: bad composite id "${id}"`);
+      // Composites are book-scoped (mm.griffon). DEFINITIONS are register-scoped
+      // and edition-independent (def.prof.alertness) even though their entry row
+      // lives under the book that prints them — the same concept can be revised
+      // in another book without changing its id.
+      if (kindRoles.get(e.kind) === "definition") {
+        if (!DEF_ID.test(id)) err(`${label}: bad definition id "${id}" (expect def.<class>.<slug>)`);
+      } else {
+        if (!COMPOSITE_ID.test(id)) err(`${label}: bad composite id "${id}"`);
+        if (!id.startsWith(`${bookId}.`)) err(`${id}: composite id must be book-scoped (${bookId}.*)`);
+      }
       if (seenIds.has(id)) err(`duplicate id ${id}`);
       seenIds.add(id);
-      if (!id.startsWith(`${bookId}.`)) err(`${id}: composite id must be book-scoped (${bookId}.*)`);
       if (!kindIds.has(e.kind)) err(`${id}: unknown kind "${e.kind}"`);
       if (e.book !== bookId) err(`${id}: book "${e.book}" != directory "${bookId}"`);
       if (!Array.isArray(e.pages) || !e.pages.every((p) => Number.isInteger(p) && p > 0)) err(`${id}: pages must be positive ints`);

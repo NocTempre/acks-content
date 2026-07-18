@@ -1288,6 +1288,7 @@
         "key": "weapon"
       }
     },
+    "power": {},
     "proficiency": {
       "Alertness": {
         "key": "alertness",

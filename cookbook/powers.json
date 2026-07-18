@@ -1,0 +1,311 @@
+{
+  "schema": "acks-cookbook/1",
+  "content": "powers",
+  "entries": {
+    "def.power.abominableMutation": {
+      "id": "def.power.abominableMutation",
+      "kind": "kind.power",
+      "name": "Abominable Mutation",
+      "book": "jj",
+      "cite": "JJ p.310",
+      "pages": [
+        310
+      ],
+      "meta": {
+        "category": "classPower"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 310,
+          "box": {
+            "x0": 43,
+            "x1": 131.13799999999998,
+            "y0": 321,
+            "y1": 330
+          },
+          "text": "Abominable Mutation:"
+        },
+        "description": {
+          "op": "text",
+          "page": 310,
+          "paras": [
+            {
+              "box": {
+                "x0": 45,
+                "x1": 294,
+                "y0": 323,
+                "y1": 479
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16,
+                  17,
+                  18,
+                  19,
+                  20,
+                  21
+                ]
+              },
+              "dropText": "Abominable Mutation:"
+            },
+            {
+              "box": {
+                "x0": 45,
+                "x1": 294,
+                "y0": 506.183,
+                "y1": 585.0399
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  8,
+                  9,
+                  10,
+                  11,
+                  13,
+                  14,
+                  15
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "def.power.accessToCapital": {
+      "id": "def.power.accessToCapital",
+      "kind": "kind.power",
+      "name": "Access to Capital",
+      "book": "jj",
+      "cite": "JJ p.310",
+      "pages": [
+        310
+      ],
+      "meta": {
+        "category": "classPower"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 310,
+          "box": {
+            "x0": 43,
+            "x1": 113.92999999999996,
+            "y0": 591,
+            "y1": 600
+          },
+          "text": "Access to Capital:"
+        },
+        "description": {
+          "op": "text",
+          "page": 310,
+          "paras": [
+            {
+              "box": {
+                "x0": 45,
+                "x1": 294,
+                "y0": 593,
+                "y1": 739
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16
+                ]
+              },
+              "dropText": "Access to Capital:"
+            }
+          ]
+        }
+      }
+    },
+    "def.power.accuracy": {
+      "id": "def.power.accuracy",
+      "kind": "kind.power",
+      "name": "Accuracy",
+      "book": "jj",
+      "cite": "JJ p.310",
+      "pages": [
+        310
+      ],
+      "meta": {
+        "category": "classPower"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 310,
+          "box": {
+            "x0": 299.5,
+            "x1": 337.99309999999997,
+            "y0": 81,
+            "y1": 90
+          },
+          "text": "Accuracy:"
+        },
+        "description": {
+          "op": "text",
+          "page": 310,
+          "paras": [
+            {
+              "box": {
+                "x0": 295,
+                "x1": 612,
+                "y0": 83,
+                "y1": 99
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1
+                ]
+              },
+              "dropText": "Accuracy:"
+            }
+          ]
+        }
+      }
+    },
+    "def.power.adhesiveToePads": {
+      "id": "def.power.adhesiveToePads",
+      "kind": "kind.power",
+      "name": "Adhesive Toe Pads",
+      "book": "jj",
+      "cite": "JJ p.310",
+      "pages": [
+        310
+      ],
+      "meta": {
+        "category": "classPower",
+        "powerValue": 2
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 310,
+          "box": {
+            "x0": 299.5,
+            "x1": 375.623,
+            "y0": 301,
+            "y1": 310
+          },
+          "text": "Adhesive Toe Pads:"
+        },
+        "description": {
+          "op": "text",
+          "page": 310,
+          "paras": [
+            {
+              "box": {
+                "x0": 295,
+                "x1": 612,
+                "y0": 303,
+                "y1": 359
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+              },
+              "dropText": "Adhesive Toe Pads:"
+            }
+          ]
+        }
+      }
+    },
+    "def.power.alertness": {
+      "id": "def.power.alertness",
+      "kind": "kind.power",
+      "name": "Alertness",
+      "book": "jj",
+      "cite": "JJ p.310",
+      "pages": [
+        310
+      ],
+      "meta": {
+        "category": "classPower"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 310,
+          "box": {
+            "x0": 299.5,
+            "x1": 338.25499999999994,
+            "y0": 461,
+            "y1": 470
+          },
+          "text": "Alertness:"
+        },
+        "description": {
+          "op": "text",
+          "page": 310,
+          "paras": [
+            {
+              "box": {
+                "x0": 295,
+                "x1": 612,
+                "y0": 463,
+                "y1": 519
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ]
+              },
+              "dropText": "Alertness:"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

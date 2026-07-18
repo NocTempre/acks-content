@@ -30,6 +30,10 @@ const FILES = {
 };
 
 const HEADING_MIN_H = 12; // mirrors extract.mjs
+// Definition bodies are 9pt prose (+ ~5pt superscript ordinals). Italic
+// pull-quote/maxim blocks between entries print at ~10.5pt and are NOT part of
+// the entry, so definition body collection caps below them.
+const DEF_BODY_MAX_H = 10;
 const LABEL_RE = /^[A-Z][A-Za-z ()'/]{0,28}:$/;
 const DICE_RE = /\d*d\d+(?:[×xX]\d+)?(?:[+-]\d+)?/; // mirrors scripts/executor.mjs
 const cleanSeg = (s) => (s ?? "").replace(/[-′″]/g, "").replace(/\s+/g, " ").trim();
@@ -548,6 +552,105 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
 }
 
 /* -------------------------------------------- */
+/*  Definition compilation (proficiency/power/skill) */
+/* -------------------------------------------- */
+
+/** Content-type cookbook filename for a definition kind (named by WHAT it
+ * extracts, not the source book — a content type spans every book). */
+const CONTENT_OF = { "kind.proficiency": "proficiencies", "kind.power": "powers", "kind.skill": "skills" };
+
+/**
+ * Compile a role:definition entry (proficiency / power / skill) into
+ * expect(name) + text(description). Two locate modes:
+ *  - display: a heading (RR proficiency descriptions) → block to the next
+ *    heading in the same column.
+ *  - runin: a bold "Name:" run (JJ powers, class skills) → block to the next
+ *    same-alias run-in in the same column; the heading run is dropped.
+ * Descriptor prose materializes per seat (lazy @PdfText); structured effects are
+ * per-entry assists (emitted later — descriptor first).
+ */
+async function compileDefinition(doc, entry, kindRow) {
+  const assists = entry.assists ?? {};
+  const page = entry.pages[0];
+  const pd = await pageItems(doc, page);
+  const cols = detectColumns(pd.items);
+  const mode = kindRow.fields.name.locate;
+  const fields = {};
+
+  if (mode === "display") {
+    const heads = listHeadings(pd).filter((a) => a.mode === "display");
+    const want = assists.anchor ?? entry.anchor?.display ?? entry.name;
+    const noParen = want.replace(/\s*\([^)]*\)\s*/g, " ").replace(/\s+/g, " ").trim();
+    let anchor = null;
+    let matched = want;
+    for (const c of [want, noParen].filter(Boolean)) {
+      anchor = heads.find((a) => a.text.toLowerCase().startsWith(c.toLowerCase()));
+      if (anchor) {
+        matched = c;
+        break;
+      }
+    }
+    if (!anchor) throw new Error(`display anchor "${want}" not found on p.${page}`);
+    const colX = cols[anchor.col];
+    const nextX = cols[anchor.col + 1];
+    const box = { x0: colX - 5, x1: nextX ? nextX - 6 : pd.width };
+    // Absorb a wrapped 2-line heading into the anchor block.
+    let endY = anchor.y;
+    const later = [];
+    for (const h of heads.filter((a) => a.col === anchor.col && a.y > anchor.y + 2).sort((a, b) => a.y - b.y)) {
+      if (h.y - endY <= 20) endY = h.y;
+      else later.push(h);
+    }
+    const stopY = later[0]?.y ? later[0].y - 4 : pd.height;
+    fields.name = { op: "expect", page, box: { x0: box.x0, x1: box.x1, y0: anchor.y - 16, y1: endY + 6 }, text: matched };
+    const body = pd.items.filter((it) => it.h < DEF_BODY_MAX_H && it.x >= box.x0 && it.x <= box.x1 && it.y > endY + 2 && it.y < stopY);
+    fields.description = { op: "text", page, paras: paragraphBoxes(toLines(body), box.x0, box.x1).map((p) => withFixes(p, pd)) };
+  } else {
+    const want = assists.anchor ?? entry.anchor?.runin ?? `${entry.name}:`;
+    const anchor = pd.items.find((it) => it.h < DEF_BODY_MAX_H && it.str.trim().startsWith(want));
+    if (!anchor) throw new Error(`runin anchor "${want}" not found on p.${page}`);
+    const col = colOf(anchor.x, cols);
+    const colX = cols[col];
+    const nextX = cols[col + 1];
+    const box = { x0: colX - 5, x1: nextX ? nextX - 6 : pd.width };
+    const stop = pd.items
+      .filter((it) => it !== anchor && it.alias === anchor.alias && colOf(it.x, cols) === col && it.y > anchor.y + 2 && Math.abs(it.x - colX) < 15)
+      .sort((a, b) => a.y - b.y)[0];
+    const yMax = stop ? stop.y - 2 : pd.height;
+    // Narrow to the heading run itself so `found` is the label, not the whole
+    // line. Box membership tests a run's ORIGIN x, and the prose run starts
+    // flush at anchor.x + width — so stop just short of it (still wide enough to
+    // admit a heading split across runs).
+    fields.name = {
+      op: "expect", page,
+      box: { x0: anchor.x - 2, x1: anchor.x + (anchor.w ?? 60) - 1, y0: anchor.y - 5, y1: anchor.y + 4 },
+      text: want,
+    };
+    const body = pd.items.filter((it) => {
+      if (it === anchor || it.h >= DEF_BODY_MAX_H || colOf(it.x, cols) !== col) return false;
+      const sameLineAfter = Math.abs(it.y - anchor.y) <= 2 && it.x >= anchor.x;
+      return sameLineAfter || (it.y > anchor.y + 2 && it.y < yMax);
+    });
+    const paras = paragraphBoxes(toLines(body), box.x0, box.x1).map((p) => withFixes(p, pd));
+    if (paras[0]) paras[0].dropText = want; // drop the "Name:" heading run at runtime
+    fields.description = { op: "text", page, paras };
+  }
+
+  return {
+    id: entry.id,
+    kind: entry.kind,
+    name: entry.name,
+    book: entry.book,
+    cite: `${BOOKS[entry.book].short} p.${page}`,
+    pages: entry.pages,
+    // Authored classification facts (general-list membership, repeatability,
+    // custom-power cost) — rules, not values scraped from the page.
+    ...(entry.meta ? { meta: entry.meta } : {}),
+    fields,
+  };
+}
+
+/* -------------------------------------------- */
 /*  Main                                        */
 /* -------------------------------------------- */
 
@@ -565,6 +668,10 @@ async function main() {
     if (only && e.book !== only) continue;
     (byBook[e.book] ??= []).push(e);
   }
+
+  // Definition entries (proficiency/power/skill) aggregate into CONTENT-TYPE
+  // cookbooks spanning every book; monsters keep their per-book file.
+  const contentOut = {};
 
   for (const [bookId, list] of Object.entries(byBook)) {
     const file = FILES[bookId];
@@ -590,12 +697,27 @@ async function main() {
         warn(`${entry.id}: unknown kind ${entry.kind} — skipped`);
         continue;
       }
-      if (entry.kind !== "kind.monster") {
-        warn(`${entry.id}: kind ${entry.kind} not compilable yet — skipped`);
-        continue;
-      }
       if (entry.status && entry.status !== "active") {
         console.error(`SKIP ${entry.id}: status "${entry.status}" (pending review)`);
+        continue;
+      }
+      if (kindRow.role === "definition") {
+        const content = CONTENT_OF[entry.kind];
+        if (!content) {
+          warn(`${entry.id}: definition kind ${entry.kind} has no content-type mapping — skipped`);
+          continue;
+        }
+        try {
+          const compiled = await compileDefinition(doc, entry, kindRow);
+          (contentOut[content] ??= { schema: "acks-cookbook/1", content, entries: {} }).entries[entry.id] = compiled;
+          console.error(`OK   ${entry.id}: ${compiled.fields.description.paras.length} para(s) [${content}]`);
+        } catch (err) {
+          warn(`${entry.id}: ${err.message}`);
+        }
+        continue;
+      }
+      if (entry.kind !== "kind.monster") {
+        warn(`${entry.id}: kind ${entry.kind} not compilable yet — skipped`);
         continue;
       }
       try {
@@ -611,9 +733,19 @@ async function main() {
         warn(`${entry.id}: ${err.message}`);
       }
     }
-    const outPath = path.join(COOKBOOK, `${bookId}.json`);
-    fs.writeFileSync(outPath, JSON.stringify(out, null, 2) + "\n");
-    console.error(`wrote ${Object.keys(out.entries).length} entr(ies) -> ${outPath}`);
+    if (Object.keys(out.entries).length) {
+      const outPath = path.join(COOKBOOK, `${bookId}.json`);
+      fs.writeFileSync(outPath, JSON.stringify(out, null, 2) + "\n");
+      console.error(`wrote ${Object.keys(out.entries).length} entr(ies) -> ${outPath}`);
+    }
+  }
+
+  // Content-type cookbooks: named by WHAT they extract, spanning every book
+  // (powers appear in JJ and other books; monsters in MM and adventures).
+  for (const [content, data] of Object.entries(contentOut)) {
+    const outPath = path.join(COOKBOOK, `${content}.json`);
+    fs.writeFileSync(outPath, JSON.stringify(data, null, 2) + "\n");
+    console.error(`wrote ${Object.keys(data.entries).length} entr(ies) -> ${outPath}`);
   }
   console.error(`compile done — ${warns.length} warning(s).`);
 }
