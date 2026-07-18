@@ -3412,6 +3412,16 @@
               }
             }
           ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "companion",
+              "amount": 1,
+              "note": "Familiar"
+            }
+          ]
         }
       }
     },

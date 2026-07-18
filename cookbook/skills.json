@@ -1169,7 +1169,7 @@
     "def.skill.hideout": {
       "id": "def.skill.hideout",
       "kind": "kind.skill",
-      "name": "Hideout (9level)",
+      "name": "Hideout",
       "book": "rr",
       "cite": "RR p.35",
       "pages": [

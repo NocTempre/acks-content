@@ -701,7 +701,14 @@
     "meta": {
       "category": "proficiency",
       "general": false
-    }
+    },
+    "effects": [
+      {
+        "type": "companion",
+        "amount": 1,
+        "note": "Familiar"
+      }
+    ]
   },
   {
     "id": "def.prof.fightingStyleSpecialization",

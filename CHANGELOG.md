@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.5.0
+
+- **Cross-referenced abilities are their own entries.** A name the books list
+  whose rules text is printed under another entry used to redirect away and mint
+  nothing. It now gets a real ability: the recipe carries a pre-baked pointer to
+  *where* that text lives, so it extracts, classifies and displays like any
+  other — it just does not stack with the entry it shares the passage with.
+  Finding the text needs the book; the pointer is page coordinates, so it ships
+  safely. 68 of these, all resolving (was 64 resolving, 4 dangling).
+- **Import Abilities / Update Abilities buttons** in the Item directory (GM
+  only). Import is deduped — running it twice reuses items rather than
+  duplicating them. Update refreshes every ability in the world, *including the
+  copies on actors*, and adopts hand-made or older ones by matching their name.
+  Both are safe to re-run.
+- **Companion slots.** An ability that confers a creature now carries a slot for
+  it. When the recipe names a monster entry and that book is connected, the
+  actor is imported and linked; otherwise the slot stays empty for a GM to fill,
+  or for `cookbookFillCompanions()` to fill once the book loads. Abilities whose
+  creature is *built* rather than named (a totem animal, a familiar chosen from
+  a list) keep an empty slot by design.
+- **Rerolls are structured**, not prose: which throw, how many rolls, and which
+  result stands — with the direction of "better" following the throw itself.
+- Classified effects rose from 51% to **61%** of entries, mostly because a
+  cross-reference now reads its target's prose.
+- Extraction fixes: three cross-references whose target name wraps mid-phrase
+  are now hand-linked by the recipe, and a phantom entry the harvest created by
+  splitting one heading across two lines is gone (470 definitions, was 471).
+
 ## 0.4.0
 
 - **Proficiencies, powers and skills extract from your books.** Three new

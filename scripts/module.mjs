@@ -29,7 +29,8 @@ import { extractStatPairs } from "./stats.mjs";
 import { mapPairs } from "./stats-map.mjs";
 import { createSamples, createDocFor, audit as auditDialog } from "./poc.mjs";
 import {
-  initCookbook, loadCookbook, cookbookImport, cookbookImportAbilities, importAbility, cookbookDebug, cookbookStub,
+  initCookbook, loadCookbook, cookbookImport, cookbookImportAbilities, cookbookUpdateAbilities,
+  cookbookFillCompanions, registerAbilityDirectoryButtons, importAbility, cookbookDebug, cookbookStub,
   cookbookCanReveal, cookbookProse, cookbookCount,
 } from "./cookbook.mjs";
 
@@ -589,11 +590,13 @@ Hooks.once("ready", async () => {
 
   document.body.addEventListener("click", onRevealClick);
   initCookbook({ sessionDocs, proseMem, importArtForPage: importArt });
+  registerAbilityDirectoryButtons();
   await loadCookbook();
   const audit = () => auditDialog(allRecipes(), stubFor);
   const api = {
     connectBook, browseAndLoad, createSamples: createSamplesAndFill, applyStats, audit, bookStatus, forgetBooks,
-    proseFor, cookbookImport, cookbookImportAbilities, importAbility, cookbookDebug, cookbookProse, cookbookCount,
+    proseFor, cookbookImport, cookbookImportAbilities, cookbookUpdateAbilities, cookbookFillCompanions,
+    importAbility, cookbookDebug, cookbookProse, cookbookCount,
     RECIPES, BOOKS,
   };
   globalThis.acksContent = api;

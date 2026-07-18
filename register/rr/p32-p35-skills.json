@@ -183,7 +183,7 @@
     "id": "def.skill.hideout",
     "kind": "kind.skill",
     "book": "rr",
-    "name": "Hideout (9level)",
+    "name": "Hideout",
     "anchor": {
       "runin": "Hideout (9level):"
     },

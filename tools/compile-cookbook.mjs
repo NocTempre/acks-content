@@ -879,6 +879,13 @@ async function compileDefinition(doc, entry, kindRow) {
     fields.description = { op: "text", page, paras };
   }
 
+  // Chef-authored effect specs, for shapes the prose scan cannot classify on
+  // its own (a companion pointing at a monster entry, a reroll's keep rule).
+  // These ship STRUCTURE only — type, refs, mode, stacking. Any NUMBER they
+  // carry is a `from.pattern` locator resolved against the seat's own prose, so
+  // the recipe can be as convoluted as it likes without holding a value.
+  if (entry.effects?.length) fields.effects = { op: "effects", specs: entry.effects };
+
   return {
     id: entry.id,
     kind: entry.kind,
@@ -894,6 +901,11 @@ async function compileDefinition(doc, entry, kindRow) {
     // raw target is resolved to a real id in a post-pass (once every id is
     // known) so we never ship a dangling pointer. The conclusion ships; the
     // sentence never does.
+    // `assists.aliasOf` is the chef pre-baking the link by hand, for the cases
+    // where the printed cross-reference cannot be read back cleanly (a target
+    // name that wraps mid-phrase, a heading the PDF split). Naming the target
+    // needs the book; the resulting id does not, so it ships safely.
+    ...(entry.assists?.aliasOf ? { _aliasTarget: entry.assists.aliasOf } : {}),
     ...(seeReference(bodyText) ? { _aliasRaw: seeReference(bodyText) } : {}),
     ...(replacementPhrase(bodyText) ? { _replacedRaw: replacementPhrase(bodyText) } : {}),
     fields,
@@ -1078,15 +1090,17 @@ async function main() {
   // Resolve "See X." cross-references once every id is known. Ids from content
   // types compiled in an EARLIER run are folded in too, so a per-book compile
   // still resolves across registries (a power may point at a proficiency).
-  const knownIds = new Set();
-  for (const data of Object.values(contentOut)) for (const id of Object.keys(data.entries)) knownIds.add(id);
+  const entryById = new Map();
+  for (const data of Object.values(contentOut)) for (const [id, e] of Object.entries(data.entries)) entryById.set(id, e);
   for (const name of new Set(Object.values(CONTENT_OF))) {
     const prev = path.join(COOKBOOK, `${name}.json`);
     if (contentOut[name] || !fs.existsSync(prev)) continue;
-    const old = readJson(prev);
-    for (const id of Object.keys(old?.entries ?? {})) knownIds.add(id);
+    for (const [id, e] of Object.entries(readJson(prev)?.entries ?? {})) entryById.set(id, e);
   }
-  let aliased = 0;
+  const knownIds = new Set(entryById.keys());
+
+  // Pass 1: what each cross-reference points at, before anything is rewritten.
+  const aliasTarget = new Map();
   let unresolved = 0;
   for (const data of Object.values(contentOut)) {
     for (const [id, e] of Object.entries(data.entries)) {
@@ -1097,19 +1111,78 @@ async function main() {
       if (rep) e.meta = { ...(e.meta ?? {}), replacedBy: resolveAlias(rep, id, knownIds) ?? rep };
 
       const raw = e._aliasRaw;
+      const explicit = e._aliasTarget;
       delete e._aliasRaw;
-      if (!raw) continue;
-      const target = resolveAlias(raw, id, knownIds);
-      if (target && target !== id) {
-        e.aliasOf = target;
-        aliased++;
-      } else {
+      delete e._aliasTarget;
+      if (!raw && !explicit) continue;
+      // A hand-authored target wins: it exists precisely because reading the
+      // printed reference back failed.
+      if (explicit && !knownIds.has(explicit)) {
+        unresolved++;
+        warn(`${id}: assists.aliasOf "${explicit}" is not a known definition`);
+        continue;
+      }
+      const target = explicit ?? resolveAlias(raw, id, knownIds);
+      if (target && target !== id) aliasTarget.set(id, target);
+      else {
         unresolved++;
         warn(`${id}: see-reference could not be resolved to a known definition`);
       }
     }
   }
-  if (aliased || unresolved) console.error(`aliases: ${aliased} resolved, ${unresolved} unresolved`);
+  // Snapshot the text pointers BEFORE rewriting: an alias may point at another
+  // alias, and it must land on the entry that actually prints the text.
+  const textOf = new Map([...entryById].map(([id, e]) => [id, e.fields?.description]));
+  const citeOf = new Map([...entryById].map(([id, e]) => [id, e.cite]));
+  const finalTarget = (id) => {
+    const seen = new Set([id]);
+    let at = aliasTarget.get(id);
+    while (at && aliasTarget.has(at) && !seen.has(at)) {
+      seen.add(at);
+      at = aliasTarget.get(at);
+    }
+    return at;
+  };
+
+  // Pass 2: an alias is its OWN ability, not a redirect. The books list a name
+  // whose rules text is printed under another entry — so it gets a real entry
+  // and the recipe carries a pre-baked pointer to WHERE that text lives. The
+  // pointer is page coordinates, not the passage: safe to ship, useless without
+  // the book. Because the effect scan reads whatever prose the pointer yields,
+  // the alias materializes the same mechanics without restating any of them.
+  let linked = 0;
+  let dangling = 0;
+  for (const data of Object.values(contentOut)) {
+    for (const [id, e] of Object.entries(data.entries)) {
+      const target = finalTarget(id);
+      if (!target) continue;
+      e.aliasOf = target;
+      const desc = textOf.get(target);
+      if (!desc) {
+        dangling++;
+        warn(`${id}: alias target ${target} has no text pointer to follow`);
+        continue;
+      }
+      e.fields.description = desc;
+      // The citation labels the PROSE, and the prose is the target's — so cite
+      // where a reader would actually turn to read it.
+      e.cite = citeOf.get(target) ?? e.cite;
+      // Two names for one capability do not stack. The target's build cost and
+      // retirement carry over too (same content), but never overwrite anything
+      // the alias's own listing stated.
+      const t = entryById.get(target);
+      e.meta = {
+        ...(t?.meta?.powerValue != null ? { powerValue: t.meta.powerValue } : {}),
+        ...(t?.meta?.deprecated ? { deprecated: true, ...(t.meta.replacedBy ? { replacedBy: t.meta.replacedBy } : {}) } : {}),
+        ...(e.meta ?? {}),
+        notStacksWith: [target],
+      };
+      linked++;
+    }
+  }
+  if (linked || unresolved || dangling) {
+    console.error(`aliases: ${linked} linked to their text, ${unresolved} unresolved, ${dangling} dangling`);
+  }
 
   // Content-type cookbooks: named by WHAT they extract, spanning every book
   // (powers appear in JJ and other books; monsters in MM and adventures).

@@ -61,3 +61,18 @@
 .acks-content-browse-row .acks-content-cite {
   margin-left: auto;
 }
+
+/* GM ability tools in the Item directory header. Sits above the search box, so
+   it keeps the directory's own spacing rather than introducing its own. */
+.acks-content-ability-tools {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.acks-content-ability-tools button {
+  flex: 1;
+  font-size: var(--font-size-12, 12px);
+  line-height: 1.6;
+  white-space: nowrap;
+}

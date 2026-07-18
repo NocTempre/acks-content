@@ -430,7 +430,12 @@ export function bindMonster(node) {
     // degrades to a plain named ability — never a failure.
     const shared = prof.ref ? cookbookEntry(prof.ref) : null;
     if (shared) {
-      items.push({ img: "icons/svg/book.svg", ...bindAbility(shared.entry, null, prof.ref) });
+      // When the stat block named it by an older name, the EMBEDDED copy records
+      // the rename (not the shared world item — that would stamp one source's
+      // history onto everyone's). The sheet then explains why the name on the
+      // page and the name in the book differ.
+      const renamed = prof.convertedFrom ? { conversionStatus: "renamed", conversionFrom: prof.convertedFrom } : {};
+      items.push({ img: "icons/svg/book.svg", ...bindAbility(shared.entry, null, prof.ref, renamed) });
       continue;
     }
     items.push({
@@ -532,9 +537,15 @@ async function importOne(bookId, id, folderId) {
  * descriptor; classification and any materialized mechanics persist in
  * flags["acks-abilities"].extras, so the ability stays usable without the book.
  */
-export function bindAbility(entry, node, id) {
+export function bindAbility(entry, node, id, opts = {}) {
   const meta = entry.meta ?? {};
   const cite = entry.cite ?? "";
+  // An alias is a DISTINCT ability that shares another entry's rules text, not a
+  // redirect to it. Two names for one capability do not stack, so the relation
+  // ships as a real effect rather than a note the reader has to interpret.
+  const aliasEffects = meta.notStacksWith?.length
+    ? [{ type: "capability", ref: entry.aliasOf ?? meta.notStacksWith[0], notStacksWith: meta.notStacksWith }]
+    : [];
   const extras = {
     category: meta.category ?? "proficiency",
     general: !!meta.general,
@@ -545,10 +556,17 @@ export function bindAbility(entry, node, id) {
     ...(meta.replacedBy ? { replacedBy: meta.replacedBy } : {}),
     ...(meta.powerValue != null ? { powerValue: meta.powerValue } : {}),
     ...(meta.requires ? { requires: meta.requires } : {}),
+    ...(entry.aliasOf ? { aliasOf: entry.aliasOf } : {}),
+    // Set when this reference arrived under an older/foreign name: the reader's
+    // source calls it `conversionFrom`, ACKS II calls it `entry.name`.
+    ...(opts.conversionStatus ? { conversionStatus: opts.conversionStatus } : {}),
+    ...(opts.conversionFrom ? { conversionFrom: opts.conversionFrom } : {}),
     // Structured effects are CLASSIFIED from the seat's own prose (type, target
     // and value all materialize; the cookbook pre-declares none of them). An
     // ability the scan can't classify is still valid — name + type + lazy prose.
-    effects: node?.fields?.effects ?? [],
+    // An alias reads the TARGET's prose through its pre-baked pointer, so it
+    // materializes the same mechanics without the cookbook restating any.
+    effects: [...aliasEffects, ...(node?.fields?.effects ?? [])],
     // Immunity-granting abilities (Divine Health, Wakefulness, Fiery
     // Resistance…) materialize defenses from the seat's OWN prose via the
     // executor's vocabulary scan — nothing about which is shipped.
@@ -584,9 +602,11 @@ async function ensureItemFolder() {
 export async function importAbility(id, folderId) {
   const found = cookbookEntry(id);
   if (!found) return null;
-  // A "See X." entry is a cross-reference, not an ability: resolve to the real
-  // one rather than minting a stub whose entire text is "See X."
-  if (found.entry.aliasOf && found.entry.aliasOf !== id) return importAbility(found.entry.aliasOf, folderId);
+  // NOTE an alias gets its OWN item. The books list a name whose rules text is
+  // printed under another entry; that makes it a distinct ability sharing a
+  // passage, not a synonym to redirect away. Its recipe already carries a
+  // pointer to where that text lives, so it extracts and classifies normally —
+  // it just does not stack with the entry it points at.
   const existing = game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id);
   if (existing) return existing;
 
@@ -599,11 +619,102 @@ export async function importAbility(id, folderId) {
     else node = null;
   }
   const folder = folderId ?? (await ensureItemFolder())?.id ?? null;
-  return Item.create({ ...bindAbility(found.entry, node, id), folder });
+  const doc = bindAbility(found.entry, node, id);
+  const extras = doc.flags["acks-abilities"].extras;
+  extras.effects = await resolveCompanions(extras.effects);
+  return Item.create({ ...doc, folder });
 }
 
 /** Every definition id the shipped content-type cookbooks carry. */
 export const cookbookAbilityIds = () => [...data.content.values()].flatMap((cb) => Object.keys(cb.entries));
+
+/* -------------------------------------------- */
+/*  Companions                                  */
+/* -------------------------------------------- */
+
+/**
+ * Fill a companion effect's actor slot. `ref` names the monster entry the
+ * ability confers — a pointer the recipe can ship because it is not the book's
+ * text. When that book is connected we import the creature and link it; when it
+ * is not, the slot stays EMPTY on purpose so a GM can drop an actor in, or so
+ * `cookbookFillCompanions()` can fill it once the book loads.
+ *
+ * Abilities whose creature is BUILT rather than named (a totem animal, a
+ * familiar chosen from a list) carry no `ref` at all and keep an empty slot for
+ * good — there is no single entry to point at.
+ */
+async function resolveCompanion(effect) {
+  if (effect?.type !== "companion" || effect.actorUuid || !effect.ref) return effect;
+  const found = cookbookEntry(effect.ref);
+  if (!found) return effect;
+  const existing = game.actors.find((a) => a.getFlag(MODULE_ID, "cookbook")?.id === effect.ref);
+  if (existing) return { ...effect, actorUuid: existing.uuid };
+  const bookId = bookOf(found);
+  if (!ctx.sessionDocs.has(bookId)) return effect; // bookless: leave the bucket
+  const actor = await importOne(bookId, effect.ref, (await ensureFolder())?.id ?? null).catch((err) => {
+    console.error(`${MODULE_ID} | companion ${effect.ref}`, err);
+    return null;
+  });
+  return actor ? { ...effect, actorUuid: actor.uuid } : effect;
+}
+
+/** Resolve every companion slot in an effects array, in order (creates actors). */
+async function resolveCompanions(effects) {
+  if (!effects?.some((e) => e?.type === "companion" && !e.actorUuid && e.ref)) return effects;
+  const out = [];
+  for (const e of effects) out.push(await resolveCompanion(e));
+  return out;
+}
+
+/**
+ * Fill companion slots left empty because the citing book was not connected.
+ * Safe to re-run: a slot already holding an actor is never touched.
+ */
+export async function cookbookFillCompanions() {
+  if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only.");
+  let filled = 0;
+  for (const { doc, extras } of eachAbility()) {
+    const effects = await resolveCompanions(extras.effects);
+    if (effects === extras.effects) continue;
+    await doc.update({ [`flags.acks-abilities.extras.effects`]: effects });
+    filled += effects.filter((e, i) => e.actorUuid && !extras.effects[i]?.actorUuid).length;
+  }
+  ui.notifications.info(`acks-content | companions: ${filled} slot(s) linked to an actor.`);
+  return filled;
+}
+
+/* -------------------------------------------- */
+/*  Bulk import / update                        */
+/* -------------------------------------------- */
+
+/** Every ability item in the world — loose in the library and on actors alike. */
+function* eachAbility() {
+  const extrasOf = (doc) => doc.getFlag("acks-abilities", "extras") ?? {};
+  for (const item of game.items) {
+    if (item.type === "ability") yield { doc: item, extras: extrasOf(item), on: null };
+  }
+  for (const actor of game.actors) {
+    for (const item of actor.items) {
+      if (item.type === "ability") yield { doc: item, extras: extrasOf(item), on: actor };
+    }
+  }
+}
+
+/** Names vary by punctuation and case between sources, so match folded. */
+const nameKey = (s) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/** Folded name -> definition id, across every shipped content cookbook. */
+function abilityNameIndex() {
+  const index = new Map();
+  for (const cb of data.content.values()) {
+    for (const [id, e] of Object.entries(cb.entries)) {
+      const key = nameKey(e.name);
+      if (key && !index.has(key)) index.set(key, id);
+      for (const a of e.aliases ?? []) if (nameKey(a) && !index.has(nameKey(a))) index.set(nameKey(a), id);
+    }
+  }
+  return index;
+}
 
 /** GM: import every shipped ability as a shared, deduped item. */
 export async function cookbookImportAbilities() {
@@ -616,9 +727,113 @@ export async function cookbookImportAbilities() {
   for (const id of ids) {
     if (game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id)) reused++;
     else made++;
-    await importAbility(id, folder);
+    await importAbility(id, folder).catch((err) => console.error(`${MODULE_ID} | import ${id}`, err));
   }
   ui.notifications.info(`acks-content | abilities: ${made} imported, ${reused} already present.`);
+  return { made, reused };
+}
+
+/**
+ * GM: refresh every ability already in the world — loose items AND the copies
+ * embedded on actors — against the current cookbook.
+ *
+ * Matched by cookbook id first, then by folded NAME, so abilities made by hand
+ * or imported by an older version get adopted and repaired rather than
+ * duplicated. Only the generated surface is rewritten (the lazy descriptor, the
+ * structured extras, the cookbook id); the item's name and the system fields a
+ * GM may have tuned are left alone.
+ */
+export async function cookbookUpdateAbilities() {
+  if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only.");
+  const index = abilityNameIndex();
+  if (!index.size) return ui.notifications.warn("acks-content | no abilities in the shipped cookbook.");
+
+  const nodeCache = new Map();
+  let updated = 0;
+  let adopted = 0;
+  let onActors = 0;
+  let skipped = 0;
+  for (const { doc, extras, on } of eachAbility()) {
+    const flagged = doc.getFlag(MODULE_ID, "cookbook")?.id;
+    const id = flagged ?? index.get(nameKey(doc.name));
+    if (!id || !cookbookEntry(id)) {
+      skipped++;
+      continue;
+    }
+    const found = cookbookEntry(id);
+    // Re-extract once per definition, not once per copy of it.
+    if (!nodeCache.has(id)) {
+      const session = ctx.sessionDocs.get(bookOf(found));
+      let node = null;
+      if (session) {
+        node = await executeEntry(session.doc, found.cb, data.registers, id).catch(() => null);
+        if (node?.ok) cookbookCacheParas(bookOf(found), id, node.fields.description ?? []);
+        else node = null;
+      }
+      nodeCache.set(id, node);
+    }
+    const built = bindAbility(found.entry, nodeCache.get(id), id, {
+      // A copy that recorded arriving under an older name keeps saying so.
+      ...(extras.conversionStatus ? { conversionStatus: extras.conversionStatus } : {}),
+      ...(extras.conversionFrom ? { conversionFrom: extras.conversionFrom } : {}),
+    });
+    built.flags["acks-abilities"].extras.effects = await resolveCompanions(built.flags["acks-abilities"].extras.effects);
+    await doc.update({
+      "system.description": built.system.description,
+      [`flags.${MODULE_ID}.cookbook`]: built.flags[MODULE_ID].cookbook,
+      "flags.acks-abilities.extras": built.flags["acks-abilities"].extras,
+    });
+    updated++;
+    if (!flagged) adopted++;
+    if (on) onActors++;
+  }
+  ui.notifications.info(
+    `acks-content | abilities updated: ${updated} (${onActors} on actors, ${adopted} matched by name), ` +
+      `${skipped} not in the cookbook.`,
+  );
+  return { updated, adopted, onActors, skipped };
+}
+
+/**
+ * GM-only Import All / Update All buttons at the top of the Item directory.
+ *
+ * Both are idempotent, which is what makes them safe to hand a GM: importing
+ * twice reuses the existing items rather than duplicating them, and updating
+ * only rewrites the generated surface. Buttons disable while running — these
+ * touch every ability in the world and a double-click would interleave.
+ */
+export function registerAbilityDirectoryButtons() {
+  Hooks.on("renderItemDirectory", (app, element) => {
+    if (!game.user.isGM) return;
+    const root = element instanceof HTMLElement ? element : element?.[0];
+    if (!root || root.querySelector(".acks-content-ability-tools")) return;
+
+    const bar = document.createElement("div");
+    bar.className = "acks-content-ability-tools";
+    const button = (labelKey, tipKey, icon, run) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.innerHTML = `<i class="${icon}"></i> ${game.i18n.localize(`${LANG_PREFIX}.ui.${labelKey}`)}`;
+      b.dataset.tooltip = game.i18n.localize(`${LANG_PREFIX}.ui.${tipKey}`);
+      b.addEventListener("click", async () => {
+        for (const x of bar.querySelectorAll("button")) x.disabled = true;
+        try {
+          await run();
+        } catch (err) {
+          console.error(`${MODULE_ID} | ability tools`, err);
+          ui.notifications.error(`acks-content | ${err.message}`);
+        } finally {
+          for (const x of bar.querySelectorAll("button")) x.disabled = false;
+        }
+      });
+      return b;
+    };
+    bar.append(
+      button("importAllAbilities", "importAllAbilitiesTip", "fa-solid fa-download", cookbookImportAbilities),
+      button("updateAllAbilities", "updateAllAbilitiesTip", "fa-solid fa-rotate", cookbookUpdateAbilities),
+    );
+    (root.querySelector(".directory-header") ?? root).prepend(bar);
+  });
 }
 
 /* -------------------------------------------- */
