@@ -43,7 +43,18 @@ export async function loadCookbook() {
     console.log(`${MODULE_ID} | no cookbook shipped (registers.json missing) — cookbook features disabled.`);
     return false;
   }
-  for (const bookId of Object.keys(BOOKS)) {
+  // The compiler writes an index naming exactly the files it produced. Probing
+  // for every book id instead would 404 for each book with no cookbook yet —
+  // caught and harmless, but it fills the console with what look like errors.
+  let index = null;
+  try {
+    index = await foundry.utils.fetchJsonWithTimeout(`${base}/index.json`);
+  } catch {
+    /* cookbook compiled before the index existed — fall back to probing */
+  }
+  const bookFiles = index?.books ?? Object.keys(BOOKS);
+  const contentFiles = index?.content ?? CONTENT_FILES;
+  for (const bookId of bookFiles) {
     try {
       const cb = await foundry.utils.fetchJsonWithTimeout(`${base}/${bookId}.json`);
       if (cb?.entries) data.books.set(bookId, cb);
@@ -51,7 +62,7 @@ export async function loadCookbook() {
       /* book without a cookbook yet */
     }
   }
-  for (const name of CONTENT_FILES) {
+  for (const name of contentFiles) {
     try {
       const cb = await foundry.utils.fetchJsonWithTimeout(`${base}/${name}.json`);
       if (cb?.entries) data.content.set(name, cb);
@@ -761,6 +772,117 @@ const preferredId = (ids) =>
     return r(a) - r(b);
   })[0];
 
+/**
+ * GM: browse every shipped ability and pick which to import.
+ *
+ * The counterpart to the monster import dialog. Works WITHOUT a connected book
+ * — an ability always imports with its name, classification and lazy descriptor
+ * — but the header says whether the citing book is open, because that is the
+ * difference between importing structure and importing structure + mechanics.
+ */
+export async function cookbookImportAbilitiesDialog() {
+  if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only (creates items).");
+  const rows = [];
+  for (const cb of data.content.values()) {
+    for (const [id, e] of Object.entries(cb.entries)) {
+      rows.push({ id, name: e.name, cite: e.cite, book: e.book, category: e.meta?.category ?? "proficiency", alias: !!e.aliasOf, deprecated: !!e.meta?.deprecated });
+    }
+  }
+  if (!rows.length) return ui.notifications.warn("acks-content | no abilities in the shipped cookbook.");
+  rows.sort((a, b) => a.name.localeCompare(b.name));
+
+  const esc = foundry.utils.escapeHTML ?? ((x) => x);
+  const have = new Set(game.items.filter((i) => i.getFlag(MODULE_ID, "cookbook")?.id).map((i) => i.getFlag(MODULE_ID, "cookbook").id));
+  const openBooks = [...new Set(rows.map((r) => r.book))].filter((b) => ctx.sessionDocs.has(b));
+  const cats = [...new Set(rows.map((r) => r.category))].sort();
+
+  const list = rows
+    .map((r) => {
+      const marks = [
+        r.alias ? `<i class="fa-solid fa-link" data-tooltip="${esc(game.i18n.localize(`${LANG_PREFIX}.ui.abilAlias`))}"></i>` : "",
+        r.deprecated ? `<i class="fa-solid fa-triangle-exclamation" data-tooltip="${esc(game.i18n.localize(`${LANG_PREFIX}.ui.abilDeprecated`))}"></i>` : "",
+        have.has(r.id) ? `<i class="fa-solid fa-check" data-tooltip="${esc(game.i18n.localize(`${LANG_PREFIX}.ui.abilPresent`))}"></i>` : "",
+      ].join("");
+      return `<label class="acks-content-browse-row" data-name="${esc(r.name.toLowerCase())}" data-cat="${esc(r.category)}" data-have="${have.has(r.id) ? 1 : 0}">
+        <input type="checkbox" name="sel" value="${esc(r.id)}">
+        <span>${esc(r.name)}</span><span class="acks-content-marks">${marks}</span>
+        <span class="acks-content-cite">${esc(r.cite)}</span>
+      </label>`;
+    })
+    .join("");
+
+  const catOptions = cats.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+  const content = `
+    <p class="notes">${game.i18n.format(`${LANG_PREFIX}.ui.abilIntro`, {
+      n: rows.length,
+      books: openBooks.length ? openBooks.map((b) => BOOKS[b].short).join(", ") : game.i18n.localize(`${LANG_PREFIX}.ui.abilNoBook`),
+    })}</p>
+    <div class="acks-content-abil-filters">
+      <input type="text" name="filter" placeholder="${game.i18n.localize(`${LANG_PREFIX}.ui.cookbookFilter`)}">
+      <select name="cat"><option value="">${game.i18n.localize(`${LANG_PREFIX}.ui.abilAllCats`)}</option>${catOptions}</select>
+      <label><input type="checkbox" name="hideHave"> ${game.i18n.localize(`${LANG_PREFIX}.ui.abilHidePresent`)}</label>
+    </div>
+    <div class="acks-content-abil-actions">
+      <button type="button" data-act="all">${game.i18n.localize(`${LANG_PREFIX}.ui.abilSelectShown`)}</button>
+      <button type="button" data-act="none">${game.i18n.localize(`${LANG_PREFIX}.ui.abilClear`)}</button>
+      <span class="acks-content-abil-count"></span>
+    </div>
+    <div class="acks-content-browse-list acks-content-abil-list">${list}</div>`;
+
+  return foundry.applications.api.DialogV2.prompt({
+    window: { title: game.i18n.localize(`${LANG_PREFIX}.ui.abilTitle`), resizable: true },
+    position: { width: 620, height: 700 },
+    content,
+    render: (event, dialog) => {
+      const root = dialog.element ?? dialog;
+      const listEl = root.querySelector(".acks-content-abil-list");
+      const count = root.querySelector(".acks-content-abil-count");
+      const shown = () => [...listEl.querySelectorAll(".acks-content-browse-row")].filter((r) => r.style.display !== "none");
+      const refresh = () => {
+        const q = root.querySelector('[name="filter"]').value.toLowerCase();
+        const cat = root.querySelector('[name="cat"]').value;
+        const hide = root.querySelector('[name="hideHave"]').checked;
+        for (const r of listEl.querySelectorAll(".acks-content-browse-row")) {
+          const ok = r.dataset.name.includes(q) && (!cat || r.dataset.cat === cat) && (!hide || r.dataset.have === "0");
+          r.style.display = ok ? "" : "none";
+          if (!ok) r.querySelector('input[name="sel"]').checked = false;
+        }
+        tally();
+      };
+      const tally = () => {
+        const n = listEl.querySelectorAll('input[name="sel"]:checked').length;
+        count.textContent = game.i18n.format(`${LANG_PREFIX}.ui.abilCount`, { n, shown: shown().length });
+      };
+      for (const sel of ['[name="filter"]', '[name="cat"]', '[name="hideHave"]']) {
+        root.querySelector(sel).addEventListener("input", refresh);
+      }
+      listEl.addEventListener("change", tally);
+      root.querySelector('[data-act="all"]').addEventListener("click", () => {
+        for (const r of shown()) r.querySelector('input[name="sel"]').checked = true;
+        tally();
+      });
+      root.querySelector('[data-act="none"]').addEventListener("click", () => {
+        for (const r of listEl.querySelectorAll('input[name="sel"]')) r.checked = false;
+        tally();
+      });
+      tally();
+    },
+    ok: {
+      label: game.i18n.localize(`${LANG_PREFIX}.ui.abilGo`),
+      callback: async (event, button) => {
+        const picked = [...button.form.querySelectorAll('input[name="sel"]:checked')].map((el) => el.value);
+        if (!picked.length) return ui.notifications.warn("acks-content | nothing selected.");
+        const folder = (await ensureItemFolder())?.id ?? null;
+        let done = 0;
+        for (const id of picked) {
+          if (await importAbility(id, folder).catch((err) => (console.error(`${MODULE_ID} | import ${id}`, err), null))) done++;
+        }
+        ui.notifications.info(game.i18n.format(`${LANG_PREFIX}.ui.abilDone`, { done, picked: picked.length, folder: FOLDER_NAME }));
+      },
+    },
+  });
+}
+
 /** GM: import every shipped ability as a shared, deduped item. */
 export async function cookbookImportAbilities() {
   if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only.");
@@ -880,6 +1002,7 @@ export function registerAbilityDirectoryButtons() {
       return b;
     };
     bar.append(
+      button("browseAbilities", "browseAbilitiesTip", "fa-solid fa-list-check", cookbookImportAbilitiesDialog),
       button("importAllAbilities", "importAllAbilitiesTip", "fa-solid fa-download", cookbookImportAbilities),
       button("updateAllAbilities", "updateAllAbilitiesTip", "fa-solid fa-rotate", cookbookUpdateAbilities),
     );

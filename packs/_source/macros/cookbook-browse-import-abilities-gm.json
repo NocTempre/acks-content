@@ -1,0 +1,20 @@
+{
+  "_id": "ackscMacAbilBrw0",
+  "_key": "!macros!ackscMacAbilBrw0",
+  "name": "Cookbook — Browse & Import Abilities (GM)",
+  "type": "script",
+  "img": "icons/svg/book.svg",
+  "scope": "global",
+  "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\napi.cookbookImportAbilitiesDialog();",
+  "folder": null,
+  "sort": 210,
+  "ownership": {
+    "default": 2
+  },
+  "flags": {},
+  "_stats": {
+    "coreVersion": "14",
+    "createdTime": 1784332800000,
+    "modifiedTime": 1784332800000
+  }
+}

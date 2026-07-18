@@ -76,3 +76,34 @@
   line-height: 1.6;
   white-space: nowrap;
 }
+
+/* Ability browse dialog: filters, bulk actions, per-row markers. */
+.acks-content-abil-filters,
+.acks-content-abil-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.acks-content-abil-filters input[type="text"] {
+  flex: 1;
+}
+
+.acks-content-abil-actions .acks-content-abil-count {
+  margin-left: auto;
+  font-size: var(--font-size-12, 12px);
+  opacity: 0.8;
+}
+
+.acks-content-abil-list {
+  max-height: 480px;
+}
+
+.acks-content-marks {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 6px;
+  opacity: 0.75;
+  font-size: var(--font-size-12, 12px);
+}

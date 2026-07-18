@@ -1,13 +1,13 @@
 {
   "_id": "ackscMacClear000",
   "_key": "!macros!ackscMacClear000",
-  "name": "PoC — Forget Books (this seat)",
+  "name": "Forget Books (this seat)",
   "type": "script",
   "img": "icons/svg/blind.svg",
   "scope": "global",
   "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\napi.forgetBooks();",
   "folder": null,
-  "sort": 0,
+  "sort": 120,
   "ownership": {
     "default": 2
   },

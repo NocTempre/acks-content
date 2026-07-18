@@ -1,13 +1,13 @@
 {
   "_id": "ackscMacStats000",
   "_key": "!macros!ackscMacStats000",
-  "name": "PoC 5 — Apply Stats from Book (GM)",
+  "name": "Apply Stats from Book (GM)",
   "type": "script",
   "img": "icons/svg/combat.svg",
   "scope": "global",
   "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\napi.applyStats();",
   "folder": null,
-  "sort": 0,
+  "sort": 310,
   "ownership": {
     "default": 2
   },

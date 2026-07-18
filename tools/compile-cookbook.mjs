@@ -1191,6 +1191,25 @@ async function main() {
     fs.writeFileSync(outPath, JSON.stringify(data, null, 2) + "\n");
     console.error(`wrote ${Object.keys(data.entries).length} entr(ies) -> ${outPath}`);
   }
+
+  // An index of what actually exists, so the runtime loads by name instead of
+  // probing every book id and 404-ing for the ones with no cookbook yet.
+  // Written from the DIRECTORY, not this run, so a per-book compile does not
+  // drop the files an earlier run produced.
+  const present = fs.readdirSync(COOKBOOK).filter((f) => f.endsWith(".json"));
+  const stem = (f) => f.replace(/\.json$/, "");
+  const contentNames = new Set(Object.values(CONTENT_OF));
+  fs.writeFileSync(
+    path.join(COOKBOOK, "index.json"),
+    JSON.stringify(
+      {
+        books: present.map(stem).filter((s) => BOOKS[s]),
+        content: present.map(stem).filter((s) => contentNames.has(s)),
+      },
+      null,
+      2,
+    ) + "\n",
+  );
   console.error(`compile done — ${warns.length} warning(s).`);
 }
 

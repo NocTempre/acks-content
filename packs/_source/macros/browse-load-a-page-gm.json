@@ -1,13 +1,13 @@
 {
   "_id": "ackscMacBrowse00",
   "_key": "!macros!ackscMacBrowse00",
-  "name": "PoC 3 — Browse & Load a Page (GM)",
+  "name": "Browse & Load a Page (GM)",
   "type": "script",
   "img": "icons/svg/direction.svg",
   "scope": "global",
   "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\napi.browseAndLoad();",
   "folder": null,
-  "sort": 0,
+  "sort": 300,
   "ownership": {
     "default": 2
   },

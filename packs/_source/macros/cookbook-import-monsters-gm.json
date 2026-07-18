@@ -3,11 +3,11 @@
   "_key": "!macros!ackscMacCookbook",
   "name": "Cookbook — Import Monsters (GM)",
   "type": "script",
-  "img": "icons/svg/book.svg",
+  "img": "icons/svg/mystery-man.svg",
   "scope": "global",
   "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\napi.cookbookImport();",
   "folder": null,
-  "sort": 0,
+  "sort": 200,
   "ownership": {
     "default": 2
   },

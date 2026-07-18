@@ -2,10 +2,15 @@
  * Module-owned compendium document content, consumed by the synced
  * tools/build-packs.mjs harness.
  *
- * One pack: PoC testing macros wrapping the acksContent api, so testers click
- * instead of typing console calls. Ids carry the declared "acksc" prefix and
- * are exactly 16 alphanumerics; _stats timestamps are FIXED so rebuilds are
- * byte-identical (no pack churn).
+ * One pack: macros wrapping the acksContent api, so a GM clicks instead of
+ * typing console calls. Ids carry the declared "acksc" prefix and are exactly
+ * 16 alphanumerics; _stats timestamps are FIXED so rebuilds are byte-identical
+ * (no pack churn).
+ *
+ * `_id` IS IDENTITY — never change one. A new id on an existing macro gives
+ * every world that already imported the pack a duplicate. Rename freely; the id
+ * stays. `sort` groups them: 100s set this seat up, 200s import from the
+ * cookbook, 300s are tools, 400s demonstrate the language model.
  */
 
 // Fixed epoch: 2026-07-17T00:00:00Z. Never change casually — churns packs.
@@ -15,7 +20,7 @@ const GUARD = `const api = globalThis.acksContent;
 if (!api) return ui.notifications.warn("acks-content | module not ready (is it enabled?).");
 `;
 
-function macro(id, name, img, command) {
+function macro(id, name, img, command, sort = 0) {
   return {
     _id: id,
     _key: `!macros!${id}`,
@@ -25,7 +30,7 @@ function macro(id, name, img, command) {
     scope: "global",
     command,
     folder: null,
-    sort: 0,
+    sort,
     ownership: { default: 2 },
     flags: {},
     _stats: { ...STATS },
@@ -34,60 +39,56 @@ function macro(id, name, img, command) {
 
 function buildMacros() {
   return [
+    /* --- 100s: set this seat up. What a new user does first. --- */
+    macro("ackscMacConnect0", "Connect Your Book (this seat)", "icons/svg/book.svg", GUARD + `api.connectBook();`, 100),
+    macro("ackscMacStatus00", "Book Status (this seat)", "icons/svg/chest.svg", GUARD + `api.bookStatus();`, 110),
+    macro("ackscMacClear000", "Forget Books (this seat)", "icons/svg/blind.svg", GUARD + `api.forgetBooks();`, 120),
+
+    /* --- 200s: import from the cookbook. --- */
+    macro("ackscMacCookbook", "Cookbook — Import Monsters (GM)", "icons/svg/mystery-man.svg", GUARD + `api.cookbookImport();`, 200),
+    macro(
+      "ackscMacAbilBrw0",
+      "Cookbook — Browse & Import Abilities (GM)",
+      "icons/svg/book.svg",
+      GUARD + `api.cookbookImportAbilitiesDialog();`,
+      210,
+    ),
+    macro(
+      "ackscMacAbilAll0",
+      "Cookbook — Import ALL Abilities (GM)",
+      "icons/svg/upgrade.svg",
+      GUARD + `api.cookbookImportAbilities();`,
+      220,
+    ),
+    macro(
+      "ackscMacAbilUpd0",
+      "Cookbook — Update Abilities in World (GM)",
+      "icons/svg/regen.svg",
+      GUARD + `api.cookbookUpdateAbilities();`,
+      230,
+    ),
+    macro(
+      "ackscMacAbilCmp0",
+      "Cookbook — Fill Companion Slots (GM)",
+      "icons/svg/pawprint.svg",
+      GUARD + `api.cookbookFillCompanions();`,
+      240,
+    ),
+
+    /* --- 300s: tools. --- */
+    macro("ackscMacBrowse00", "Browse & Load a Page (GM)", "icons/svg/direction.svg", GUARD + `api.browseAndLoad();`, 300),
+    macro("ackscMacStats000", "Apply Stats from Book (GM)", "icons/svg/combat.svg", GUARD + `api.applyStats();`, 310),
+    macro("ackscMacCkDebug0", "Cookbook — Debug Raw Extraction (GM)", "icons/svg/eye.svg", GUARD + `api.cookbookDebug();`, 320),
+
+    /* --- 400s: demonstrations of the language model, not day-to-day tools. --- */
     macro(
       "ackscMacSamples0",
-      "PoC 1 — Create Sample Actors & Items",
-      "icons/svg/mystery-man.svg",
+      "Demo — Create Sample Actors & Items",
+      "icons/svg/dice-target.svg",
       GUARD + `api.createSamples();`,
+      400,
     ),
-    macro(
-      "ackscMacConnect0",
-      "PoC 2 — Connect Your Book (this seat)",
-      "icons/svg/book.svg",
-      GUARD + `api.connectBook();`,
-    ),
-    macro(
-      "ackscMacBrowse00",
-      "PoC 3 — Browse & Load a Page (GM)",
-      "icons/svg/direction.svg",
-      GUARD + `api.browseAndLoad();`,
-    ),
-    macro(
-      "ackscMacAudit000",
-      "PoC 4 — Audit: the two language options",
-      "icons/svg/eye.svg",
-      GUARD + `api.audit();`,
-    ),
-    macro(
-      "ackscMacStats000",
-      "PoC 5 — Apply Stats from Book (GM)",
-      "icons/svg/combat.svg",
-      GUARD + `api.applyStats();`,
-    ),
-    macro(
-      "ackscMacCookbook",
-      "Cookbook — Import Monsters (GM)",
-      "icons/svg/book.svg",
-      GUARD + `api.cookbookImport();`,
-    ),
-    macro(
-      "ackscMacCkDebug0",
-      "Cookbook — Debug Raw Extraction (GM)",
-      "icons/svg/eye.svg",
-      GUARD + `api.cookbookDebug();`,
-    ),
-    macro(
-      "ackscMacStatus00",
-      "PoC — Book Status (this seat)",
-      "icons/svg/chest.svg",
-      GUARD + `api.bookStatus();`,
-    ),
-    macro(
-      "ackscMacClear000",
-      "PoC — Forget Books (this seat)",
-      "icons/svg/blind.svg",
-      GUARD + `api.forgetBooks();`,
-    ),
+    macro("ackscMacAudit000", "Demo — Audit: the two language options", "icons/svg/light.svg", GUARD + `api.audit();`, 410),
   ];
 }
 

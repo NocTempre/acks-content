@@ -1,0 +1,20 @@
+{
+  "_id": "ackscMacAbilAll0",
+  "_key": "!macros!ackscMacAbilAll0",
+  "name": "Cookbook — Import ALL Abilities (GM)",
+  "type": "script",
+  "img": "icons/svg/upgrade.svg",
+  "scope": "global",
+  "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\napi.cookbookImportAbilities();",
+  "folder": null,
+  "sort": 220,
+  "ownership": {
+    "default": 2
+  },
+  "flags": {},
+  "_stats": {
+    "coreVersion": "14",
+    "createdTime": 1784332800000,
+    "modifiedTime": 1784332800000
+  }
+}

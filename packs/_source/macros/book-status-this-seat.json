@@ -1,13 +1,13 @@
 {
   "_id": "ackscMacStatus00",
   "_key": "!macros!ackscMacStatus00",
-  "name": "PoC — Book Status (this seat)",
+  "name": "Book Status (this seat)",
   "type": "script",
   "img": "icons/svg/chest.svg",
   "scope": "global",
   "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\napi.bookStatus();",
   "folder": null,
-  "sort": 0,
+  "sort": 110,
   "ownership": {
     "default": 2
   },

@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.6.0
+
+- **Browse & Import Abilities.** There was no way to import a *selection* of
+  abilities — only all of them, or nothing. This adds the picker the monster
+  import has always had: filter by category and name, "select shown", hide the
+  ones already in the world, and markers for cross-references, retired content
+  and what you already have. Reachable from the Items sidebar and a macro.
+  It works without a connected book, and says so: abilities always import with
+  their name, classification and page reference, and the mechanics arrive when
+  someone who owns the book imports or updates.
+- **Macro pack revised.** The macros were still the PoC set, numbered in a
+  tutorial order that no longer matched how the module is used, with nothing for
+  abilities at all. They are now grouped and named for what they do — set up
+  your seat, import from the cookbook, tools, demos — and four ability macros
+  are added. Existing macro ids are unchanged, so a world that already imported
+  the pack gets renames rather than duplicates. The compendium is now "ACKS
+  Content — Macros".
+- **No more 404s on load.** The runtime probed for a cookbook file per book id
+  and 404'd for every book without one (`rr.json`, `jj.json`, `cw.json`). The
+  compiler now writes `cookbook/index.json` naming exactly what it produced, and
+  the runtime loads from that.
+- README rewritten around actual usage rather than the PoC walkthrough.
+
 ## 0.5.2
 
 - Reverts the compiled `packs/` back to the v0.5.0 build. 0.5.1 accidentally

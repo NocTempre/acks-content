@@ -54,25 +54,42 @@ stream (e.g. the ACKS II core rules, Judges Journal, Monstrous Manual) —
 _[confirm exact publication title(s)]_. You supply your own PDFs; the app is
 free to use and is not a substitute for the books.
 
-## PoC usage (dev)
+## Usage
 
-1. Enable the module in an `acks` world (junction already in place).
-2. Open the "ACKS Content — PoC Macros" compendium and drag the macros to the
-   hotbar (or run from the compendium). "PoC 1 — Create Sample Actors & Items"
-   (GM) creates the
-   "ACKS Content PoC" folders: Griffon (PoC) + Content Carrier (PoC) actors
-   and three world items, all carrying only `@PdfText` tags.
-3. `acksContent.connectBook()` — pick a book and your local PDF (read in this
-   browser only). Re-open sheets: descriptions gain "📖 Show book text".
-4. `acksContent.audit()` — GM-whispered card contrasting language option A
-   (persisted stub + reference) with B (reproduced on demand per seat).
-5. The two Codex of Whispers entries are INTENTIONAL FAKES — they demo the
-   missing-book path and can never resolve.
-6. "PoC 5 — Apply Stats from Book" (GM, after PoC 1+2 with MM connected):
-   parses the monster stat block from your PDF into the world actor (AC, HD,
-   saves via F-band, morale, XP, alignment, movement, appearing, attacks);
-   unmapped labels stored raw under flags.acks-content. Browse-loaded (PoC 3)
-   monsters get stats automatically. Combat Reflexes demonstrates a shipped
-   mechanical payload: +1 initiative Active Effect alongside streamed prose.
-7. Engine regression vs the local library: `node tools/dev-extract-check.mjs`
-   (dev-only; requires C:\Proj\acks-reference).
+Enable the module in an `acks` world, then open the **"ACKS Content — Macros"**
+compendium. They are ordered by what you do first.
+
+**Set up your seat.** `Connect Your Book` picks a book and your local PDF (read
+in this browser only, never uploaded). Re-open a sheet afterwards and its
+description gains "📖 Show book text". `Book Status` says which books this seat
+can read; `Forget Books` drops the remembered locations and this session's prose.
+
+**Import content.** `Cookbook — Import Monsters` and `Cookbook — Browse & Import
+Abilities` open pickers; `Import ALL Abilities` takes the lot. Abilities import
+**with or without a connected book** — without one you get the name,
+classification and page reference, and the rules text and mechanics arrive once
+someone who owns the book imports or updates. `Update Abilities in World`
+re-runs that over everything already imported, including the copies embedded on
+actors, and adopts hand-made abilities by matching their name. `Fill Companion
+Slots` links companion abilities to their creature once the citing book is open.
+
+The same three ability actions also sit at the top of a GM's Items sidebar.
+
+**Tools.** `Browse & Load a Page`; `Apply Stats from Book` (parses a monster
+stat block from your PDF into the world actor — AC, HD, saves via F-band,
+morale, XP, alignment, movement, appearing, attacks; unmapped labels are stored
+raw under `flags.acks-content`, and browse-loaded monsters get stats
+automatically); and `Cookbook — Debug Raw Extraction`, which shows exactly what
+the executor read, so a bad import can be traced to the recipe rather than the
+binding.
+
+**Demos.** `Create Sample Actors & Items` builds the "ACKS Content PoC" folders
+— Griffon and Content Carrier actors plus three world items, all carrying only
+`@PdfText` tags. Combat Reflexes there demonstrates a shipped mechanical
+payload: a +1 initiative Active Effect alongside streamed prose. `Audit: the two
+language options` contrasts the persisted stub with the text reproduced on
+demand. The two Codex of Whispers entries are INTENTIONAL FAKES — they
+demonstrate the missing-book path and can never resolve.
+
+Engine regression against the local library: `node tools/dev-extract-check.mjs`
+(dev-only; requires `C:\Proj\acks-reference`).

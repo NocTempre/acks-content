@@ -1,0 +1,20 @@
+{
+  "_id": "ackscMacAbilUpd0",
+  "_key": "!macros!ackscMacAbilUpd0",
+  "name": "Cookbook — Update Abilities in World (GM)",
+  "type": "script",
+  "img": "icons/svg/regen.svg",
+  "scope": "global",
+  "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\napi.cookbookUpdateAbilities();",
+  "folder": null,
+  "sort": 230,
+  "ownership": {
+    "default": 2
+  },
+  "flags": {},
+  "_stats": {
+    "coreVersion": "14",
+    "createdTime": 1784332800000,
+    "modifiedTime": 1784332800000
+  }
+}

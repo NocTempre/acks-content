@@ -29,7 +29,7 @@ import { extractStatPairs } from "./stats.mjs";
 import { mapPairs } from "./stats-map.mjs";
 import { createSamples, createDocFor, audit as auditDialog } from "./poc.mjs";
 import {
-  initCookbook, loadCookbook, cookbookImport, cookbookImportAbilities, cookbookUpdateAbilities,
+  initCookbook, loadCookbook, cookbookImport, cookbookImportAbilities, cookbookImportAbilitiesDialog, cookbookUpdateAbilities,
   cookbookFillCompanions, registerAbilityDirectoryButtons, importAbility, cookbookDebug, cookbookStub,
   cookbookCanReveal, cookbookProse, cookbookCount,
 } from "./cookbook.mjs";
@@ -595,7 +595,7 @@ Hooks.once("ready", async () => {
   const audit = () => auditDialog(allRecipes(), stubFor);
   const api = {
     connectBook, browseAndLoad, createSamples: createSamplesAndFill, applyStats, audit, bookStatus, forgetBooks,
-    proseFor, cookbookImport, cookbookImportAbilities, cookbookUpdateAbilities, cookbookFillCompanions,
+    proseFor, cookbookImport, cookbookImportAbilities, cookbookImportAbilitiesDialog, cookbookUpdateAbilities, cookbookFillCompanions,
     importAbility, cookbookDebug, cookbookProse, cookbookCount,
     RECIPES, BOOKS,
   };
@@ -603,7 +603,7 @@ Hooks.once("ready", async () => {
   const module = game.modules.get(MODULE_ID);
   if (module) module.api = api;
   console.log(
-    `${MODULE_ID} | ready. PoC macros in "ACKS Content — PoC Macros", or: acksContent.connectBook() · acksContent.cookbookImport() · acksContent.cookbookImportAbilities() · acksContent.browseAndLoad() · acksContent.audit().`,
+    `${MODULE_ID} | ready. Macros in "ACKS Content — Macros", or: acksContent.connectBook() · acksContent.cookbookImport() · acksContent.cookbookImportAbilitiesDialog() · acksContent.cookbookUpdateAbilities() · acksContent.browseAndLoad() · acksContent.audit().`,
   );
 
   // Reopen remembered books; offer the unlock gesture for the rest.

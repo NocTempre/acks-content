@@ -137,8 +137,18 @@ if (fs.existsSync(refsDir)) {
 
 /* --- compiled cookbook (when present) --- */
 if (fs.existsSync(COOKBOOK)) {
+  // index.json names which cookbook files exist; it is not itself a cookbook.
+  const idx = readJson(path.join(COOKBOOK, "index.json"), "cookbook/index.json");
+  if (idx) {
+    for (const key of ["books", "content"]) {
+      if (!Array.isArray(idx[key])) err(`cookbook/index.json: "${key}" must be an array`);
+      for (const name of idx[key] ?? []) {
+        if (!fs.existsSync(path.join(COOKBOOK, `${name}.json`))) err(`cookbook/index.json: ${key} names missing "${name}.json"`);
+      }
+    }
+  }
   for (const f of fs.readdirSync(COOKBOOK).sort()) {
-    if (!f.endsWith(".json")) continue;
+    if (!f.endsWith(".json") || f === "index.json") continue;
     const label = `cookbook/${f}`;
     const cb = readJson(path.join(COOKBOOK, f), label);
     if (!cb) continue;

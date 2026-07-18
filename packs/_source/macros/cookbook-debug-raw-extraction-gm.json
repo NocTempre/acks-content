@@ -7,7 +7,7 @@
   "scope": "global",
   "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\napi.cookbookDebug();",
   "folder": null,
-  "sort": 0,
+  "sort": 320,
   "ownership": {
     "default": 2
   },
