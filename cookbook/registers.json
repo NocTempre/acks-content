@@ -1229,6 +1229,68 @@
         "key": "energyInvulnerabilityColdElectric"
       }
     },
+    "modifierTarget": {
+      "avoid surprise": {
+        "key": "surprise"
+      },
+      "surprise rolls": {
+        "key": "surprise"
+      },
+      "surprise throws": {
+        "key": "surprise"
+      },
+      "reaction rolls": {
+        "key": "reaction"
+      },
+      "saving throws": {
+        "key": "save"
+      },
+      "attack throws": {
+        "key": "attackThrow"
+      },
+      "armor class": {
+        "key": "ac"
+      },
+      "ac": {
+        "key": "ac"
+      },
+      "initiative rolls": {
+        "key": "initiative"
+      },
+      "initiative": {
+        "key": "initiative"
+      },
+      "damage rolls": {
+        "key": "damage"
+      },
+      "morale": {
+        "key": "morale"
+      },
+      "morale score": {
+        "key": "morale"
+      },
+      "loyalty score": {
+        "key": "loyalty"
+      },
+      "proficiency throws": {
+        "key": "proficiencyThrow"
+      },
+      "proficiency throw": {
+        "key": "proficiencyThrow"
+      },
+      "magic research throws": {
+        "key": "research"
+      },
+      "research throws": {
+        "key": "research"
+      },
+      "hit points": {
+        "key": "hp"
+      },
+      "cleaves": {
+        "key": "cleaves"
+      }
+    },
     "naturalWeapon": {
       "bite": {
         "key": "bite"

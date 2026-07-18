@@ -542,9 +542,10 @@ export function bindAbility(entry, node, id) {
     deprecated: !!meta.deprecated,
     ...(meta.powerValue != null ? { powerValue: meta.powerValue } : {}),
     ...(meta.requires ? { requires: meta.requires } : {}),
-    // Structured effects arrive with the per-entry extraction assists; an
-    // ability with none is still valid (name + type + lazy prose).
-    effects: [],
+    // Structured effects are CLASSIFIED from the seat's own prose (type, target
+    // and value all materialize; the cookbook pre-declares none of them). An
+    // ability the scan can't classify is still valid — name + type + lazy prose.
+    effects: node?.fields?.effects ?? [],
     // Immunity-granting abilities (Divine Health, Wakefulness, Fiery
     // Resistance…) materialize defenses from the seat's OWN prose via the
     // executor's vocabulary scan — nothing about which is shipped.

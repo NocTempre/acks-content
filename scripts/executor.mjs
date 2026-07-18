@@ -228,6 +228,103 @@ const DEF_BOUNDARY =
  * nothing about which defenses apply is ever baked. Exported so authoring
  * tools can preview the same result.
  */
+/**
+ * Materialize an ability's structured EFFECTS from chef-authored specs.
+ *
+ * The cookbook ships the effect's STRUCTURE (type, target, mode, refs, ifHas,
+ * stacking) — never its numbers. A spec that carries a number points at it with
+ * `from.pattern`, a short locator applied to THIS SEAT'S own extracted prose,
+ * so the value materializes from the reader's book exactly like a monster stat.
+ * A locator that doesn't match (different printing) drops that effect rather
+ * than inventing a value.
+ */
+export function materializeEffects(specs, paras) {
+  const text = (paras ?? []).map((p) => (typeof p === "string" ? p : p.text)).join(" ");
+  const out = [];
+  for (const spec of specs ?? []) {
+    const { from, ...effect } = spec ?? {};
+    if (from?.pattern) {
+      if (!text) continue;
+      let m = null;
+      try {
+        m = new RegExp(from.pattern, from.flags ?? "i").exec(text);
+      } catch {
+        m = null; // a malformed locator never throws at the table
+      }
+      if (!m) continue;
+      const n = parseInt(String(m[1] ?? m[0]).replace(/[^\d-]/g, ""), 10);
+      if (Number.isNaN(n)) continue;
+      effect.value =
+        from.as === "perLevel" ? { kind: "perLevel", base: n, per: from.per ?? -1 } : n;
+    }
+    out.push(effect);
+  }
+  return out;
+}
+
+/**
+ * Derive an ability's structured EFFECTS from its OWN prose, classified against
+ * a SHIPPED vocabulary (the `modifierTarget` register) plus a fixed library of
+ * shape patterns. Effect TYPE, TARGET and VALUE all materialize from the seat's
+ * book — the cookbook pre-declares none of them, exactly as the defense scan
+ * ships only the keyword vocabulary and never which creature has what.
+ * Per-entry assists remain the fallback for shapes this cannot classify.
+ */
+export function effectScan(paras, registers) {
+  const text = (paras ?? []).map((p) => (typeof p === "string" ? p : p.text)).join(" ");
+  if (!text) return [];
+  // Longest surface wins ("initiative rolls" before "initiative").
+  const targets = Object.entries(registers?.tables?.modifierTarget ?? {})
+    .map(([surface, row]) => [surface.toLowerCase(), row.key])
+    .sort((a, b) => b[0].length - a[0].length);
+  const classify = (phrase) => {
+    const p = ` ${String(phrase).toLowerCase().replace(/\s+/g, " ").trim()} `;
+    for (const [surface, key] of targets) if (p.includes(` ${surface} `)) return key;
+    return null;
+  };
+  const out = [];
+  const seen = new Set();
+  const push = (e) => {
+    const k = JSON.stringify(e);
+    if (seen.has(k)) return;
+    seen.add(k);
+    out.push(e);
+  };
+
+  // Values ship as acks-lib LevelValue objects so they satisfy the ability
+  // DataModel directly (a bare number would fail the SchemaField).
+  const flat = (n) => ({ kind: "flat", flat: n });
+
+  const OWNER = "(?:all\\s+|his\\s+|their\\s+|its\\s+|the\\s+)?";
+  // "gains a +1 bonus to avoid surprise" / "suffers a -2 penalty on reaction rolls"
+  for (const m of text.matchAll(new RegExp(`([+-]?\\d+)\\s+(bonus|penalty)\\s+(?:to|on)\\s+(${OWNER}[A-Za-z' -]{2,34})`, "gi"))) {
+    const key = classify(m[3]);
+    if (!key) continue;
+    let n = parseInt(m[1], 10);
+    if (Number.isNaN(n)) continue;
+    if (/penalty/i.test(m[2])) n = -Math.abs(n);
+    push({ type: "modifier", target: key, value: flat(n), mode: "add" });
+  }
+  // "gains a +2 to saving throws" (no bonus/penalty word — require an explicit sign)
+  for (const m of text.matchAll(new RegExp(`([+-]\\d+)\\s+(?:to|on)\\s+(${OWNER}[A-Za-z' -]{2,34})`, "gi"))) {
+    const key = classify(m[2]);
+    if (key) push({ type: "modifier", target: key, value: flat(parseInt(m[1], 10)), mode: "add" });
+  }
+  // "succeeds on a Dungeonbashing proficiency throw of 18+" — the capitalised
+  // qualifier says WHICH activity, so a bundle like Adventuring's five throws
+  // stays five distinct effects instead of collapsing on the number.
+  for (const m of text.matchAll(/(?:([A-Z][A-Za-z-]+)\s+)?proficiency throw of (\d+)\+/g)) {
+    const e = { type: "throw", value: flat(parseInt(m[2], 10)), roll: "1d20", rollType: "above" };
+    if (m[1]) e.forWhat = m[1];
+    push(e);
+  }
+  // "climb as a thief of his class level" / "control undead as a crusader of one half his class level"
+  for (const m of text.matchAll(/as an?\s+(thief|crusader|fighter|mage)\s+of\s+(one[- ]half\s+)?(?:his|their)\s+(?:class|caster)\s+level/gi)) {
+    push({ type: "progressionAs", as: m[1].toLowerCase(), atLevel: m[2] ? "half" : "full" });
+  }
+  return out;
+}
+
 export function defenseScan(paras, registers) {
   const text = (paras ?? []).map((p) => (typeof p === "string" ? p : p.text)).join(" ");
   if (!text) return null;
@@ -471,6 +568,7 @@ export async function executeEntry(doc, bookCookbook, registers, entryId, opts =
 
   for (const [field, instr] of Object.entries(entry.fields ?? {})) {
     if (opts.skipOps?.includes(instr.op)) continue; // caller choice (e.g. verify without art)
+    if (field === "effects") continue; // assist specs applied below, once description exists
     const ctx = { doc, registers, getPage, claims, misses, field };
     let result = null;
     try {
@@ -500,6 +598,14 @@ export async function executeEntry(doc, bookCookbook, registers, entryId, opts =
   if (fields.description?.length) {
     const scanned = defenseScan(fields.description, registers);
     if (scanned) fields.defenses = scanned;
+    // Structured effects: classified from THIS SEAT'S prose against the shipped
+    // vocabulary. Per-entry assist specs merge in for shapes the scan cannot
+    // classify — their values still materialize from the book, never baked.
+    const effects = [
+      ...effectScan(fields.description, registers),
+      ...materializeEffects(entry.fields?.effects?.specs, fields.description),
+    ];
+    if (effects.length) fields.effects = effects;
   }
   const t = fields.stats?.type;
   const typeRefs = t?.refs ?? (t?.ref ? [t.ref] : []);
