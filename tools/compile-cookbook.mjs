@@ -915,6 +915,67 @@ async function compileDefinition(doc, entry, kindRow) {
     fields.description = { op: "text", page, paras };
   }
 
+  /**
+   * `assists.progression` — this ability's numbers live in a TABLE, not in its
+   * entry. The chef names the table's heading and which column is this
+   * ability's; the compiler resolves those to coordinates and ships only those,
+   * so the values still come from the reader's book.
+   *
+   * Column headers are left-aligned while the cells under them are centred, so
+   * a header's x does not land on its data. The data columns are found from the
+   * FIRST data row instead, and each header claims the nearest one.
+   */
+  if (assists.progression) {
+    const { table, column, page: tPage = page } = assists.progression;
+    const tpd = tPage === page ? pd : await pageItems(doc, tPage);
+    const fold = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, "");
+    const head = tpd.items.find((i) => fold(i.str).startsWith(fold(table)));
+    if (!head) {
+      warn(`${entry.id}: progression table "${table}" not found on p.${tPage}`);
+    } else {
+      const below = tpd.items.filter((i) => i.y > head.y + 2 && i.y < head.y + 220);
+      const rowsOf = (items) => {
+        const by = new Map();
+        for (const it of items) {
+          const k = Math.round(it.y / 3);
+          (by.get(k) ?? by.set(k, []).get(k)).push(it);
+        }
+        return [...by.entries()].sort((a, b) => a[0] - b[0]).map(([, v]) => v.sort((a, b) => a.x - b.x));
+      };
+      const rows = rowsOf(below);
+      // The header row is the first below the heading; data rows are the ones
+      // whose leftmost cell is a bare level number.
+      const header = rows[0] ?? [];
+      const dataRows = rows.slice(1).filter((r) => /^\d+$/.test(r[0]?.str.trim()));
+      if (!dataRows.length) {
+        warn(`${entry.id}: progression table "${table}" has no numeric rows`);
+      } else {
+        // Header cells split across runs ("t"+"rapbreaking"), so rebuild them.
+        const cells = [];
+        for (const it of header) {
+          const prev = cells[cells.length - 1];
+          if (prev && it.x - (prev.x + (prev.w ?? 0)) < 3) prev.str += it.str;
+          else cells.push({ str: it.str, x: it.x, w: it.w ?? 0 });
+        }
+        const want = cells.find((c) => fold(c.str) === fold(column)) ?? cells.find((c) => fold(c.str).startsWith(fold(column)));
+        const dataXs = [...new Set(dataRows[0].slice(1).map((c) => c.x))].sort((a, b) => a - b);
+        if (!want) {
+          warn(`${entry.id}: progression column "${column}" not in table "${table}"`);
+        } else {
+          const colX = dataXs.reduce((best, x) => (Math.abs(x - want.x) < Math.abs(best - want.x) ? x : best), dataXs[0]);
+          const y0 = dataRows[0][0].y - 4;
+          const y1 = dataRows[dataRows.length - 1][0].y + 4;
+          const lx = dataRows[0][0].x;
+          fields.progression = {
+            op: "progression", page: tPage,
+            levelBox: { x0: lx - 6, x1: lx + 18, y0, y1 },
+            valueBox: { x0: colX - 8, x1: colX + 26, y0, y1 },
+          };
+        }
+      }
+    }
+  }
+
   // Chef-authored effect specs, for shapes the prose scan cannot classify on
   // its own (a companion pointing at a monster entry, a reroll's keep rule).
   // These ship STRUCTURE only — type, refs, mode, stacking. Any NUMBER they

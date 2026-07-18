@@ -668,6 +668,41 @@ async function execInstruction(instr, ctx) {
       claim(runs, ctx.field);
       return applyPattern(joinRuns(runs, instr.fixes, instr.dropText), instr, registers, misses);
     }
+    /**
+     * One COLUMN of a level-progression table, read as a LevelValue.
+     *
+     * Some abilities keep no numbers in their own entry at all — every thief
+     * skill's target numbers live in a single grid, one column per skill, one
+     * row per level. The recipe ships the grid's coordinates (which column,
+     * which rows) and nothing else, so the numbers still materialize from the
+     * reader's own book exactly like a monster's hit dice.
+     *
+     * Rows are paired by vertical proximity rather than by index, because a
+     * blank cell would otherwise shift every level below it.
+     */
+    case "progression": {
+      const levels = runsIn(pd, { box: instr.levelBox });
+      const values = runsIn(pd, { box: instr.valueBox });
+      claim([...levels, ...values], ctx.field);
+      const num = (s) => {
+        const m = /-?\d+/.exec(String(s).replace(/[^\d+-]/g, ""));
+        return m ? parseInt(m[0], 10) : null;
+      };
+      const breakpoints = [];
+      for (const lv of levels) {
+        const atLevel = num(lv.str);
+        if (atLevel == null) continue;
+        const cell = values.find((v) => Math.abs(v.y - lv.y) <= (instr.rowTol ?? 3));
+        const value = cell ? num(cell.str) : null;
+        if (value != null) breakpoints.push({ atLevel, value });
+      }
+      breakpoints.sort((a, b) => a.atLevel - b.atLevel);
+      if (!breakpoints.length) {
+        misses.push({ field: ctx.field, error: "progression table matched no rows" });
+        return null;
+      }
+      return { kind: "breakpoints", breakpoints };
+    }
     case "attacks": {
       const aRuns = runsIn(pd, { box: instr.attacksBox });
       const dRuns = runsIn(pd, { box: instr.damageBox });
@@ -794,6 +829,19 @@ export async function executeEntry(doc, bookCookbook, registers, entryId, opts =
       ...materializeEffects(entry.fields?.effects?.specs, fields.description),
     ];
     if (effects.length) fields.effects = effects;
+  }
+  // An ability whose numbers live in a TABLE rather than in its own entry: the
+  // column just read IS its proficiency throw, level by level. Added after the
+  // prose scan so it lands even on an entry whose description says nothing
+  // mechanical — which is exactly the case that motivated it.
+  if (fields.progression?.breakpoints?.length) {
+    (fields.effects ??= []).push({
+      type: "throw",
+      value: fields.progression,
+      roll: "1d20",
+      rollType: "above",
+      forWhat: entry.name,
+    });
   }
   const t = fields.stats?.type;
   const typeRefs = t?.refs ?? (t?.ref ? [t.ref] : []);

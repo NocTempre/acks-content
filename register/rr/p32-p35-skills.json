@@ -27,6 +27,13 @@
     ],
     "meta": {
       "category": "skill"
+    },
+    "assists": {
+      "progression": {
+        "table": "Thief Skills",
+        "column": "Climbing",
+        "page": 33
+      }
     }
   },
   {
@@ -42,6 +49,13 @@
     ],
     "meta": {
       "category": "skill"
+    },
+    "assists": {
+      "progression": {
+        "table": "Thief Skills",
+        "column": "Hiding",
+        "page": 33
+      }
     }
   },
   {
@@ -57,6 +71,13 @@
     ],
     "meta": {
       "category": "skill"
+    },
+    "assists": {
+      "progression": {
+        "table": "Thief Skills",
+        "column": "Listening",
+        "page": 33
+      }
     }
   },
   {
@@ -72,6 +93,13 @@
     ],
     "meta": {
       "category": "skill"
+    },
+    "assists": {
+      "progression": {
+        "table": "Thief Skills",
+        "column": "Lockpicking",
+        "page": 33
+      }
     }
   },
   {
@@ -87,6 +115,13 @@
     ],
     "meta": {
       "category": "skill"
+    },
+    "assists": {
+      "progression": {
+        "table": "Thief Skills",
+        "column": "Pickpocketing",
+        "page": 33
+      }
     }
   },
   {
@@ -102,6 +137,13 @@
     ],
     "meta": {
       "category": "skill"
+    },
+    "assists": {
+      "progression": {
+        "table": "Thief Skills",
+        "column": "Searching",
+        "page": 33
+      }
     }
   },
   {
@@ -132,6 +174,13 @@
     ],
     "meta": {
       "category": "skill"
+    },
+    "assists": {
+      "progression": {
+        "table": "Thief Skills",
+        "column": "Sneaking",
+        "page": 33
+      }
     }
   },
   {
@@ -162,6 +211,13 @@
     ],
     "meta": {
       "category": "skill"
+    },
+    "assists": {
+      "progression": {
+        "table": "Thief Skills",
+        "column": "Trapbreaking",
+        "page": 33
+      }
     }
   },
   {

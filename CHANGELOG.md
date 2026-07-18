@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.9.0
+
+- **Thief skills finally have their numbers.** All thirteen carried no mechanics
+  at all, and the reason was not a bad extraction: their target numbers are not
+  in their entries. Every one is a column of a single grid on RR p.33, and the
+  entries only describe what the skill does. A new `progression` op reads one
+  column of that grid — the recipe ships which column and which rows, the
+  numbers materialize from the reader's own book like everything else — so eight
+  skills now carry a full level-1-to-14 proficiency throw, verified cell for
+  cell against the printed table.
+- A sweep of both books confirms this was the **only** such table: no other page
+  puts several ability names over a numeric grid.
+
 ## 0.8.0
 
 - **Prerequisites are structured.** Seven abilities state a requirement the page

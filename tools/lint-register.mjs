@@ -22,7 +22,7 @@ const COMPOSITE_ID = /^[a-z]{2,4}\.[A-Za-z0-9-]+$/;
 const DEF_ID = /^def\.[a-z]+\.[A-Za-z0-9-]+$/;
 const KIND_ID = /^kind\.[a-z][A-Za-z0-9]*$/;
 const SHAPES = new Set(["open", "descriptor", "keyword", "table"]);
-const OPS = new Set(["expect", "text", "value", "attacks", "art", "effects"]);
+const OPS = new Set(["expect", "text", "value", "attacks", "art", "effects", "progression"]);
 const PATTERNS = new Set(["raw", "statValue", "int", "dice", "refList", "parenSplit", "spoilList"]);
 
 const errors = [];
