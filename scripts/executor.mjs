@@ -35,9 +35,52 @@ const inBox = (it, box) => it.x >= box.x0 && it.x <= box.x1 && it.y >= box.y0 &&
  */
 export function runsIn(pageData, instr) {
   const boxes = instr.boxes ?? (instr.box ? [instr.box] : []);
-  return pageData.items
-    .filter((it) => boxes.some((b) => inBox(it, b)))
-    .sort((a, b) => a.y - b.y || a.x - b.x);
+  return orderRuns(pageData.items.filter((it) => boxes.some((b) => inBox(it, b))));
+}
+
+/**
+ * Reading order that keeps SUPERSCRIPTS with their own line. Ordinal marks
+ * ("1st", "5th") are set ~4pt above the baseline, so a plain (y,x) sort files
+ * them ahead of the entire line and the prose comes out "st When the character
+ * casts…" with the digit stranded. Derive baselines from the full-size runs,
+ * attach every run to its nearest baseline, then order by (baseline, x).
+ *
+ * Exported behaviour is shared with the compiler, so fix ORDINALS stay aligned —
+ * changing this ordering requires recompiling the cookbooks.
+ */
+function orderRuns(items) {
+  if (items.length < 2) return [...items];
+  const sorted = [...items].sort((a, b) => a.y - b.y || a.x - b.x);
+  const heights = sorted.map((i) => i.h).sort((a, b) => a - b);
+  const median = heights[Math.floor(heights.length / 2)] || 0;
+  const full = sorted.filter((i) => i.h >= median * 0.8);
+  const lines = [];
+  for (const it of full.length ? full : sorted) {
+    const line = lines.find((l) => Math.abs(l.y - it.y) <= 2);
+    if (line) {
+      line.y = (line.y * line.n + it.y) / (line.n + 1);
+      line.n += 1;
+    } else {
+      lines.push({ y: it.y, n: 1 });
+    }
+  }
+  lines.sort((a, b) => a.y - b.y);
+  const lineOf = (it) => {
+    let best = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i < lines.length; i++) {
+      const d = Math.abs(lines[i].y - it.y);
+      if (d < bestDist) {
+        bestDist = d;
+        best = i;
+      }
+    }
+    return best;
+  };
+  return sorted
+    .map((it) => ({ it, line: lineOf(it) }))
+    .sort((a, b) => a.line - b.line || a.it.x - b.it.x || a.it.y - b.it.y)
+    .map((r) => r.it);
 }
 
 /**
@@ -338,6 +381,78 @@ export function effectScan(paras, registers) {
     if (m[1]) e.forWhat = m[1];
     push(e);
   }
+  /* --- Spell-like abilities: "can cast X (as the spell) once per week" --- */
+  const FREQ = [
+    [/\bat will\b/i, "atWill"],
+    [/\bonce per round\b/i, "perRound"],
+    [/\bonce per turn\b/i, "perTurn"],
+    [/\bonce per 8 hours\b/i, "per8Hours"],
+    [/\bonce per hour\b/i, "perHour"],
+    [/\bonce per day\b/i, "perDay"],
+    [/\bonce per week\b/i, "perWeek"],
+    [/\bonce per month\b/i, "perMonth"],
+    [/\bonce per year\b/i, "perYear"],
+  ];
+  const freqOf = (s) => FREQ.find(([re]) => re.test(s))?.[1] ?? "";
+  for (const m of text.matchAll(
+    /can (?:cast|bestow|perform|use) ([a-z][a-z' -]{2,40}?)\s*(?:\(as the (?:\d+(?:st|nd|rd|th)? level )?(?:divine |arcane )?spell\)|as a spell-like ability)([^.]{0,60})/gi,
+  )) {
+    const frequency = freqOf(m[2] ?? "");
+    push({ type: "spellLike", spell: m[1].trim(), ...(frequency ? { frequency } : {}) });
+  }
+
+  /* --- Prerequisite: "must have the mercantile network power" / "requires that
+   * the character have the ability to inspire dread" --- */
+  for (const m of text.matchAll(/must have (?:the |gained )?([A-Z][A-Za-z' -]{2,40}?) (?:custom |class )?power\b/g)) {
+    push({ type: "requires", note: m[1].trim() });
+  }
+  for (const m of text.matchAll(/requires that the character (?:have|has) the ability to ([a-z][a-z' -]{2,40})/gi)) {
+    push({ type: "requires", note: m[1].trim() });
+  }
+
+  /* --- Usage limit with no spell attached. WHAT it gates is free text, but the
+   * limit itself is a clean mechanical fact worth surfacing, so it ships as a
+   * capability carrying only the frequency. --- */
+  if (!out.some((e) => e.type === "spellLike")) {
+    const frequency = freqOf(text);
+    if (frequency) push({ type: "capability", frequency });
+  }
+
+  /* --- Resource spend/gain: Fate Points, spell slots, stigma --- */
+  for (const m of text.matchAll(/\b(spend|spends|spending|expend|expends|expending|gain|gains|recovers?)\b[^.]{0,24}?\b(Fate Points?|spell slots?|stigma)\b/gi)) {
+    const kind = /fate/i.test(m[2]) ? "fatePoint" : /stigma/i.test(m[2]) ? "stigma" : "spellSlot";
+    push({ type: "resource", resource: kind, action: /gain|recover/i.test(m[1]) ? "gain" : "spend" });
+  }
+
+  /* --- Caster-level equivalence: "two caster levels higher than actual" --- */
+  const WORD_NUM = { one: 1, two: 2, three: 3, four: 4, five: 5 };
+  for (const m of text.matchAll(/\b(one|two|three|four|five|\d+)\s+(?:class|caster)\s+levels?\s+higher\s+than\s+(?:(?:his|her|their|its)\s+)?actual/gi)) {
+    const n = WORD_NUM[m[1].toLowerCase()] ?? parseInt(m[1], 10);
+    if (n) push({ type: "spellcastingMod", casterLevelDelta: n });
+  }
+
+  /* --- Movement grant: "gains a flying movement rate of 30'" --- */
+  for (const m of text.matchAll(/\b(flying|climbing|swimming|burrowing)\s+movement rate of\s+(\d+)/gi)) {
+    const mode = { flying: "fly", climbing: "climb", swimming: "swim", burrowing: "burrow" }[m[1].toLowerCase()];
+    push({ type: "movement", mode, value: flat(parseInt(m[2], 10)) });
+  }
+
+  /* --- Economic rate: "construction rate of 1.33gp per day" --- */
+  for (const m of text.matchAll(/\b(?:construction|research) rate of\s+([\d.]+)\s*(gp|sp|cp)\s*per\s+(day|week|month)/gi)) {
+    push({ type: "economic", amount: parseFloat(m[1]), unit: m[2].toLowerCase(), period: m[3].toLowerCase() });
+  }
+
+  /* --- Grants a choice of proficiencies, resolved through the register --- */
+  for (const m of text.matchAll(/can select one (?:class )?proficiency,\s*choosing(?:\s+from)?\s+([^.]{4,160})\./gi)) {
+    const table = registers?.tables?.proficiency ?? {};
+    const refs = m[1]
+      .split(/,|\band\b/)
+      .map((s) => s.replace(/\s+/g, " ").trim())
+      .map((s) => table[s]?.ref)
+      .filter(Boolean);
+    if (refs.length) push({ type: "grants", refs, choose: 1 });
+  }
+
   // "climb as a thief of his class level" / "control undead as a crusader of one
   // half his class level" / "as thieves of his class level" (plural, no article)
   // / "as a thief of his level" (the class/caster qualifier is sometimes absent).

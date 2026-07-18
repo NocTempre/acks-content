@@ -184,7 +184,11 @@ function computeFixes(runs) {
   for (let i = 0; i < runs.length - 1; i++) {
     const a = runs[i];
     const b = runs[i + 1];
-    const sameLine = Math.abs(a.y - b.y) <= 2;
+    // A superscript ordinal sits ~4pt above its baseline but belongs to the SAME
+    // word ("1"+"st"), so judge it by the x-gap like any same-line neighbour
+    // rather than defaulting to a space and printing "1 st level".
+    const superscript = Math.min(a.h, b.h) < Math.max(a.h, b.h) * 0.75;
+    const sameLine = Math.abs(a.y - b.y) <= 2 || superscript;
     if (sameLine) {
       const gap = b.x - (a.x + (a.w ?? 0));
       if (gap > 1 && !/\s$/.test(a.str)) joinSpace.push(i);
@@ -786,9 +790,10 @@ async function compileDefinition(doc, entry, kindRow) {
     book: entry.book,
     cite: `${BOOKS[entry.book].short} p.${page}`,
     pages: entry.pages,
-    // Authored classification facts (general-list membership, repeatability,
-    // custom-power cost) — rules, not values scraped from the page.
-    ...(entry.meta ? { meta: entry.meta } : {}),
+    // Classification facts: authored (general-list membership, repeatability)
+    // merged with ones the page states outright (build cost, retirement). Both
+    // ship as CONCLUSIONS — a flag and a number, never the sentence.
+    meta: { ...(entry.meta ?? {}), ...derivedMeta(bodyText) },
     // A "See X." entry is a CROSS-REFERENCE, not an ability of its own. The
     // raw target is resolved to a real id in a post-pass (once every id is
     // known) so we never ship a dangling pointer. The conclusion ships; the
@@ -796,6 +801,34 @@ async function compileDefinition(doc, entry, kindRow) {
     ...(seeReference(bodyText) ? { _aliasRaw: seeReference(bodyText) } : {}),
     fields,
   };
+}
+
+/** "2 1/2" -> 2.5, "1/2" -> 0.5, "3" -> 3. */
+function parseCount(tok) {
+  const t = String(tok).trim();
+  const mixed = t.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)$/);
+  if (mixed) return +mixed[1] + +mixed[2] / +mixed[3];
+  const frac = t.match(/^(\d+)\s*\/\s*(\d+)$/);
+  if (frac) return +frac[1] / +frac[2];
+  const n = parseInt(t, 10);
+  return Number.isNaN(n) ? null : n;
+}
+
+/**
+ * Classification the page states outright: the custom-class BUILD COST ("counts
+ * as 2 1/2 custom powers") and retirement ("has been removed from ACKS II").
+ * Derived offline; only the resulting flag/number ships.
+ */
+function derivedMeta(bodyText) {
+  const out = {};
+  if (!bodyText) return out;
+  // The raw compile-time join omits some inter-run spaces ("removed fromACKS
+  // II"), so every boundary here is \s* rather than a literal space.
+  if (/removed\s*from\s*ACKS\s*II/i.test(bodyText)) out.deprecated = true;
+  const m = bodyText.match(/counts\s*as\s+((?:\d+\s+)?\d+\s*\/\s*\d+|\d+)\s*(?:a\s+)?(?:custom\s+)?powers?\b/i);
+  const v = m ? parseCount(m[1]) : null;
+  if (v !== null) out.powerValue = v;
+  return out;
 }
 
 /**
