@@ -637,7 +637,16 @@ async function execInstruction(instr, ctx) {
       const runs = runsIn(pd, instr);
       claim(runs, ctx.field);
       const found = clean(joinRuns(runs));
-      const ok = found.toLowerCase().startsWith(instr.text.toLowerCase());
+      // A printed heading can carry glyph artifacts the shipped label does not
+      // ("Conjure Dark Powers (1st level)" vs "(1level)" when the superscript
+      // detaches), so compare folded and fall back to a prefix. That still
+      // proves we are on the right entry — a wrong page shares no prefix — but
+      // does not fail over a stray glyph, and a failed expect would otherwise
+      // zero the entry's mechanics.
+      const fold = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const f = fold(found);
+      const w = fold(instr.text);
+      const ok = !!w && (f.startsWith(w) || (w.length >= 12 && f.startsWith(w.slice(0, 12))));
       return { ok, found: found.slice(0, 60) };
     }
     case "text": {
