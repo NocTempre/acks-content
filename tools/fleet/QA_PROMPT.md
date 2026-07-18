@@ -23,12 +23,18 @@ finding the per-page peculiarities structure checks can't see.
 ## Defenses (immunities / resistances / susceptibilities)
 These are NOT baked per creature. The executor scans each monster's OWN prose
 (from the seat's book) against a shipped vocabulary — the damage-type keys plus
-`register/_refs/defenseEffect.json`. Your only defense job: when a page states
-a defense using an effect WORD not in that vocabulary, propose it as a
-`registerTokens` entry `{ "registry": "defenseEffect", "token": "<word>" }`.
-NEVER author which immunities a specific creature has — that materializes from
-the seat's book. If a defense is phrased so unusually the generic verbs miss it,
-report it as a `note` (the GM sees the prose and ticks the box), don't bake it.
+`register/_refs/defenseEffect.json`. Rules:
+- Work ONLY from what the page prints. NEVER infer a defense from rules
+  knowledge (e.g. "medusas are traditionally immune to petrification") — if the
+  book doesn't state it for this creature, it does not exist for us.
+- Your only defense job: when a page STATES a defense using an effect WORD not
+  in the vocabulary, propose it as a `registerTokens` entry
+  `{ "registry": "defenseEffect", "token": "<word>" }`.
+- Never author which immunities a specific creature has.
+- A genuinely UNIQUE defense the book describes in a sentence that no enum
+  captures is out of scope for now (the "special defense" pointer mechanism is
+  not built — see docs; do NOT flag it as GM-remembers). Only report such a
+  case if you actually find one printed, with the ≤40-char evidence quote.
 
 ## Defect classes to hunt (per entry)
 1. **Prose jumbles** — run-on words (missing spaces), hyphen artifacts,
