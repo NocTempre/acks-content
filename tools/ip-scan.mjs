@@ -19,7 +19,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
 
+const CLI = import.meta.url === pathToFileURL(process.argv[1] ?? "").href;
 const ROOT = path.resolve(process.argv.find((a) => !a.startsWith("--") && a !== process.argv[0] && a !== process.argv[1]) ?? ".");
 const STRICT = process.argv.includes("--strict");
 
@@ -116,18 +118,32 @@ function scanStrings(node, relPath, keyPath = "") {
   }
 }
 
-const tracked = trackedFiles(ROOT);
-if (tracked) {
-  for (const relPath of tracked) inspect(path.join(ROOT, relPath), relPath);
-} else {
-  walk(ROOT);
+/**
+ * Scan an explicit list of repo-relative paths. tools/ip-quarantine.mjs uses
+ * this against the *staged* set so a leak is caught before it enters a commit,
+ * which is the only moment a .gitignore can still keep it out of history.
+ */
+export function scanPaths(root, relPaths) {
+  errors.length = 0;
+  warnings.length = 0;
+  for (const relPath of relPaths) inspect(path.join(root, relPath), relPath);
+  return { errors: [...errors], warnings: [...warnings] };
 }
 
-for (const w of warnings) console.warn(`  warn  ${w}`);
-for (const e of errors) console.error(`  LEAK  ${e}`);
+if (CLI) {
+  const tracked = trackedFiles(ROOT);
+  if (tracked) {
+    for (const relPath of tracked) inspect(path.join(ROOT, relPath), relPath);
+  } else {
+    walk(ROOT);
+  }
 
-if (errors.length || (STRICT && warnings.length)) {
-  console.error(`\nip-scan: FAILED — ${errors.length} leak(s), ${warnings.length} warning(s) in ${ROOT}`);
-  process.exit(1);
+  for (const w of warnings) console.warn(`  warn  ${w}`);
+  for (const e of errors) console.error(`  LEAK  ${e}`);
+
+  if (errors.length || (STRICT && warnings.length)) {
+    console.error(`\nip-scan: FAILED — ${errors.length} leak(s), ${warnings.length} warning(s) in ${ROOT}`);
+    process.exit(1);
+  }
+  console.log(`ip-scan: clean (${warnings.length} warning(s))`);
 }
-console.log(`ip-scan: clean (${warnings.length} warning(s))`);

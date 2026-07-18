@@ -15,7 +15,8 @@
     "harvest:index": "node tools/harvest-index.mjs",
     "compile": "node tools/compile-cookbook.mjs",
     "verify:cookbook": "node tools/verify-cookbook.mjs",
-    "ledger": "node tools/ledger-init.mjs"
+    "ledger": "node tools/ledger-init.mjs",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "devDependencies": {
     "@foundryvtt/foundryvtt-cli": "^1.0.0",
