@@ -278,8 +278,7 @@
         310
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 2
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -333,8 +332,7 @@
         310
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 1
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -573,8 +571,7 @@
         310
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 2
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -633,8 +630,7 @@
         310
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 3
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -1361,8 +1357,7 @@
         311
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 1
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -1635,8 +1630,7 @@
         311
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 1.5
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -2691,8 +2685,7 @@
         312
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 2.5
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -2855,8 +2848,7 @@
         313
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 2
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -3289,8 +3281,7 @@
         313
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 3
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -5380,8 +5371,7 @@
         315
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 1
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -5457,8 +5447,7 @@
         315
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 0
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -5629,8 +5618,7 @@
         315
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 0.5
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -7554,8 +7542,7 @@
         317
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 2
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -8061,8 +8048,7 @@
         318
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 2
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -8330,7 +8316,6 @@
       ],
       "meta": {
         "category": "classPower",
-        "powerValue": 3,
         "provides": [
           "kw:fleshrunes"
         ]
@@ -8397,8 +8382,7 @@
         318
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 5
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -8449,8 +8433,7 @@
         318
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 2
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -9610,8 +9593,7 @@
         320
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 3
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -10323,7 +10305,6 @@
         320
       ],
       "meta": {
-        "powerValue": 1.5,
         "category": "classPower",
         "notStacksWith": [
           "def.power.lightlessVision"
@@ -10793,7 +10774,6 @@
       ],
       "meta": {
         "category": "classPower",
-        "powerValue": 2,
         "provides": [
           "kw:inspirehope"
         ]
@@ -10912,8 +10892,7 @@
         321
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 2
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -11191,8 +11170,7 @@
         321
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 4
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -11723,7 +11701,6 @@
       ],
       "meta": {
         "category": "classPower",
-        "powerValue": 1.5,
         "provides": [
           "kw:lightlessvision"
         ]
@@ -13790,8 +13767,7 @@
         324
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 2.5
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -14489,7 +14465,6 @@
         325
       ],
       "meta": {
-        "powerValue": 3,
         "category": "classPower",
         "notStacksWith": [
           "def.power.fleshRunes"
@@ -15025,7 +15000,6 @@
         325
       ],
       "meta": {
-        "powerValue": 2,
         "category": "classPower",
         "notStacksWith": [
           "def.power.inspireHope"
@@ -16664,8 +16638,7 @@
         327
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 1
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -17080,8 +17053,7 @@
         327
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 2
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -17328,7 +17300,6 @@
         327
       ],
       "meta": {
-        "powerValue": 3,
         "category": "classPower",
         "notStacksWith": [
           "def.power.fleshRunes"
@@ -17638,8 +17609,7 @@
         328
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 2
+        "category": "classPower"
       },
       "fields": {
         "name": {
@@ -18687,8 +18657,7 @@
         330
       ],
       "meta": {
-        "category": "classPower",
-        "powerValue": 2
+        "category": "classPower"
       },
       "fields": {
         "name": {

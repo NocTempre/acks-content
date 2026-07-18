@@ -548,6 +548,36 @@ async function importOne(bookId, id, folderId) {
  * descriptor; classification and any materialized mechanics persist in
  * flags["acks-abilities"].extras, so the ability stays usable without the book.
  */
+/**
+ * Resolve a LevelValue at a level. A local copy of acks-lib's resolver, kept
+ * small on purpose: acks-content does not otherwise depend on acks-lib, and a
+ * runtime reaching into a sibling module would break a seat that has not
+ * installed it. Only the shapes this file can encounter are handled.
+ */
+function levelValueAt(v, level = 1) {
+  if (v == null) return null;
+  if (typeof v === "number") return v;
+  if (typeof v !== "object") return null;
+  if (v.kind === "perLevel" && v.base != null) return v.base + (v.per ?? 0) * (Math.max(1, level) - 1);
+  if (Array.isArray(v.breakpoints) && v.breakpoints.length) {
+    let out = null;
+    for (const b of [...v.breakpoints].sort((a, c) => a.atLevel - c.atLevel)) if (level >= b.atLevel) out = b.value;
+    return out;
+  }
+  return v.flat ?? null;
+}
+
+/** "kw:sensingevil" -> "Sensing Evil"-ish, for the system's requirements field. */
+const capabilityLabel = (token) => {
+  const slug = String(token).replace(/^kw:/, "");
+  for (const cb of data.content.values()) {
+    for (const [id, e] of Object.entries(cb.entries)) {
+      if (id.split(".").slice(2).join("").toLowerCase() === slug) return e.name;
+    }
+  }
+  return slug;
+};
+
 export function bindAbility(entry, node, id, opts = {}) {
   const meta = entry.meta ?? {};
   const cite = entry.cite ?? "";
@@ -565,7 +595,15 @@ export function bindAbility(entry, node, id, opts = {}) {
     // it — but carries the flag and a pointer at whatever superseded it.
     deprecated: !!meta.deprecated,
     ...(meta.replacedBy ? { replacedBy: meta.replacedBy } : {}),
-    ...(meta.powerValue != null ? { powerValue: meta.powerValue } : {}),
+    // The build cost is READ FROM THE SEAT'S BOOK, never shipped — so it is
+    // present only once someone with the book imports or updates, like every
+    // other value. `meta.powerValue` remains only as the inherited value an
+    // alias takes from its target.
+    ...(node?.fields?.powerValue != null
+      ? { powerValue: node.fields.powerValue }
+      : meta.powerValue != null
+        ? { powerValue: meta.powerValue }
+        : {}),
     ...(meta.requires ? { requires: meta.requires } : {}),
     ...(entry.aliasOf ? { aliasOf: entry.aliasOf } : {}),
     // Capabilities this ability confers, so a prerequisite written against a
@@ -593,12 +631,31 @@ export function bindAbility(entry, node, id, opts = {}) {
     // executor's vocabulary scan — nothing about which is shipped.
     ...(node?.fields?.defenses ? { defenses: node.fields.defenses } : {}),
   };
+  // Drive the SYSTEM's own fields, not just our flag. An ability whose extract
+  // classified a proficiency throw becomes rollable natively — the core sheet
+  // already has roll / rollType / rollTarget and a rollFormula() behind them —
+  // and a prerequisite lands in the requirements field the sheet already shows.
+  // Without this the mechanics exist but nothing in the game can reach them.
+  const thrown = extras.effects.find((e) => e.type === "throw");
+  const gate = extras.effects.filter((e) => e.type === "requires").flatMap((e) => e.refs ?? []);
+  const roll = thrown
+    ? {
+        roll: thrown.roll || "1d20",
+        rollType: thrown.rollType || "above",
+        // A level ladder is resolved at 1st level here, because a shared world
+        // item has no level. The sheet shows the whole ladder, and an actor's
+        // own level is applied when the copy lands on it.
+        rollTarget: levelValueAt(thrown.value, 1) ?? 0,
+      }
+    : {};
   return {
     name: entry.name,
     type: "ability",
     system: {
       description: `<p>@PdfText[${id}]{${cite}}</p>`,
       proficiencytype: meta.general ? "general" : "class",
+      ...roll,
+      ...(gate.length ? { requirements: gate.map(capabilityLabel).join(", ").slice(0, 120) } : {}),
     },
     flags: {
       [MODULE_ID]: { cookbook: { id, cite }, generated: true },

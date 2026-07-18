@@ -18,6 +18,7 @@ const COOKBOOK = path.join(HERE, "..", "cookbook");
 
 const MAX_STR = 60; // labels/names/headings/citations — never a sentence
 const MAX_NOTE = 400; // authoring commentary in register sources ("note" keys)
+const MAX_PATTERN = 200; // a regex locator, validated by looksLikeRegex
 const COMPOSITE_ID = /^[a-z]{2,4}\.[A-Za-z0-9-]+$/;
 const DEF_ID = /^def\.[a-z]+\.[A-Za-z0-9-]+$/;
 const KIND_ID = /^kind\.[a-z][A-Za-z0-9]*$/;
@@ -36,10 +37,27 @@ const readJson = (p, label) => {
   }
 };
 
-/** Cap every string leaf; "note" keys get the longer authoring cap. */
+/**
+ * A `pattern` is shipped machine vocabulary (a locator applied to the reader's
+ * own text), not a passage, so it gets a longer cap — but only if it actually
+ * looks like a regex. The check is what keeps the allowance from becoming a
+ * hole prose could ship through: it must carry regex metacharacters and must
+ * not contain a long run of plain words.
+ */
+function looksLikeRegex(v) {
+  if (!/[\\\[\](){}|+*?^$]/.test(v)) return false;
+  const words = v.replace(/\\[a-zA-Z]/g, " ").match(/[A-Za-z]{2,}/g) ?? [];
+  return !/(?:[A-Za-z]{2,}\s+){6,}/.test(v) && words.length <= 12;
+}
+
+/** Cap every string leaf; "note" and validated "pattern" keys get longer caps. */
 function capStrings(obj, label, keyPath = "") {
   for (const [k, v] of Object.entries(obj ?? {})) {
     if (typeof v === "string") {
+      if (k === "pattern" && looksLikeRegex(v)) {
+        if (v.length > MAX_PATTERN) err(`${label}: ${keyPath}${k} is ${v.length} chars (>${MAX_PATTERN})`);
+        continue;
+      }
       const cap = k === "note" ? MAX_NOTE : MAX_STR;
       if (v.length > cap) err(`${label}: ${keyPath}${k} is ${v.length} chars (>${cap}) — looks like prose`);
     } else if (v && typeof v === "object") {

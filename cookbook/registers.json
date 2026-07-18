@@ -2906,5 +2906,11 @@
         }
       }
     }
+  },
+  "derive": {
+    "powerValue": {
+      "pattern": "counts\\s*as\\s+((?:\\d+\\s+)?\\d+\\s*/\\s*\\d+|\\d+)\\s*(?:a\\s+)?(?:custom\\s+)?powers?\\b",
+      "as": "count"
+    }
   }
 }

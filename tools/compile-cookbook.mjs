@@ -149,8 +149,26 @@ function compileRegisters(refs) {
       nodes[id] = { role, ...node };
     }
   }
-  return { schema: "acks-cookbook/1", tables, nodes };
+  return { schema: "acks-cookbook/1", tables, nodes, derive: DERIVE_PATTERNS };
 }
+
+/**
+ * Shipped vocabulary for values the books state in PROSE rather than in a
+ * labelled field. The PATTERN ships; the number it finds never does — it is
+ * matched against the reader's own extracted text at runtime, exactly like the
+ * defense and effect scans.
+ *
+ * `powerValue` is the custom-class build cost ("counts as 2 1/2 custom
+ * powers"). It used to be resolved offline and shipped as a number, which put
+ * book values in the module; this is the fix.
+ */
+const DERIVE_PATTERNS = {
+  powerValue: {
+    // \s* at every boundary: the extracted join drops inter-run spaces.
+    pattern: "counts\\s*as\\s+((?:\\d+\\s+)?\\d+\\s*/\\s*\\d+|\\d+)\\s*(?:a\\s+)?(?:custom\\s+)?powers?\\b",
+    as: "count",
+  },
+};
 
 /* -------------------------------------------- */
 /*  Geometry helpers                            */
@@ -1021,9 +1039,15 @@ function parseCount(tok) {
 }
 
 /**
- * Classification the page states outright: the custom-class BUILD COST ("counts
- * as 2 1/2 custom powers") and retirement ("has been removed from ACKS II").
- * Derived offline; only the resulting flag/number ships.
+ * Classification the page states outright — retirement ("has been removed from
+ * ACKS II"). A FLAG, not a value: it records that an entry was withdrawn, which
+ * is a fact about the entry rather than anything printed as content.
+ *
+ * The custom-class BUILD COST deliberately does NOT live here. "Counts as 2 1/2
+ * custom powers" is a NUMBER off the page, and shipping it would put book values
+ * in the module — the one thing this pipeline exists to avoid. It is derived at
+ * runtime instead, from the reader's own prose, against the shipped pattern in
+ * `registers.derive` (see DERIVE_PATTERNS).
  */
 function derivedMeta(bodyText) {
   const out = {};
@@ -1031,9 +1055,6 @@ function derivedMeta(bodyText) {
   // The raw compile-time join omits some inter-run spaces ("removed fromACKS
   // II"), so every boundary here is \s* rather than a literal space.
   if (/removed\s*from\s*ACKS\s*II/i.test(bodyText)) out.deprecated = true;
-  const m = bodyText.match(/counts\s*as\s+((?:\d+\s+)?\d+\s*\/\s*\d+|\d+)\s*(?:a\s+)?(?:custom\s+)?powers?\b/i);
-  const v = m ? parseCount(m[1]) : null;
-  if (v !== null) out.powerValue = v;
   return out;
 }
 

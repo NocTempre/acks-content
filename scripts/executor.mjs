@@ -106,6 +106,17 @@ export function joinRuns(runs, fixes = {}, dropText) {
 /** Names vary by small-caps and spacing between books, so compare folded. */
 const convKey = (s) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
+/** "2 1/2" -> 2.5, "1/2" -> 0.5, "3" -> 3. Build costs print as mixed fractions. */
+function parseCount(tok) {
+  const t = String(tok ?? "").trim();
+  const mixed = t.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)$/);
+  if (mixed) return +mixed[1] + +mixed[2] / +mixed[3];
+  const frac = t.match(/^(\d+)\s*\/\s*(\d+)$/);
+  if (frac) return +frac[1] / +frac[2];
+  const n = parseInt(t, 10);
+  return Number.isNaN(n) ? null : n;
+}
+
 /**
  * Look a name up in the conversion table (harvested offline from the System
  * Compatibility Guide). Returns `{from, to?, status, category}` for an OGL/OSR
@@ -829,6 +840,24 @@ export async function executeEntry(doc, bookCookbook, registers, entryId, opts =
       ...materializeEffects(entry.fields?.effects?.specs, fields.description),
     ];
     if (effects.length) fields.effects = effects;
+  }
+  // Values the books state in PROSE rather than in a labelled field — the
+  // custom-class build cost, "counts as 2 1/2 custom powers". The pattern is
+  // shipped vocabulary; the NUMBER is read here, from this seat's own extracted
+  // text, so no book value ever rides along in the module.
+  if (fields.description?.length) {
+    const text = fields.description.map((p) => p.text).join(" ");
+    for (const [key, spec] of Object.entries(registers?.derive ?? {})) {
+      let m = null;
+      try {
+        m = new RegExp(spec.pattern, spec.flags ?? "i").exec(text);
+      } catch {
+        m = null; // a malformed shipped pattern never throws at the table
+      }
+      if (!m) continue;
+      const value = spec.as === "count" ? parseCount(m[1] ?? m[0]) : parseInt(String(m[1] ?? m[0]).replace(/[^\d-]/g, ""), 10);
+      if (value != null && !Number.isNaN(value)) fields[key] = value;
+    }
   }
   // An ability whose numbers live in a TABLE rather than in its own entry: the
   // column just read IS its proficiency throw, level by level. Added after the

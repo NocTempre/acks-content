@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.11.0
+
+- **Build costs are no longer baked into the module.** "Counts as 2 1/2 custom
+  powers" is a number printed on the page, and 31 of them were being resolved
+  offline and shipped — exactly what this pipeline exists to prevent. The
+  PATTERN now ships as vocabulary and the number is read from the reader's own
+  prose at runtime, like every other value. Verified identical to the values
+  that used to ship, and now finds 36 (a cross-reference derives its own from
+  the text it shares). The IP lint gained a validated allowance for regex
+  locators so it does not mistake one for prose — the allowance only applies to
+  strings that actually look like a pattern.
+- **Abilities now drive the system's own fields, so they do something.** A
+  classified proficiency throw fills `roll` / `rollType` / `rollTarget`, which
+  the core sheet already knows how to roll, and a prerequisite fills
+  `requirements`. Previously every mechanic lived in a module flag that nothing
+  in the game read. A level ladder resolves at 1st level on the shared item;
+  the sheet shows the whole ladder.
+
 ## 0.10.0
 
 - **The combat proficiencies are abilities, and generals upgrade them.** Weapons,
