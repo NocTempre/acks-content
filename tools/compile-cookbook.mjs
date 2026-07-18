@@ -613,6 +613,32 @@ const slugOf = (s) =>
     .map((w, i) => (i ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w.toLowerCase()))
     .join("");
 
+/**
+ * Column starts for a DEFINITION page. `detectColumns` needs a bin to hold >8%
+ * of body items, which a page dominated by a table can starve — RR p33 reports
+ * one column when it prints two, collapsing both into a single region so an
+ * entry swallows its neighbour's prose. Same histogram, gentler threshold.
+ * Scoped to definitions so monster compilation is untouched.
+ */
+function defColumns(pd) {
+  const cols = detectColumns(pd.items);
+  // Trust the proven detector whenever it found a multi-column layout. Lowering
+  // its threshold globally invents columns out of table cells, indents and the
+  // page-edge chapter tabs (RR p33 reported EIGHT), which is far worse than the
+  // miss being fixed.
+  if (cols.length > 1) return cols;
+  // It reported one. Run-in HEADINGS always sit at a column's left edge, so
+  // their x-positions recover the true columns when a dominant table starves
+  // the histogram's second bin (RR p33 prints two columns, reports one — which
+  // made an entry swallow its neighbour's prose).
+  const heads = pd.items.filter((it) => it.h < DEF_BODY_MAX_H && /^[A-Z][^:]{1,44}:$/.test(it.str.trim()));
+  const starts = [];
+  for (const x of heads.map((h) => h.x).sort((a, b) => a - b)) {
+    if (!starts.length || x - starts[starts.length - 1] > 60) starts.push(x);
+  }
+  return starts.length > 1 ? starts : cols;
+}
+
 /** Raw reading-order join of a body region (compile-time inspection only). */
 const joinBody = (items) =>
   [...items].sort((a, b) => a.y - b.y || a.x - b.x).map((it) => it.str).join("").replace(/\s+/g, " ").trim();
@@ -631,7 +657,7 @@ async function compileDefinition(doc, entry, kindRow) {
   const assists = entry.assists ?? {};
   const page = entry.pages[0];
   const pd = await pageItems(doc, page);
-  const cols = detectColumns(pd.items);
+  const cols = defColumns(pd);
   const mode = kindRow.fields.name.locate;
   const fields = {};
   let bodyText = "";

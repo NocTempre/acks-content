@@ -1,0 +1,197 @@
+[
+  {
+    "id": "def.skill.backstabbing",
+    "kind": "kind.skill",
+    "book": "rr",
+    "name": "Backstabbing",
+    "anchor": {
+      "runin": "Backstabbing:"
+    },
+    "pages": [
+      32
+    ],
+    "meta": {
+      "category": "skill"
+    }
+  },
+  {
+    "id": "def.skill.climbing",
+    "kind": "kind.skill",
+    "book": "rr",
+    "name": "Climbing",
+    "anchor": {
+      "runin": "Climbing:"
+    },
+    "pages": [
+      32
+    ],
+    "meta": {
+      "category": "skill"
+    }
+  },
+  {
+    "id": "def.skill.hiding",
+    "kind": "kind.skill",
+    "book": "rr",
+    "name": "Hiding",
+    "anchor": {
+      "runin": "Hiding:"
+    },
+    "pages": [
+      33
+    ],
+    "meta": {
+      "category": "skill"
+    }
+  },
+  {
+    "id": "def.skill.listening",
+    "kind": "kind.skill",
+    "book": "rr",
+    "name": "Listening",
+    "anchor": {
+      "runin": "Listening:"
+    },
+    "pages": [
+      33
+    ],
+    "meta": {
+      "category": "skill"
+    }
+  },
+  {
+    "id": "def.skill.lockpicking",
+    "kind": "kind.skill",
+    "book": "rr",
+    "name": "Lockpicking",
+    "anchor": {
+      "runin": "Lockpicking:"
+    },
+    "pages": [
+      33
+    ],
+    "meta": {
+      "category": "skill"
+    }
+  },
+  {
+    "id": "def.skill.pickpocketing",
+    "kind": "kind.skill",
+    "book": "rr",
+    "name": "Pickpocketing",
+    "anchor": {
+      "runin": "Pickpocketing:"
+    },
+    "pages": [
+      34
+    ],
+    "meta": {
+      "category": "skill"
+    }
+  },
+  {
+    "id": "def.skill.searching",
+    "kind": "kind.skill",
+    "book": "rr",
+    "name": "Searching",
+    "anchor": {
+      "runin": "Searching:"
+    },
+    "pages": [
+      34
+    ],
+    "meta": {
+      "category": "skill"
+    }
+  },
+  {
+    "id": "def.skill.shadowySenses",
+    "kind": "kind.skill",
+    "book": "rr",
+    "name": "Shadowy Senses",
+    "anchor": {
+      "runin": "Shadowy Senses:"
+    },
+    "pages": [
+      34
+    ],
+    "meta": {
+      "category": "skill"
+    }
+  },
+  {
+    "id": "def.skill.sneaking",
+    "kind": "kind.skill",
+    "book": "rr",
+    "name": "Sneaking",
+    "anchor": {
+      "runin": "Sneaking:"
+    },
+    "pages": [
+      34
+    ],
+    "meta": {
+      "category": "skill"
+    }
+  },
+  {
+    "id": "def.skill.streetwise",
+    "kind": "kind.skill",
+    "book": "rr",
+    "name": "Streetwise",
+    "anchor": {
+      "runin": "Streetwise:"
+    },
+    "pages": [
+      34
+    ],
+    "meta": {
+      "category": "skill"
+    }
+  },
+  {
+    "id": "def.skill.trapbreaking",
+    "kind": "kind.skill",
+    "book": "rr",
+    "name": "Trapbreaking",
+    "anchor": {
+      "runin": "Trapbreaking:"
+    },
+    "pages": [
+      34
+    ],
+    "meta": {
+      "category": "skill"
+    }
+  },
+  {
+    "id": "def.skill.deciphering",
+    "kind": "kind.skill",
+    "book": "rr",
+    "name": "Deciphering (4level)",
+    "anchor": {
+      "runin": "Deciphering (4level):"
+    },
+    "pages": [
+      35
+    ],
+    "meta": {
+      "category": "skill"
+    }
+  },
+  {
+    "id": "def.skill.hideout",
+    "kind": "kind.skill",
+    "book": "rr",
+    "name": "Hideout (9level)",
+    "anchor": {
+      "runin": "Hideout (9level):"
+    },
+    "pages": [
+      35
+    ],
+    "meta": {
+      "category": "skill"
+    }
+  }
+]
