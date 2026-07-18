@@ -684,7 +684,13 @@ async function compileDefinition(doc, entry, kindRow) {
   const assists = entry.assists ?? {};
   const page = entry.pages[0];
   const pd = await pageItems(doc, page);
-  const cols = defColumns(pd);
+  // `assists.columns` overrides the detected column lefts for THIS entry. A page
+  // whose lower half is a table has more vertical gutters than it has prose
+  // columns, and the detector cannot tell which is which — so a run-in entry
+  // whose text spans the full width gets shredded along a table's gutter. The
+  // recipe knows the page; this lets it say so, without changing detection for
+  // every other entry printed on the same page.
+  const cols = assists.columns ?? defColumns(pd);
   const tabs = marginTabs(pd); // dropped from every paragraph (see marginTabs)
   const mode = kindRow.fields.name.locate;
   const fields = {};
@@ -825,7 +831,22 @@ async function compileDefinition(doc, entry, kindRow) {
     const stop = pd.items
       .filter((it) => it !== anchor && it.alias === anchor.alias && colOf(it.x, cols) === col && it.y > anchor.y + 2 && Math.abs(it.x - colX) < 15)
       .sort((a, b) => a.y - b.y)[0];
-    const yMax = stop ? stop.y - 2 : pd.height;
+    // Where the NEXT heading carries a superscript ordinal ("Hideout (9th
+    // level)"), that ordinal sits above its heading's baseline — so a block
+    // that stops just above the heading still catches it, and the paragraph box
+    // built around it swallows the heading line too. End above the superscript.
+    let yStop = stop ? stop.y : pd.height;
+    if (stop) {
+      for (const it of pd.items) {
+        if (it.h >= (stop.h ?? 9) * 0.8 || colOf(it.x, cols) !== col) continue;
+        if (it.y >= stop.y || it.y < stop.y - 8) continue;
+        yStop = Math.min(yStop, it.y);
+      }
+    }
+    // `assists.descStopY` is the floor for an entry whose block ends at
+    // something that is not another run-in heading — a table, a sidebar. The
+    // stop rule only knows how to see the next heading.
+    const yMax = Math.min(yStop - 2, assists.descStopY ?? pd.height);
     // The heading may be ONE run or several. Walk the anchor's line rightward
     // until the accumulated text covers the name — those runs are the heading.
     const sameLine = pd.items
@@ -840,11 +861,26 @@ async function compileDefinition(doc, entry, kindRow) {
       acc += it.str;
       headEnd = it.x + (it.w ?? 30) - 1;
     }
+    // An ordinal inside a heading ("Hideout (9th level)") prints its suffix as
+    // a SUPERSCRIPT on its own baseline a few points higher. It belongs to the
+    // heading, so it joins the heading's drop set — otherwise it survives as a
+    // stray "th" at the head of the description.
+    for (const it of pd.items) {
+      if (headRuns.has(it) || it.h >= (anchor.h ?? 9) * 0.8) continue;
+      if (it.y >= anchor.y || it.y < anchor.y - 8) continue;
+      if (it.x < anchor.x - 2 || it.x > headEnd + 2) continue;
+      headRuns.add(it);
+    }
     // Box membership tests a run's ORIGIN x, and the prose run starts flush
     // after the heading — so stop just short of it.
+    // The band reaches above the baseline to catch tall glyphs. Where the
+    // heading carries a SUPERSCRIPT ("Hideout (9th level)"), that ordinal sits
+    // on its own baseline inside the band and lands in the extracted text,
+    // which then cannot match the printed name. `assists.expectTop` tightens
+    // the band to exclude it.
     fields.name = {
       op: "expect", page,
-      box: { x0: anchor.x - 2, x1: headEnd, y0: anchor.y - 5, y1: anchor.y + 4 },
+      box: { x0: anchor.x - 2, x1: headEnd, y0: anchor.y - (assists.expectTop ?? 5), y1: anchor.y + 4 },
       text: want,
     };
     const body = pd.items.filter((it) => {
@@ -860,7 +896,7 @@ async function compileDefinition(doc, entry, kindRow) {
     // at the top of the next column, which is where ~1 in 5 entries lost their
     // second half.
     const isRunin = (it) => it.alias === anchor.alias && Math.abs(it.x - cols[colOf(it.x, cols)]) < 15;
-    const cont = columnFlow(pd, cols, col, !!stop, isRunin);
+    const cont = columnFlow(pd, cols, col, !!stop || assists.descStopY != null, isRunin);
     if (cont.length) {
       const cx0 = cols[col + 1] - 5;
       const cx1 = cols[col + 2] ? cols[col + 2] - 6 : pd.width;
@@ -962,6 +998,24 @@ function replacementPhrase(bodyText) {
     flat.match(/replaceitwith(?:onerankof)?([a-z][a-z'-]{2,40}?)proficiency/i);
   return m ? m[1] : null;
 }
+
+/**
+ * The acks-lib capability token for a definition id
+ * ("def.prof.sensingEvil" → "kw:sensingevil").
+ *
+ * Inlined rather than imported: acks-content does not otherwise depend on
+ * acks-lib, and a build tool reaching into a sibling repo would break a
+ * standalone clone. acks-lib's `capabilityForId` is the canonical definition
+ * and is covered by its tests — keep the two in step.
+ */
+const capabilityToken = (id) =>
+  "kw:" +
+  String(id ?? "")
+    .split(".")
+    .slice(2)
+    .join("")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
 
 /**
  * The target text of a "See X." cross-reference body, or null. Conservative:
@@ -1176,7 +1230,12 @@ async function main() {
         ...(t?.meta?.deprecated ? { deprecated: true, ...(t.meta.replacedBy ? { replacedBy: t.meta.replacedBy } : {}) } : {}),
         ...(e.meta ?? {}),
         notStacksWith: [target],
+        // The alias and its target are one capability under two names, so both
+        // declare it. A gate written against the capability is then satisfied
+        // by whichever of them the character actually took.
+        provides: [capabilityToken(target)],
       };
+      t.meta = { ...(t.meta ?? {}), provides: [capabilityToken(target)] };
       linked++;
     }
   }

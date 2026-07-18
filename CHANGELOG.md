@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.7.0
+
+- **Ten phantom abilities removed.** The JJ prints some headings without spaces
+  ("ChosenWeapon:"), and the harvest had read the tail of ten of them as
+  abilities in their own right — "Weapon", "Animal", "Proficiency", "Powers" and
+  six more. Each duplicated an entry that already existed. They also poisoned
+  name-matching: "Proficiency" as an ability name matched 201 other entries.
+  Thirteen surviving entries had kept the spaceless spelling as their display
+  name and now read properly ("Totem Animal", "Chosen Weapon").
+- **Capabilities.** An alias and its target now declare the capability they
+  share, so a prerequisite written against that capability is satisfied by
+  whichever of them the character actually took. 103 entries carry one.
+- **RR p.35 "Hideout" extracts correctly** — the last bad entry. Its prose spans
+  a page half that a table below splits into two columns, and it ends at that
+  table rather than at a heading, so the recipe now states its own column band
+  and floor. Two general fixes came out of it: a heading's superscript ordinal
+  ("9th") no longer leaks into the description, and a block ending at a heading
+  that HAS such an ordinal no longer swallows that heading.
+- **Every definition now extracts cleanly**: 460 entries, 0 errors, 0 expect
+  mismatches, 0 empty descriptions, 0 unresolved cross-references. Classified
+  effects 62%.
+- Update's name-matching resolves a collision by what the world actually holds
+  before falling back to the category preference — if only one of the same-named
+  candidates has been imported, that is not a guess.
+
 ## 0.6.0
 
 - **Browse & Import Abilities.** There was no way to import a *selection* of

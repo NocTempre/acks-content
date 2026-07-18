@@ -568,6 +568,10 @@ export function bindAbility(entry, node, id, opts = {}) {
     ...(meta.powerValue != null ? { powerValue: meta.powerValue } : {}),
     ...(meta.requires ? { requires: meta.requires } : {}),
     ...(entry.aliasOf ? { aliasOf: entry.aliasOf } : {}),
+    // Capabilities this ability confers, so a prerequisite written against a
+    // capability resolves no matter which of the same-capability entries the
+    // character actually holds.
+    ...(meta.provides?.length ? { provides: meta.provides } : {}),
     // Set when this reference arrived under an older/foreign name: the reader's
     // source calls it `conversionFrom`, ACKS II calls it `entry.name`.
     ...(opts.conversionStatus ? { conversionStatus: opts.conversionStatus } : {}),
@@ -721,14 +725,14 @@ const nameKey = (s) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
  * with its target number attached. Without this, every monster-embedded
  * proficiency fails to match and never gets adopted.
  */
-function idForName(index, name) {
+function idForName(index, name, present) {
   let ids = index.get(nameKey(name));
   if (!ids) {
     const bare = String(name ?? "").replace(/\s*\d+\s*\+?\s*$/, "");
     ids = bare && bare !== name ? index.get(nameKey(bare)) : undefined;
   }
   if (!ids?.length) return null;
-  return { id: preferredId(ids), ambiguous: ids.length > 1 };
+  return preferredId(ids, present);
 }
 
 /**
@@ -757,13 +761,18 @@ function abilityNameIndex() {
 }
 
 /**
- * Pick among same-named definitions. A stat block's proficiency list and a
- * hand-made ability both far more often mean the PROFICIENCY than the same-named
- * class power, so that is the preference — but the choice is a guess and the
- * caller reports how many it made, rather than hiding it.
+ * Pick among same-named definitions.
+ *
+ * A collision stops being a guess when only ONE of the candidates is actually
+ * available — a world that imported the proficiency list but not the powers has
+ * already answered the question. So candidates present in the world win outright,
+ * and only when that leaves the choice open (none present, or several) does the
+ * category preference apply: a stat block's proficiency list and a hand-made
+ * ability both far more often mean the PROFICIENCY than the same-named class
+ * power. `ambiguous` reports whether a real guess was made.
  */
 const CATEGORY_RANK = ["def.prof.", "def.skill.", "def.power.", "def.drawback."];
-const preferredId = (ids) =>
+const byCategory = (ids) =>
   [...ids].sort((a, b) => {
     const r = (x) => {
       const i = CATEGORY_RANK.findIndex((p) => x.startsWith(p));
@@ -771,6 +780,13 @@ const preferredId = (ids) =>
     };
     return r(a) - r(b);
   })[0];
+
+function preferredId(ids, present) {
+  if (ids.length === 1) return { id: ids[0], ambiguous: false };
+  const here = ids.filter((id) => present.has(id));
+  if (here.length === 1) return { id: here[0], ambiguous: false };
+  return { id: byCategory(here.length ? here : ids), ambiguous: true };
+}
 
 /**
  * GM: browse every shipped ability and pick which to import.
@@ -915,6 +931,9 @@ export async function cookbookUpdateAbilities() {
   const index = abilityNameIndex();
   if (!index.size) return ui.notifications.warn("acks-content | no abilities in the shipped cookbook.");
 
+  // Which definitions the world already holds — the signal that resolves a
+  // name collision without guessing.
+  const present = new Set(game.items.filter((i) => i.getFlag(MODULE_ID, "cookbook")?.id).map((i) => i.getFlag(MODULE_ID, "cookbook").id));
   const nodeCache = new Map();
   let updated = 0;
   let adopted = 0;
@@ -923,7 +942,7 @@ export async function cookbookUpdateAbilities() {
   let skipped = 0;
   for (const { doc, extras, on } of eachAbility()) {
     const flagged = doc.getFlag(MODULE_ID, "cookbook")?.id;
-    const guess = flagged ? null : idForName(index, doc.name);
+    const guess = flagged ? null : idForName(index, doc.name, present);
     const id = flagged ?? guess?.id;
     if (!id || !cookbookEntry(id)) {
       skipped++;

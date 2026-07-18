@@ -138,7 +138,7 @@
     "id": "def.power.alienintuition",
     "kind": "kind.power",
     "book": "jj",
-    "name": "AlienIntuition",
+    "name": "Alien Intuition",
     "anchor": {
       "runin": "AlienIntuition:"
     },
@@ -186,21 +186,6 @@
     "name": "Alluring Beauty",
     "anchor": {
       "runin": "Alluring Beauty:"
-    },
-    "pages": [
-      310
-    ],
-    "meta": {
-      "category": "classPower"
-    }
-  },
-  {
-    "id": "def.power.intuition",
-    "kind": "kind.power",
-    "book": "jj",
-    "name": "Intuition",
-    "anchor": {
-      "runin": "Intuition:"
     },
     "pages": [
       310
@@ -927,7 +912,7 @@
     "id": "def.power.chosenweapon",
     "kind": "kind.power",
     "book": "jj",
-    "name": "ChosenWeapon",
+    "name": "Chosen Weapon",
     "anchor": {
       "runin": "ChosenWeapon:"
     },
@@ -990,21 +975,6 @@
     "name": "Classical Weapons Training",
     "anchor": {
       "runin": "Classical Weapons Training:"
-    },
-    "pages": [
-      313
-    ],
-    "meta": {
-      "category": "classPower"
-    }
-  },
-  {
-    "id": "def.power.weapon",
-    "kind": "kind.power",
-    "book": "jj",
-    "name": "Weapon",
-    "anchor": {
-      "runin": "Weapon:"
     },
     "pages": [
       313
@@ -1650,7 +1620,7 @@
     "id": "def.power.discernevil",
     "kind": "kind.power",
     "book": "jj",
-    "name": "DiscernEvil",
+    "name": "Discern Evil",
     "anchor": {
       "runin": "DiscernEvil:"
     },
@@ -1713,21 +1683,6 @@
     "name": "Eldritch Talent",
     "anchor": {
       "runin": "Eldritch Talent:"
-    },
-    "pages": [
-      316
-    ],
-    "meta": {
-      "category": "classPower"
-    }
-  },
-  {
-    "id": "def.power.evil",
-    "kind": "kind.power",
-    "book": "jj",
-    "name": "Evil",
-    "anchor": {
-      "runin": "Evil:"
     },
     "pages": [
       316
@@ -3274,7 +3229,7 @@
     "id": "def.power.marvelousmachines",
     "kind": "kind.power",
     "book": "jj",
-    "name": "MarvelousMachines",
+    "name": "Marvelous Machines",
     "anchor": {
       "runin": "MarvelousMachines:"
     },
@@ -3304,7 +3259,7 @@
     "id": "def.power.masteryofdominationanddeception",
     "kind": "kind.power",
     "book": "jj",
-    "name": "MasteryofDominationandDeception",
+    "name": "Mastery of Domination and Deception",
     "anchor": {
       "runin": "MasteryofDominationandDeception:"
     },
@@ -3355,21 +3310,6 @@
     "name": "Military Genius",
     "anchor": {
       "runin": "Military Genius:"
-    },
-    "pages": [
-      323
-    ],
-    "meta": {
-      "category": "classPower"
-    }
-  },
-  {
-    "id": "def.power.machines",
-    "kind": "kind.power",
-    "book": "jj",
-    "name": "Machines",
-    "anchor": {
-      "runin": "Machines:"
     },
     "pages": [
       323
@@ -3682,7 +3622,7 @@
     "id": "def.power.probabilitytrance",
     "kind": "kind.power",
     "book": "jj",
-    "name": "ProbabilityTrance",
+    "name": "Probability Trance",
     "anchor": {
       "runin": "ProbabilityTrance:"
     },
@@ -3880,21 +3820,6 @@
     "name": "Rhetoric",
     "anchor": {
       "runin": "Rhetoric:"
-    },
-    "pages": [
-      325
-    ],
-    "meta": {
-      "category": "classPower"
-    }
-  },
-  {
-    "id": "def.power.trance",
-    "kind": "kind.power",
-    "book": "jj",
-    "name": "Trance",
-    "anchor": {
-      "runin": "Trance:"
     },
     "pages": [
       325
@@ -4435,7 +4360,7 @@
     "id": "def.power.subtlebeguilement",
     "kind": "kind.power",
     "book": "jj",
-    "name": "SubtleBeguilement",
+    "name": "Subtle Beguilement",
     "anchor": {
       "runin": "SubtleBeguilement:"
     },
@@ -4450,7 +4375,7 @@
     "id": "def.power.summoninfernalpowers",
     "kind": "kind.power",
     "book": "jj",
-    "name": "SummonInfernalPowers",
+    "name": "Summon Infernal Powers",
     "anchor": {
       "runin": "SummonInfernalPowers:"
     },
@@ -4555,7 +4480,7 @@
     "id": "def.power.technologicaljargon",
     "kind": "kind.power",
     "book": "jj",
-    "name": "TechnologicalJargon",
+    "name": "Technological Jargon",
     "anchor": {
       "runin": "TechnologicalJargon:"
     },
@@ -4570,7 +4495,7 @@
     "id": "def.power.thieveryproficiency",
     "kind": "kind.power",
     "book": "jj",
-    "name": "ThieveryProficiency",
+    "name": "Thievery Proficiency",
     "anchor": {
       "runin": "ThieveryProficiency:"
     },
@@ -4600,7 +4525,7 @@
     "id": "def.power.totemanimal",
     "kind": "kind.power",
     "book": "jj",
-    "name": "TotemAnimal",
+    "name": "Totem Animal",
     "anchor": {
       "runin": "TotemAnimal:"
     },
@@ -4664,72 +4589,12 @@
     }
   },
   {
-    "id": "def.power.beguilement",
-    "kind": "kind.power",
-    "book": "jj",
-    "name": "Beguilement",
-    "anchor": {
-      "runin": "Beguilement:"
-    },
-    "pages": [
-      328
-    ],
-    "meta": {
-      "category": "classPower"
-    }
-  },
-  {
-    "id": "def.power.powers",
-    "kind": "kind.power",
-    "book": "jj",
-    "name": "Powers",
-    "anchor": {
-      "runin": "Powers:"
-    },
-    "pages": [
-      328
-    ],
-    "meta": {
-      "category": "classPower"
-    }
-  },
-  {
     "id": "def.power.jargon",
     "kind": "kind.power",
     "book": "jj",
     "name": "Jargon",
     "anchor": {
       "runin": "Jargon:"
-    },
-    "pages": [
-      328
-    ],
-    "meta": {
-      "category": "classPower"
-    }
-  },
-  {
-    "id": "def.power.proficiency",
-    "kind": "kind.power",
-    "book": "jj",
-    "name": "Proficiency",
-    "anchor": {
-      "runin": "Proficiency:"
-    },
-    "pages": [
-      328
-    ],
-    "meta": {
-      "category": "classPower"
-    }
-  },
-  {
-    "id": "def.power.animal",
-    "kind": "kind.power",
-    "book": "jj",
-    "name": "Animal",
-    "anchor": {
-      "runin": "Animal:"
     },
     "pages": [
       328
@@ -4772,7 +4637,7 @@
     "id": "def.power.undeadslaying",
     "kind": "kind.power",
     "book": "jj",
-    "name": "UndeadSlaying",
+    "name": "Undead Slaying",
     "anchor": {
       "runin": "UndeadSlaying:"
     },
@@ -4862,7 +4727,7 @@
     "id": "def.power.weaponsystemsexpert",
     "kind": "kind.power",
     "book": "jj",
-    "name": "WeaponSystemsExpert",
+    "name": "Weapon Systems Expert",
     "anchor": {
       "runin": "WeaponSystemsExpert:"
     },
@@ -4955,21 +4820,6 @@
     "name": "Words of Command and Obedience",
     "anchor": {
       "runin": "Words of Command and Obedience:"
-    },
-    "pages": [
-      330
-    ],
-    "meta": {
-      "category": "classPower"
-    }
-  },
-  {
-    "id": "def.power.slaying",
-    "kind": "kind.power",
-    "book": "jj",
-    "name": "Slaying",
-    "anchor": {
-      "runin": "Slaying:"
     },
     "pages": [
       330

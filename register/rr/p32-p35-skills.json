@@ -168,7 +168,7 @@
     "id": "def.skill.deciphering",
     "kind": "kind.skill",
     "book": "rr",
-    "name": "Deciphering (4level)",
+    "name": "Deciphering",
     "anchor": {
       "runin": "Deciphering (4level):"
     },
@@ -177,6 +177,9 @@
     ],
     "meta": {
       "category": "skill"
+    },
+    "assists": {
+      "expectTop": 2
     }
   },
   {
@@ -192,6 +195,14 @@
     ],
     "meta": {
       "category": "skill"
+    },
+    "assists": {
+      "columns": [
+        70,
+        310
+      ],
+      "descStopY": 315,
+      "expectTop": 2
     }
   }
 ]
