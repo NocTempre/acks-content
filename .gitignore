@@ -12,3 +12,7 @@ npm-debug.log*
 docs/RULES.md
 docs/PROFICIENCIES.md
 docs/ACKS-Reactions-Reference.md
+
+# transient compile/verify reports
+_c.txt
+_v*.txt
