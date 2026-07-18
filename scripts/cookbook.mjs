@@ -424,6 +424,15 @@ export function bindMonster(node) {
   }
   for (const prof of f.stats?.proficiencies ?? []) {
     if (!prof.text || /^none/i.test(prof.text)) continue;
+    // Prefer the SHARED definition: when the token resolved to a def ref the
+    // cookbook carries, embed THAT ability (lazy descriptor, classification,
+    // shared cookbook id) instead of minting a bare namesake. A registry miss
+    // degrades to a plain named ability — never a failure.
+    const shared = prof.ref ? cookbookEntry(prof.ref) : null;
+    if (shared) {
+      items.push({ img: "icons/svg/book.svg", ...bindAbility(shared.entry, null, prof.ref) });
+      continue;
+    }
     items.push({
       name: prof.text,
       type: "ability",
@@ -498,7 +507,12 @@ async function importOne(bookId, id, folderId) {
   if (items.length) {
     await actor.createEmbeddedDocuments(
       "Item",
-      items.map((i) => ({ ...i, flags: { ...(i.flags ?? {}), [MODULE_ID]: { generated: true } } })),
+      // Merge, don't replace: an embedded shared ability keeps its cookbook id
+      // (that id is what resolves its lazy prose and marks it as the shared one).
+      items.map((i) => ({
+        ...i,
+        flags: { ...(i.flags ?? {}), [MODULE_ID]: { ...(i.flags?.[MODULE_ID] ?? {}), generated: true } },
+      })),
     );
   }
   await actor.setFlag(MODULE_ID, "cookbook", { id, cite: found.entry.cite });
