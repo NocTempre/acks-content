@@ -49,8 +49,15 @@ export async function loadCookbook() {
   return n > 0;
 }
 
-export const cookbookEntry = (id) => {
-  for (const cb of data.books.values()) if (cb.entries[id]) return { cb, entry: cb.entries[id] };
+/** "mm.griffon#combat" -> { id, section } (section null when absent). */
+const splitId = (full) => {
+  const [id, section] = String(full ?? "").split("#");
+  return { id, section: section || null };
+};
+
+export const cookbookEntry = (fullId) => {
+  const { id } = splitId(fullId);
+  for (const cb of data.books.values()) if (cb.entries[id]) return { cb, entry: cb.entries[id], id };
   return null;
 };
 export const cookbookCount = (bookId) => Object.keys(data.books.get(bookId)?.entries ?? {}).length;
@@ -60,33 +67,46 @@ export const cookbookCount = (bookId) => Object.keys(data.books.get(bookId)?.ent
 /* -------------------------------------------- */
 
 /** Stub line for a cookbook id: name + citation (no book needed). */
-export function cookbookStub(id) {
-  const found = cookbookEntry(id);
+export function cookbookStub(fullId) {
+  const found = cookbookEntry(fullId);
   if (!found) return null;
   return game.i18n.format(`${LANG_PREFIX}.ui.cookbookStub`, { name: found.entry.name, cite: found.entry.cite });
 }
 
 /** Whether this seat could reveal prose for the id right now. */
-export function cookbookCanReveal(id) {
-  const found = cookbookEntry(id);
+export function cookbookCanReveal(fullId) {
+  const found = cookbookEntry(fullId);
   return !!found && ctx.sessionDocs.has(found.cb.book.id);
 }
 
-/** Execute the entry's description on demand; cache in session memory only. */
-export async function cookbookProse(id) {
-  const found = cookbookEntry(id);
-  if (!found) return null;
-  const bookId = found.cb.book.id;
+/** Cache an entry's description paragraphs (session memory only). */
+export function cookbookCacheParas(bookId, id, paras) {
+  if (!paras?.length) return;
   const mem = ctx.proseMem.get(bookId) ?? {};
-  if (mem[id]) return mem[id];
-  const session = ctx.sessionDocs.get(bookId);
-  if (!session) return null;
-  const res = await executeEntry(session.doc, found.cb, data.registers, id);
-  const prose = (res.fields.description ?? []).map((p) => p.text).join("\n\n");
-  if (!prose) return null;
-  mem[id] = prose;
+  mem[id] = paras;
   ctx.proseMem.set(bookId, mem);
-  return prose;
+}
+
+/**
+ * Execute the entry's description on demand; cache paragraphs in session
+ * memory only. A "#section" suffix filters to that section's paragraphs.
+ */
+export async function cookbookProse(fullId) {
+  const found = cookbookEntry(fullId);
+  if (!found) return null;
+  const { section } = splitId(fullId);
+  const bookId = found.cb.book.id;
+  let paras = (ctx.proseMem.get(bookId) ?? {})[found.id];
+  if (!paras) {
+    const session = ctx.sessionDocs.get(bookId);
+    if (!session) return null;
+    const res = await executeEntry(session.doc, found.cb, data.registers, found.id);
+    paras = res.fields.description ?? [];
+    cookbookCacheParas(bookId, found.id, paras);
+  }
+  const picked = section ? paras.filter((p) => (p.section ?? "appearance") === section) : paras;
+  const prose = picked.map((p) => p.text).join("\n\n");
+  return prose || null;
 }
 
 /* -------------------------------------------- */
@@ -219,20 +239,31 @@ async function importOne(bookId, id, folderId) {
   }
   const { system, items } = bindMonster(node);
 
-  // Prose stays lazy: the actor carries only the tag; description reproduces
-  // per seat. Cache this GM's extraction in session memory for instant reveal.
-  const mem = ctx.proseMem.get(bookId) ?? {};
-  const paras = (node.fields.description ?? []).map((p) => p.text).join("\n\n");
-  if (paras) {
-    mem[id] = paras;
-    ctx.proseMem.set(bookId, mem);
-  }
-  const tag = `<p>@PdfText[${id}]{${found.entry.cite}}</p>`;
+  // Prose stays lazy: the actor carries only tags; description reproduces per
+  // seat. Cache this GM's extraction in session memory for instant reveal.
+  const paras = node.fields.description ?? [];
+  cookbookCacheParas(bookId, id, paras);
+  const tag = (section) => `<p>@PdfText[${id}${section ? `#${section}` : ""}]{${found.entry.cite}}</p>`;
   const fmsActive = game.modules.get("acks-monsters")?.active;
-  if (!fmsActive) system.details = { ...(system.details ?? {}), biography: tag };
+  if (!fmsActive) system.details = { ...(system.details ?? {}), biography: tag(null) };
 
   const actor = await Actor.create({ name: found.entry.name, type: "monster", folder: folderId, system });
-  if (fmsActive) await actor.update({ "flags.acks-monsters.extras": { description: { appearance: tag } } });
+  if (fmsActive) {
+    // Route description SECTIONS onto the Full Monster Sheet's fields; each
+    // field gets its own section-scoped lazy tag. Unrouted sections -> notes.
+    const ROUTE = {
+      appearance: "appearance", combat: "combat", ecology: "ecology",
+      encounter: "encounterText", lair: "encounterText",
+      lore: "lore", specialRules: "notes", behavior: "notes",
+    };
+    const description = {};
+    for (const sec of [...new Set(paras.map((p) => p.section ?? "appearance"))]) {
+      const field = ROUTE[sec] ?? "notes";
+      description[field] = (description[field] ?? "") + tag(sec);
+    }
+    if (!Object.keys(description).length) description.appearance = tag(null);
+    await actor.update({ "flags.acks-monsters.extras": { description } });
+  }
   if (items.length) {
     await actor.createEmbeddedDocuments(
       "Item",

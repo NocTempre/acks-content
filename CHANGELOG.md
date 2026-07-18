@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.3
+
+- **Description sections.** Paragraphs are classified by the book's own run-in
+  headings (Combat / Ecology / Encounter / Special Rules / Lair …) at compile
+  time — 286 of 287 entries label themselves — and imported actors now route
+  each section to the matching Full Monster Sheet field (Appearance, Combat,
+  Ecology, Encounter, Lore, Notes) with its own lazy `@PdfText[id#section]`
+  tag instead of dumping everything into Appearance.
+- **Spoils fixed book-wide:** fractional-only weights (`4/6 st`) were rejected
+  by the component parser, silently emptying most spoils lists (e.g. Death
+  Charger). All weight forms now parse.
+- Divider mini-headings ("… Secondary Characteristics", "… Encounters") no
+  longer pollute stat fields (smallcaps-aware detection, shipped drop fixes).
+
 ## 0.3.2
 
 - **Attacks reworked into modes.** The Attacks and Damage lines are now parsed

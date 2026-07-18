@@ -78,7 +78,9 @@ const isDamageSeg = (s) => {
   const c = clean(s);
   return DICE_RE.test(c) || /^\d+$/.test(c) || /weapon/i.test(c);
 };
-const SPOIL_RE = /([A-Za-z][A-Za-z' -]*?)\s*\((\d+)(?:\s*(\d)\/6)?\s*st,\s*([\d,]+)\s*gp(?:,\s*((?:[^()]|\([^)]*\))+?))?\)/g;
+// Component: "name (W st, Ngp, effects…)" where W = "2", "2 3/6", or "4/6" —
+// the whole-stone part is OPTIONAL (fractional-only weights are common).
+const SPOIL_RE = /([A-Za-z][A-Za-z' -]*?)\s*\((?:(\d+)\s*)?(?:(\d)\/6\s*)?st,\s*([\d,]+)\s*gp(?:,\s*((?:[^()]|\([^)]*\))+?))?\)/g;
 
 /** Split on commas at parenthesis depth 0 ("a (b, c), d" -> ["a (b, c)", "d"]). */
 function splitTop(s) {
@@ -225,7 +227,7 @@ function applyPattern(raw, instr, registers, misses) {
       for (const m of text.matchAll(SPOIL_RE)) {
         spoils.push({
           name: m[1].trim(),
-          weight6: parseInt(m[2], 10) * 6 + (m[3] ? parseInt(m[3], 10) : 0),
+          weight6: (m[2] ? parseInt(m[2], 10) : 0) * 6 + (m[3] ? parseInt(m[3], 10) : 0),
           cost: parseInt(m[4].replace(/,/g, ""), 10),
           effects: splitTop(m[5] ?? "")
             .map((t) => (instr.effectsTable ? lookup(registers, instr.effectsTable, t, misses) : { text: t })),
@@ -275,8 +277,8 @@ async function execInstruction(instr, ctx) {
       for (const para of instr.paras ?? []) {
         const runs = runsIn(pd, para);
         claim(runs, ctx.field);
-        const text = clean(joinRuns(runs, para.fixes ?? instr.fixes));
-        if (text) paras.push({ type: "paragraph", text });
+        const text = clean(joinRuns(runs, para.fixes ?? instr.fixes, para.dropText));
+        if (text) paras.push({ type: "paragraph", ...(para.section ? { section: para.section } : {}), text });
       }
       return paras;
     }

@@ -571,7 +571,8 @@ Hooks.once("init", () => {
   game.settings.register(MODULE_ID, SETTING_DYNAMIC, { scope: "world", config: false, type: Object, default: {} });
   setWorker(`modules/${MODULE_ID}/vendor/pdf.worker.mjs`);
   CONFIG.TextEditor.enrichers.push({
-    pattern: /@PdfText\[([\w.-]+)\](?:\{([^}]+)\})?/g,
+    // id may carry a "#section" suffix (cookbook description sections).
+    pattern: /@PdfText\[([\w.#-]+)\](?:\{([^}]+)\})?/g,
     enricher: async (match) => enrichPdfText(match[1], match[2]),
   });
 });

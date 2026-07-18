@@ -156,10 +156,19 @@ function computeFixes(runs) {
   return Object.keys(fixes).length ? fixes : null;
 }
 
-/** Attach computed fixes to an instruction (or a text para). */
-function withFixes(instr, pd) {
-  const fixes = computeFixes(runsIn(pd, instr));
-  if (fixes) instr.fixes = fixes;
+/**
+ * Attach computed fixes to an instruction (or a text para). `dropSet` marks
+ * items (e.g. divider-heading lines caught inside a row box) to ship as
+ * `fixes.drop` ordinals so the executor discards them.
+ */
+function withFixes(instr, pd, dropSet) {
+  const runs = runsIn(pd, instr);
+  const fixes = computeFixes(runs) ?? {};
+  if (dropSet) {
+    const drop = runs.map((r, i) => (dropSet.has(r) ? i : -1)).filter((i) => i >= 0);
+    if (drop.length) fixes.drop = drop;
+  }
+  if (Object.keys(fixes).length) instr.fixes = fixes;
   return instr;
 }
 
@@ -266,10 +275,29 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
     box: { x0: proseBox.x0, x1: proseBox.x1, y0: anchor.y - 16, y1: anchorEndY + 6 },
     text: matchedText,
   };
-  fields.description = {
-    op: "text", page,
-    paras: paragraphBoxes(toLines(descItems), proseBox.x0, proseBox.x1).map((p) => withFixes(p, pd)),
+  // Description SECTIONS: the MM prints run-in section labels as their own
+  // bold runs (same mechanism as the "Spoils" anchor). Classify each paragraph
+  // by the nearest label above it; leading unlabeled prose = "appearance".
+  // Entries with NO labels are flagged for the classification agents.
+  const SECTION_LABELS = {
+    "Combat": "combat", "Ecology": "ecology", "Encounter": "encounter",
+    "Special Rules": "specialRules", "Lair": "lair", "Appearance": "appearance",
+    "Behavior": "behavior", "Legends": "lore", "Lore": "lore",
   };
+  const sectionAnchors = descItems
+    .filter((it) => SECTION_LABELS[it.str.trim()])
+    .sort((a, b) => a.y - b.y);
+  const descParas = paragraphBoxes(toLines(descItems), proseBox.x0, proseBox.x1).map((p) => withFixes(p, pd));
+  for (const p of descParas) {
+    const above = [...sectionAnchors].reverse().find((a) => a.y <= p.box.y0 + 8);
+    p.section = above ? SECTION_LABELS[above.str.trim()] : "appearance";
+    const owns = sectionAnchors.find((a) => a.y >= p.box.y0 && a.y <= p.box.y1);
+    if (owns) p.dropText = owns.str.trim();
+  }
+  if (!sectionAnchors.length && descParas.length > 2) {
+    console.error(`NOTE ${entry.id}: no section labels in description (${descParas.length} paras) — agent classification candidate`);
+  }
+  fields.description = { op: "text", page, paras: descParas };
   /* --- stat column (with two-page fallback for multi-page monsters) --- */
   const labelsOf = (p, pcols) => {
     const li = p.items.filter((it) => it.h < HEADING_MIN_H && LABEL_RE.test(it.str.trim()));
@@ -363,6 +391,19 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
   let damageInstr = null;
   const unmapped = [];
 
+  // Divider mini-headings ("<Name> Encounters", "<Name> Secondary/Primary
+  // Characteristics") sit BETWEEN stat rows; whichever row box catches one
+  // ships drop ordinals so the executor discards its runs.
+  const dividerItems = new Set();
+  for (const line of toLines(statColItems)) {
+    // Smallcaps runs join WITHOUT spaces ("secondarycharacteristics"), so
+    // compare space-stripped.
+    const lineText = line.items.map((i) => i.str).join("").replace(/\s+/g, "").toLowerCase();
+    if (/(secondarycharacteristics|primarycharacteristics|encounters)$/.test(lineText) && !lineText.includes(":")) {
+      for (const it of line.items) dividerItems.add(it);
+    }
+  }
+
   // The MM CENTERS a stat label between its value's lines when a value wraps,
   // so a wrapped value's first line sits ABOVE its own label (confirmed
   // p298: Attacks value line y=396.7 vs label y=401.2). Assign each row the
@@ -387,7 +428,7 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
     }
     if (name.startsWith(speedCfg.prefix)) {
       const kind = /\(([^)]+)\)/.exec(name)?.[1] ?? "land";
-      fields[`stats.speed${cap(camel(kind))}`] = withFixes({ ...base, pattern: speedCfg.pattern }, statPd);
+      fields[`stats.speed${cap(camel(kind))}`] = withFixes({ ...base, pattern: speedCfg.pattern }, statPd, dividerItems);
       return;
     }
     const row = rows[name];
@@ -398,10 +439,10 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
         ...(row.table ? { table: row.table } : {}),
         ...(row.parenTable ? { parenTable: row.parenTable } : {}),
         ...(row.stripRoll ? { stripRoll: true } : {}),
-      }, statPd);
+      }, statPd, dividerItems);
     } else {
       unmapped.push(name);
-      fields[`stats._raw.${camel(name)}`] = withFixes({ ...base, pattern: "raw" }, statPd);
+      fields[`stats._raw.${camel(name)}`] = withFixes({ ...base, pattern: "raw" }, statPd, dividerItems);
     }
   });
 
