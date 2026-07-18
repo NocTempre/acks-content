@@ -1619,6 +1619,18 @@
             "runin": "Construct:"
           }
         }
+      },
+      "note": "ACKS type rule, MM p.11: constructs are immune to enchantment effects, necrotic damage, and poisonous damage.",
+      "defenses": {
+        "immunities": {
+          "damage": [
+            "necrotic",
+            "poisonous"
+          ],
+          "effects": [
+            "enchantment"
+          ]
+        }
       }
     },
     "def.type.enchanted": {
@@ -1709,6 +1721,14 @@
             "runin": "Ooze:"
           }
         }
+      },
+      "note": "ACKS type rule, MM p.12: oozes vary, but all are immune to enchantment effects.",
+      "defenses": {
+        "immunities": {
+          "effects": [
+            "enchantment"
+          ]
+        }
       }
     },
     "def.type.plant": {
@@ -1724,6 +1744,15 @@
             "runin": "Plant:"
           }
         }
+      },
+      "note": "ACKS type rule, MM p.12: all plants are immune to necrotic damage and poisonous damage.",
+      "defenses": {
+        "immunities": {
+          "damage": [
+            "necrotic",
+            "poisonous"
+          ]
+        }
       }
     },
     "def.type.undead": {
@@ -1738,6 +1767,18 @@
           "anchor": {
             "runin": "Undead:"
           }
+        }
+      },
+      "note": "ACKS type rule, MM p.12: all undead are immune to enchantment effects, necrotic damage, and poisonous damage.",
+      "defenses": {
+        "immunities": {
+          "damage": [
+            "necrotic",
+            "poisonous"
+          ],
+          "effects": [
+            "enchantment"
+          ]
         }
       }
     },

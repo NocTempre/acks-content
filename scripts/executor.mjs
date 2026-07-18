@@ -211,11 +211,15 @@ export function attackModel(attacksText, damageRaw) {
 // synonyms map to the canonical key. Generic vocabulary, frozen like the rest.
 const DAMAGE_WORDS = {
   acid: "acidic", acidic: "acidic", arcane: "arcane", bludgeoning: "bludgeoning",
-  necrotic: "necrotic", cold: "cold", frost: "cold", electrical: "electrical",
-  electricity: "electrical", lightning: "electrical", fire: "fire", flame: "fire",
-  luminous: "luminous", slashing: "slashing", piercing: "piercing",
-  poison: "poisonous", poisonous: "poisonous", seismic: "seismic",
+  necrotic: "necrotic", cold: "cold", frost: "cold", electric: "electrical",
+  electrical: "electrical", electricity: "electrical", lightning: "electrical",
+  fire: "fire", flame: "fire", luminous: "luminous", slashing: "slashing",
+  piercing: "piercing", poison: "poisonous", poisonous: "poisonous", seismic: "seismic",
 };
+// A defense clause ends at the sentence end OR the next defence verb / contrast
+// word — so "immune to X and resistant to Y" doesn't leak Y's flags into X.
+const DEF_BOUNDARY =
+  "(?=[.;]|\\b(?:but|however|except|while|though|although|whereas)\\b|\\b(?:resistant|resistance|vulnerable|susceptible)\\b|\\bhave full effect\\b|$)";
 
 /**
  * Scan a monster's OWN description prose for immunity / resistance /
@@ -247,15 +251,34 @@ export function defenseScan(paras, registers) {
   };
   // "can only be harmed/hit by extraordinary/magic" == immune to mundane damage.
   const out = {};
-  const imm = scan(/(?:immun(?:e|ity) to|unaffected by|not affected by|cannot be) ([^.;]+)/gi);
+  const imm = scan(new RegExp(`(?:immun(?:e|ity) to|unaffected by|not affected by|cannot be) (.+?)${DEF_BOUNDARY}`, "gi"));
   if (/only be (?:harmed|hit|struck|damaged) by (?:extraordinary|magic)/i.test(text)) imm.mundane = true;
-  const res = scan(/(?:resistan(?:t|ce) to|takes? half (?:damage )?from) ([^.;]+)/gi);
-  const sus = scan(/(?:susceptible|vulnerable|especially vulnerable) to ([^.;]+)/gi);
+  const res = scan(new RegExp(`(?:resistan(?:t|ce) to|takes? half (?:damage )?from) (.+?)${DEF_BOUNDARY}`, "gi"));
+  const sus = scan(new RegExp(`(?:susceptible|vulnerable|especially vulnerable) to (.+?)${DEF_BOUNDARY}`, "gi"));
   const any = (b) => b.damage.length || b.effects.length || b.mundane || b.extraordinary;
   if (any(imm)) out.immunities = imm;
   if (any(res)) out.resistances = res;
   if (any(sus)) out.susceptibilities = sus;
   return Object.keys(out).length ? out : null;
+}
+
+/** Union two defense objects (type-inherent ACKS rule + per-entry prose scan). */
+export function mergeDefenses(a, b) {
+  if (!a) return b ?? null;
+  if (!b) return a;
+  const out = {};
+  for (const cat of ["immunities", "resistances", "susceptibilities"]) {
+    const x = a[cat];
+    const y = b[cat];
+    if (!x && !y) continue;
+    out[cat] = {
+      damage: [...new Set([...(x?.damage ?? []), ...(y?.damage ?? [])])],
+      effects: [...new Set([...(x?.effects ?? []), ...(y?.effects ?? [])])],
+      mundane: !!(x?.mundane || y?.mundane),
+      extraordinary: !!(x?.extraordinary || y?.extraordinary),
+    };
+  }
+  return out;
 }
 
 /** Fixed pattern library (frozen with the schema). */
@@ -469,11 +492,20 @@ export async function executeEntry(doc, bookCookbook, registers, entryId, opts =
     }
   }
 
-  // Defenses are DERIVED from this seat's own extracted description prose +
-  // the shipped vocabulary — never baked per creature (see defenseScan).
+  // Defenses = per-entry prose scan (this seat's own description + shipped
+  // vocabulary) UNIONED with the creature's TYPE-inherent defenses (an ACKS
+  // type rule authored once on the type node, e.g. "all undead are immune
+  // to..."). Both are applied by the type/prose the SEAT extracted — nothing
+  // about which defenses a specific creature has is baked on the entry.
   if (fields.description?.length) {
-    const defenses = defenseScan(fields.description, registers);
-    if (defenses) fields.defenses = defenses;
+    const scanned = defenseScan(fields.description, registers);
+    if (scanned) fields.defenses = scanned;
+  }
+  const t = fields.stats?.type;
+  const typeRefs = t?.refs ?? (t?.ref ? [t.ref] : []);
+  for (const ref of typeRefs) {
+    const td = registers?.nodes?.[ref]?.defenses;
+    if (td) fields.defenses = mergeDefenses(fields.defenses, td);
   }
 
   return {

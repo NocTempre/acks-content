@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.7
+
+- **Type-inherent defenses (ACKS type rules).** The MM states type-wide
+  immunities — "all undead / constructs are immune to enchantment effects,
+  necrotic and poisonous damage"; "all plants…"; "oozes… enchantment". These
+  are now authored once on the creature-type nodes (cited) and applied to every
+  creature of that type, unioned with its own description scan. So an undead
+  that doesn't restate its immunities still gets them.
+- Defense prose scan tightened: a clause stops at the next defense verb /
+  contrast word, so "immune to X and resistant to Y" no longer leaks Y's
+  mundane/extraordinary flags into X; added the "electric" damage synonym.
+
 ## 0.3.6
 
 - **Defenses materialize from your book, not baked lists.** Immunities /

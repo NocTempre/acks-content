@@ -23,10 +23,17 @@ finding the per-page peculiarities structure checks can't see.
 ## Defenses (immunities / resistances / susceptibilities)
 These are NOT baked per creature. The executor scans each monster's OWN prose
 (from the seat's book) against a shipped vocabulary — the damage-type keys plus
-`register/_refs/defenseEffect.json`. Rules:
-- Work ONLY from what the page prints. NEVER infer a defense from rules
-  knowledge (e.g. "medusas are traditionally immune to petrification") — if the
-  book doesn't state it for this creature, it does not exist for us.
+`register/_refs/defenseEffect.json` — and unions in the creature's TYPE-inherent
+defenses (an ACKS type rule authored once on the type node, cited). Rules:
+- Work from what ACKS PRINTS: the creature's own entry AND ACKS system rules
+  (e.g. the MM creature-type definitions, which state type-wide immunities).
+  You MAY apply an ACKS rule (cite book+page). You may NOT apply assumptions or
+  anything from OUTSIDE ACKS (D&D tradition etc.). If neither the entry nor an
+  ACKS rule states a defense, it does not exist for us.
+- A type-wide rule ("all undead are immune to …") is authored ONCE on the type
+  node in `_refs/creatureType.json` (with a `note` citing the page), never
+  per creature. Only 4 MM types have inherent immunities (construct, undead,
+  plant, ooze) — confirmed by reading each type's printed sentence.
 - Your only defense job: when a page STATES a defense using an effect WORD not
   in the vocabulary, propose it as a `registerTokens` entry
   `{ "registry": "defenseEffect", "token": "<word>" }`.
