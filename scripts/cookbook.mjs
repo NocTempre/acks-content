@@ -120,6 +120,210 @@ const firstInt = (v) => {
 const diceOf = (v) => /\d+d\d+(?:[+-]\d+)?/.exec(String(v ?? ""))?.[0] ?? "";
 const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
+/* -------------------------------------------- */
+/*  Full Monster Sheet extras (acks-monsters)   */
+/* -------------------------------------------- */
+
+const SAVE_CLASS_BY_ABBR = { F: "fighter", C: "crusader", M: "mage", T: "thief", D: "dwarvenVaultguard", E: "elvenSpellsword" };
+const AGE_KEYS = ["baby", "juvenile", "adolescent", "adult", "middleAged", "old", "ancient", "maximum"];
+const DAMAGE_WORDS = {
+  acid: "acidic", acidic: "acidic", arcane: "arcane", bludgeoning: "bludgeoning", cold: "cold",
+  electrical: "electrical", electricity: "electrical", lightning: "electrical", fire: "fire",
+  luminous: "luminous", necrotic: "necrotic", piercing: "piercing", poison: "poisonous",
+  poisonous: "poisonous", seismic: "seismic", slashing: "slashing",
+};
+
+/** "Wandering noun (2d4) / Lair noun (2d6)" -> encounter side object. */
+function encSide(value) {
+  if (!value || /^none/i.test(String(value))) return null;
+  const parse = (part) => {
+    const m = /^([^(]+?)\s*\((\d+d\d+(?:[+-]\d+)?)\)/.exec((part ?? "").trim());
+    return m ? { noun: m[1].trim(), number: m[2] } : null;
+  };
+  const parts = String(value).split("/");
+  const wandering = parse(parts[0]);
+  const lair = parse(parts[1] ?? parts[0]);
+  if (!wandering && !lair) return null;
+  return { wandering: wandering ?? { noun: "", number: "" }, lair: lair ?? { noun: "", number: "" } };
+}
+
+/** Scan description paragraphs for the MM's formulaic defense sentences. */
+function scanDefenses(paras) {
+  const text = paras.map((p) => p.text).join(" ");
+  const bucket = () => ({ damage: [], effects: [], mundane: false, extraordinary: false });
+  const out = { immunities: bucket(), resistances: bucket(), susceptibilities: bucket() };
+  const fill = (b, clause) => {
+    for (const token of clause.split(/,|\band\b/)) {
+      const t = token.trim().toLowerCase();
+      if (!t) continue;
+      const dmg = Object.keys(DAMAGE_WORDS).find((w) => t.includes(w));
+      if (dmg && /damage|weapon/.test(t + " damage")) {
+        if (!b.damage.includes(DAMAGE_WORDS[dmg])) b.damage.push(DAMAGE_WORDS[dmg]);
+      } else if (/mundane|ordinary|non-?magical/.test(t)) {
+        b.mundane = true;
+      } else if (/extraordinary|magical weapons/.test(t)) {
+        b.extraordinary = true;
+      } else if (/effect|enchantment|charm|sleep|paralysis|petrification|disease|gaze/.test(t)) {
+        const eff = t.replace(/\beffects?\b/g, "").trim();
+        if (eff && !b.effects.includes(eff)) b.effects.push(eff);
+      }
+    }
+  };
+  for (const m of text.matchAll(/immune to ([^.;]+)/gi)) fill(out.immunities, m[1]);
+  for (const m of text.matchAll(/resistant to ([^.;]+)/gi)) fill(out.resistances, m[1]);
+  for (const m of text.matchAll(/(?:susceptible|vulnerable) to ([^.;]+)/gi)) fill(out.susceptibilities, m[1]);
+  if (/only be (?:harmed|hit|struck) by (?:extraordinary|magic)/i.test(text)) out.immunities.mundane = true;
+  const any = (b) => b.damage.length || b.effects.length || b.mundane || b.extraordinary;
+  const pack = (b) => (any(b) ? { damage: b.damage, effects: b.effects.join(", "), mundane: b.mundane, extraordinary: b.extraordinary } : undefined);
+  const res = {};
+  if (pack(out.immunities)) res.immunities = pack(out.immunities);
+  if (pack(out.resistances)) res.resistances = pack(out.resistances);
+  if (pack(out.susceptibilities)) res.susceptibilities = pack(out.susceptibilities);
+  return Object.keys(res).length ? res : null;
+}
+
+/**
+ * Map executor output onto the Full Monster Sheet's extras schema
+ * (Classification / Rating & Saves / Vision / Movement / Ecology / Defenses).
+ * Pure data mapping — exported so the dev harness can test it without Foundry.
+ */
+export function buildExtras(node) {
+  const s = node.fields.stats ?? {};
+  const raw = (k) => s[`_raw.${k}`];
+  const extras = {};
+
+  /* --- classification --- */
+  if (s.type) extras.types = s.type.keys ?? (s.type.key ? [s.type.key] : []);
+  const sub = s.type?.paren?.[0];
+  if (sub) extras.subtype = sub.key ?? sub.text;
+  if (s.size?.key) extras.size = s.size.key;
+  const massText = s.size?.paren?.map((p) => p.text).join(",") ?? "";
+  const stone = firstInt(massText);
+  if (stone != null && /st/.test(massText)) extras.mass = { stone, lbs: stone * 10 };
+
+  /* --- rating & saves --- */
+  const hdm = /^(\d+)(?:\s*([+-])\s*(\d+))?\s*(\**)/.exec(String(s.hitDice ?? "").trim());
+  if (hdm) {
+    extras.hd = {
+      count: parseInt(hdm[1], 10),
+      bonus: hdm[2] ? (hdm[2] === "-" ? -1 : 1) * parseInt(hdm[3], 10) : null,
+      asterisks: hdm[4]?.length || null,
+      dieType: 8,
+    };
+  }
+  const sv = /^([A-Z]+)\s*(\d+)?/.exec(String(s.save ?? "").trim());
+  if (sv) extras.saveAs = { class: SAVE_CLASS_BY_ABBR[sv[1]] ?? "fighter", level: sv[1] === "NH" ? 0 : parseInt(sv[2] ?? "0", 10) || 0 };
+  if (s.normalLoad != null || s.maxLoad != null) {
+    extras.load = { ...(s.normalLoad != null ? { normal: s.normalLoad } : {}), ...(s.maxLoad != null ? { capacity: s.maxLoad } : {}) };
+  }
+
+  /* --- vision & senses --- */
+  const vis = String(s.vision ?? "").toLowerCase();
+  if (vis) {
+    extras.vision = ["standard", "night", "lightless", "acute", "blind"].filter((k) => vis.includes(k));
+    const range = /lightless[^(]*\((\d+)/.exec(vis);
+    if (range) extras.lightlessRange = parseInt(range[1], 10);
+  }
+  if (s.otherSenses && !/^standard$/i.test(s.otherSenses)) extras.otherSenses = s.otherSenses;
+
+  /* --- movement --- */
+  const speeds = [];
+  for (const [k, v] of Object.entries(s)) {
+    const m = /^speed([A-Z][a-z]+)$/.exec(k);
+    if (!m || !v) continue;
+    const nums = [...String(v).matchAll(/(\d+)/g)].map((n) => parseInt(n[1], 10));
+    if (!nums.length) continue;
+    speeds.push({ type: m[1].toLowerCase(), combat: nums[0] ?? null, run: nums[1] ?? nums[0] ?? null, hover: false });
+  }
+  if (speeds.length) extras.speeds = speeds;
+
+  /* --- encounter --- */
+  const d = encSide(s.dungeonEnc);
+  const w = encSide(s.wildernessEnc);
+  if (d || w || s.lairChance != null) {
+    extras.encounter = {
+      ...(d ? { dungeon: d } : {}),
+      ...(w ? { wilderness: w } : {}),
+      ...(s.lairChance != null ? { lairChance: s.lairChance } : {}),
+    };
+  }
+
+  /* --- ecology (secondary) --- */
+  const secondary = {};
+  const exp = firstInt(raw("expeditionSpeed"));
+  if (exp != null) secondary.expeditionSpeed = exp;
+  const supply = raw("supplyCost");
+  if (supply && !/^none/i.test(supply)) secondary.supplyCost = firstInt(supply) ?? supply;
+  const tp = raw("trainingPeriod");
+  if (tp && !/untrainable/i.test(tp)) secondary.trainingMonths = firstInt(tp);
+  const tm = raw("trainingModifier");
+  if (tm && !/untrainable/i.test(tm)) secondary.trainingModifier = firstInt(tm);
+  const br = raw("battleRating");
+  if (br) {
+    const ind = /([\d.]+)\s*\(individual\)/i.exec(br);
+    const unit = /([\d.]+)\s*\(unit\)/i.exec(br);
+    const single = /^([\d.]+)\s*$/.exec(String(br).trim());
+    if (ind || unit || single) {
+      secondary.battleRating = {
+        ...(ind || single ? { individual: parseFloat((ind ?? single)[1]) } : {}),
+        ...(unit ? { unit: parseFloat(unit[1]) } : {}),
+      };
+    }
+  }
+  const life = raw("lifespan");
+  if (life && /\d+\s*\/\s*\d+/.test(life)) {
+    const vals = life.split("/").map((v) => firstInt(v));
+    const lifespan = {};
+    AGE_KEYS.forEach((k, i) => {
+      if (vals[i] != null) lifespan[k] = vals[i];
+    });
+    secondary.lifespan = lifespan;
+  }
+  const rep = raw("reproduction");
+  if (rep && !/^none/i.test(rep)) {
+    const count = diceOf(rep) || (firstInt(rep) != null ? String(firstInt(rep)) : "");
+    const yt = /egg/i.test(rep) ? "egg" : /litter/i.test(rep) ? "litter" : /spawn/i.test(rep) ? "spawn" : /live/i.test(rep) ? "live" : /infant/i.test(rep) ? "infant" : /juvenile/i.test(rep) ? "juvenile" : "";
+    if (/egg/i.test(rep)) secondary.oviparous = true;
+    secondary.reproduction = { ...(count ? { count } : {}), ...(yt ? { youngType: yt } : {}) };
+    const iv = /every\s+(\d+)?\s*(year|month|week|day)/i.exec(rep);
+    if (iv) {
+      secondary.reproduction.interval = iv[1] ? parseInt(iv[1], 10) : 1;
+      secondary.reproduction.intervalUnit = iv[2].toLowerCase();
+    }
+  }
+  const uv = raw("untrainedValue");
+  if (uv && !/^none/i.test(uv)) {
+    const bucketOf = (marker) => {
+      const m = new RegExp(`([\\d,]+\\s*gp)\\s*\\((?:${marker})\\)`, "i").exec(uv);
+      return m ? m[1].replace(/\s+/g, "") : undefined;
+    };
+    const adult = bucketOf("A");
+    const juvenile = bucketOf("J");
+    const baby = bucketOf("B|e|egg");
+    if (adult || juvenile || baby) {
+      secondary.untrainedValue = {
+        ...(adult ? { adult } : {}),
+        ...(juvenile ? { juvenile } : {}),
+        ...(baby ? { baby } : {}),
+      };
+    }
+  }
+  const tv = raw("trainedValue");
+  if (tv && !/^none/i.test(tv)) secondary.trainedValue = tv;
+  if (Object.keys(secondary).length) extras.secondary = secondary;
+
+  /* --- defenses & spellcasting (formulaic prose) --- */
+  const paras = node.fields.description ?? [];
+  const defenses = scanDefenses(paras);
+  if (defenses) extras.defenses = defenses;
+  const castM = /casts? spells(?: and uses magic items)? as (?:an? )?(\d+)(?:st|nd|rd|th)?[- ]level (\w+)/i.exec(
+    paras.map((p) => p.text).join(" "),
+  );
+  if (castM) extras.spellcasting = { class: capitalize(castM[2]), level: parseInt(castM[1], 10) };
+
+  return extras;
+}
+
 /** Map one executed node to acks actor data + embedded items. */
 export function bindMonster(node) {
   const f = node.fields;
@@ -262,7 +466,9 @@ async function importOne(bookId, id, folderId) {
       description[field] = (description[field] ?? "") + tag(sec);
     }
     if (!Object.keys(description).length) description.appearance = tag(null);
-    await actor.update({ "flags.acks-monsters.extras": { description } });
+    // Classification / saves / vision / movement / ecology / defenses extras
+    // mapped from the same executed node (see buildExtras).
+    await actor.update({ "flags.acks-monsters.extras": { ...buildExtras(node), description } });
   }
   if (items.length) {
     await actor.createEmbeddedDocuments(

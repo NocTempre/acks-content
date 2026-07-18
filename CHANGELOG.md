@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3.4
+
+- **Full Monster Sheet tabs now populate on import.** The binding maps the
+  executed extraction onto the FMS extras schema:
+  - *Classification*: type checkboxes (compound types tick both), sub-type,
+    size, mass (stone + lbs), HD count/bonus/asterisks, saves-as class+level,
+    normal/max load, vision checkboxes + lightless range, other senses, and
+    per-mode movement speeds.
+  - *Ecology*: expedition speed, supply cost, training months/modifier, battle
+    ratings (individual + unit), lifespan age thresholds, reproduction
+    (count/young type/oviparous), untrained market values (adult/juvenile/
+    baby), trained value, encounter nouns (wandering/lair) + lair chance.
+  - *Defenses & Magic*: conservative scan of the entry's own formulaic prose
+    ("immune to enchantment effects, necrotic damage…") fills immunity/
+    resistance/susceptibility damage types and effects, plus "casts spells as
+    an Nth-level X" spellcasting.
+
 ## 0.3.3
 
 - **Description sections.** Paragraphs are classified by the book's own run-in
