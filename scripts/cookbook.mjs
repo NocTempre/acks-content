@@ -707,6 +707,33 @@ async function importOne(bookId, id, folderId) {
   return actor;
 }
 
+/**
+ * Re-read an already-imported monster's stats from this seat's book.
+ *
+ * The counterpart to importOne for an actor that already exists: same
+ * extraction, same binding, but it UPDATES rather than creates. Embedded items
+ * are left alone — a refill that re-added the abilities would duplicate them
+ * on every run, and the stats are what go stale when a recipe improves.
+ *
+ * Returns null when the actor is not ours or its book is not open this
+ * session, so the caller can fall back or explain.
+ */
+export async function refillMonster(actor) {
+  const id = actor?.getFlag(MODULE_ID, "cookbook")?.id;
+  if (!id) return null;
+  const found = cookbookEntry(id);
+  if (!found) return null;
+  const bookId = bookOf(found);
+  const session = ctx.sessionDocs.get(bookId);
+  if (!session) return { ok: false, reason: "book-closed", book: bookId, name: found.entry.name };
+  const node = await executeEntry(session.doc, found.cb, data.registers, found.id);
+  if (!node.ok) return { ok: false, reason: "no-match", book: bookId, name: found.entry.name };
+  const { system, prototypeToken } = bindMonster(node);
+  await actor.update({ system, ...(prototypeToken ? { prototypeToken } : {}) });
+  cookbookCacheParas(bookId, found.id, node.fields.description ?? []);
+  return { ok: true, book: bookId, name: found.entry.name };
+}
+
 /* -------------------------------------------- */
 /*  Abilities (proficiencies / powers / skills) */
 /* -------------------------------------------- */

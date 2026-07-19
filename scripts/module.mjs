@@ -29,7 +29,7 @@ import { createDocFor } from "./poc.mjs";
 import {
   initCookbook, loadCookbook, cookbookImport, cookbookImportMonsters, cookbookImportAbilities, cookbookImportAbilitiesDialog, cookbookUpdateAbilities,
   cookbookFillCompanions, cookbookPruneAbilities, registerAbilityDirectoryButtons, importAbility, cookbookDebug, cookbookStub,
-  cookbookCanReveal, cookbookProse, cookbookCount,
+  cookbookCanReveal, cookbookProse, cookbookCount, refillMonster,
 } from "./cookbook.mjs";
 
 const SETTING_DYNAMIC = "dynamicRecipes";
@@ -567,29 +567,74 @@ async function fillMonster(actor, recipe) {
 }
 
 /**
- * Fill stats on the SELECTED monster tokens only (not every monster in the
- * world). Select the token(s) on the canvas, then run this.
+ * Which monsters Apply Stats should act on.
+ *
+ * Selected tokens, plus any monster whose SHEET is open. A monster that has
+ * never been placed on a scene has no token to select, which made the whole
+ * feature unreachable for it — and an imported bestiary is mostly actors
+ * nobody has dragged out yet. Opening the sheet is the natural way to say
+ * "this one". Deduped, because an open sheet for a selected token is one
+ * monster, not two.
+ */
+function applyStatsTargets() {
+  const fromTokens = (canvas.tokens?.controlled ?? []).map((t) => t.actor);
+  const open = [...(foundry.applications?.instances?.values?.() ?? []), ...Object.values(ui.windows ?? {})];
+  const fromSheets = open.map((app) => app?.document ?? app?.object).filter((d) => d instanceof Actor);
+  return [...new Set([...fromTokens, ...fromSheets].filter((a) => a?.type === "monster"))];
+}
+
+/**
+ * Re-read stats from the connected book for the selected/open monsters.
+ *
+ * Never every monster in the world: this rewrites system data, so it acts on
+ * what the GM pointed at and nothing else.
  */
 async function applyStats() {
   if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only.");
-  const selected = [
-    ...new Set((canvas.tokens?.controlled ?? []).map((t) => t.actor).filter((a) => a?.type === "monster")),
-  ];
+  const selected = applyStatsTargets();
   if (!selected.length) {
     return ui.notifications.warn(
-      "acks-content | select the monster token(s) to fill first — Apply Stats now targets only your selection, never every monster.",
+      "acks-content | select a monster token or open its sheet first — Apply Stats targets only what you point at, never every monster.",
     );
   }
   let touched = 0;
+  const closed = new Set();
+  const unknown = [];
   for (const actor of selected) {
+    // A cookbook-imported monster knows exactly which entry it came from, so
+    // ask it rather than guessing from its name. Before this, Apply Stats
+    // resolved names against allRecipes() alone — the dozen hand-written PoC
+    // recipes — so it could not touch ANY of the hundreds of monsters the
+    // cookbook imports, with or without a token.
+    const refilled = await refillMonster(actor).catch((err) => {
+      console.error(`${MODULE_ID} | refill ${actor.name}`, err);
+      return { ok: false, reason: "error" };
+    });
+    if (refilled?.ok) {
+      touched++;
+      continue;
+    }
+    if (refilled?.reason === "book-closed") {
+      closed.add(BOOKS[refilled.book]?.label ?? refilled.book);
+      continue;
+    }
+    if (refilled) continue; // ours, but this printing did not match — already logged
     const recipe = monsterRecipeForActor(actor);
     if (!recipe) {
-      ui.notifications.warn(`acks-content | no recipe matches "${actor.name}" — browse-load it (PoC 4) or rename it to a known sample.`);
+      unknown.push(actor.name);
       continue;
     }
     if (await fillMonster(actor, recipe)) touched++;
   }
-  if (touched) ui.notifications.info(`acks-content | filled ${touched} selected monster${touched === 1 ? "" : "s"}.`);
+  if (closed.size) {
+    ui.notifications.warn(`acks-content | not open this session: ${[...closed].join(", ")} — connect to refill from it.`);
+  }
+  if (unknown.length) {
+    ui.notifications.warn(
+      `acks-content | not from the cookbook and no recipe matches: ${unknown.slice(0, 5).join(", ")}${unknown.length > 5 ? ` (+${unknown.length - 5})` : ""}.`,
+    );
+  }
+  if (touched) ui.notifications.info(`acks-content | refilled ${touched} monster${touched === 1 ? "" : "s"} from your book.`);
 }
 
 /* -------------------------------------------- */
