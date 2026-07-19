@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.1
+
+- Reverts the compiled `packs/` to the v0.11.0 build; 0.12.0 swept up LevelDB
+  churn again. `packs/_source` did not change, so 0.12.0's macros are correct.
+  Root cause, finally: shutting the WORLD down is not enough — the Foundry
+  desktop application keeps running and keeps the module's pack open, so the
+  files churn whatever the world is doing.
+
 ## 0.12.0
 
 Four defects, all found by auditing a single entry (JJ Acrobatics) and all
