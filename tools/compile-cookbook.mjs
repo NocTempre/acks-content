@@ -9,8 +9,9 @@
  * segmentation, name stemming, color-run matching) — none of it ships as
  * code, only as data. Requires C:\Proj\acks-reference; never CI.
  *
- * Usage: node tools/compile-cookbook.mjs [book]   (default: all books with entries)
- * Emits: cookbook/<book>.json + cookbook/registers.json; report to stderr.
+ * Usage: node tools/compile-cookbook.mjs [book] [--out <dir>]
+ *        (default: all books with entries, written into cookbook/)
+ * Emits: <out>/<book>.json + <out>/registers.json; report to stderr.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -18,16 +19,36 @@ import { fileURLToPath } from "node:url";
 import { openBook, pageItems, listHeadings, detectColumns, colOf, glyphColorRuns } from "../scripts/extract.mjs";
 import { runsIn, joinRuns, attackModel } from "../scripts/executor.mjs";
 import { BOOKS, fingerprintWarning } from "../scripts/books.mjs";
+import { FILES } from "./reference-lib.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REGISTER = path.join(HERE, "..", "register");
-const COOKBOOK = path.join(HERE, "..", "cookbook");
-const LIB = "C:\\Proj\\acks-reference\\ACKSII";
-const FILES = {
-  rr: `${LIB}\\ACKSII_Revised_Rulebook_DIGITAL_FINAL_r10_2nd_Printing.pdf`,
-  jj: `${LIB}\\ACKSII_Judges_Journal_DIGITAL_FINAL_r9_2nd_Printing.pdf`,
-  mm: `${LIB}\\ACKSII_Monstrous_Manual_DIGITAL_FINAL_r7_2nd_Printing.pdf`,
-};
+
+/**
+ * Args: an optional book id to compile alone, and `--out <dir>` to redirect
+ * every write. The output dir is read back as well as written (prior compiles
+ * are folded in, and index.json is built from the directory listing), so it is
+ * one dir, not a write-only sink: pointing it at an empty scratch dir yields a
+ * from-scratch compile, which is exactly what tools/check-cookbook-drift.mjs
+ * needs to diff against what is committed.
+ */
+const argv = process.argv.slice(2);
+const positional = [];
+let outArg = null; // null = no --out; undefined = --out with nothing after it
+for (let i = 0; i < argv.length; i++) {
+  const a = argv[i];
+  if (a === "--out") outArg = argv[++i];
+  else if (a.startsWith("--out=")) outArg = a.slice("--out=".length);
+  else positional.push(a);
+}
+// Never silently fall back to cookbook/ on a malformed --out: a caller that
+// asked for a scratch dir and got the real one would overwrite the very files
+// it meant to compare against.
+if (outArg === undefined || outArg === "") {
+  console.error("compile-cookbook: --out needs a directory");
+  process.exit(2);
+}
+const COOKBOOK = outArg ? path.resolve(outArg) : path.join(HERE, "..", "cookbook");
 
 const HEADING_MIN_H = 12; // mirrors extract.mjs
 // Definition bodies are 9pt prose (+ ~5pt superscript ordinals). Italic
@@ -1254,7 +1275,7 @@ function resolveAlias(raw, entryId, ids) {
 /* -------------------------------------------- */
 
 async function main() {
-  const only = process.argv[2];
+  const only = positional[0];
   const { entries, kinds, refs } = loadRegister();
   const registers = compileRegisters(refs);
   const glyphChars = new Set(Object.keys(registers.tables.damageGlyph ?? {}));

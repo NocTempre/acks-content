@@ -22,15 +22,10 @@ import { fileURLToPath } from "node:url";
 import { openBook, pageItems } from "../scripts/extract.mjs";
 import { executeEntry } from "../scripts/executor.mjs";
 import { fingerprintWarning } from "../scripts/books.mjs";
+import { FILES } from "./reference-lib.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const COOKBOOK = path.join(HERE, "..", "cookbook");
-const LIB = "C:\\Proj\\acks-reference\\ACKSII";
-const FILES = {
-  rr: `${LIB}\\ACKSII_Revised_Rulebook_DIGITAL_FINAL_r10_2nd_Printing.pdf`,
-  jj: `${LIB}\\ACKSII_Judges_Journal_DIGITAL_FINAL_r9_2nd_Printing.pdf`,
-  mm: `${LIB}\\ACKSII_Monstrous_Manual_DIGITAL_FINAL_r7_2nd_Printing.pdf`,
-};
 
 const [bookArg, startArg, endArg] = process.argv.slice(2);
 const start = startArg ? parseInt(startArg, 10) : 0;
