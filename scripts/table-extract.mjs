@@ -107,13 +107,22 @@ export function extractGridRows(items, recipe) {
     // they are never a cell value, so drop lone-marker runs from the band.
     const cellRuns = matched.items.filter((it) => it.x >= recipe.labelMaxX && !/^[*†‡]+$/.test(it.str.trim()));
     const cells = cellRuns.map((r) => r.str.trim());
-    const marketN = recipe.marketCells ?? cells.length - (recipe.trailing?.length ?? 0);
-    const market = cells.slice(0, marketN).map((c) => applyCellPattern(c, recipe.cellPattern ?? "dashNull"));
-    const row = { [recipe.cellsKey ?? "byMarketClass"]: market };
-    (recipe.trailing ?? []).forEach((tspec, i) => {
-      const raw = cells[marketN + i];
-      row[tspec.key] = raw == null ? null : applyCellPattern(raw, tspec.pattern ?? "raw");
-    });
+    let row;
+    if (recipe.cellKeys) {
+      // Named cells → an object under cellsKey (e.g. classPercentages weights).
+      const obj = {};
+      recipe.cellKeys.forEach((k, i) => { obj[k] = applyCellPattern(cells[i] ?? "", recipe.cellPattern ?? "int"); });
+      row = recipe.cellsKey ? { [recipe.cellsKey]: obj } : obj;
+    } else {
+      // Positional cells → an array (market-class grids), plus trailing cols.
+      const marketN = recipe.marketCells ?? cells.length - (recipe.trailing?.length ?? 0);
+      const market = cells.slice(0, marketN).map((c) => applyCellPattern(c, recipe.cellPattern ?? "dashNull"));
+      row = { [recipe.cellsKey ?? "byMarketClass"]: market };
+      (recipe.trailing ?? []).forEach((tspec, i) => {
+        const raw = cells[marketN + i];
+        row[tspec.key] = raw == null ? null : applyCellPattern(raw, tspec.pattern ?? "raw");
+      });
+    }
     if (spec.set) Object.assign(row, spec.set);
     out[spec.key] = row;
   }
@@ -144,7 +153,51 @@ export function extractPairs(items, recipe) {
   return out;
 }
 
-const SHAPES = { gridRows: extractGridRows, pairs: extractPairs };
+/**
+ * `nameList`: a culture's name lists (RR People) — `Male Names:`,
+ * `Female Names:`, `Surnames:` each a comma list that wraps across lines. The
+ * page is two-column, so `column` bounds the culture's side; each field runs
+ * from its label to the next field's label (the last one until the list stops
+ * looking like names). Names are DATA and persist; the surrounding appearance
+ * PROSE is never touched. A valid name is one capitalized token (accents ok).
+ */
+const NAME_RE = /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’-]*$/;
+
+export function extractNameList(items, recipe) {
+  const { xMin = 0, xMax = Infinity } = recipe.column ?? {};
+  const inCol = items.filter((it) => it.x >= xMin && it.x <= xMax);
+  const rows = rowsByY(inCol, recipe.rowTol ?? 3);
+  const fields = recipe.fields.map((f) => ({
+    ...f,
+    rowIdx: rows.findIndex((r) => r.items.some((it) => it.str.trim().startsWith(f.label))),
+  }));
+  const out = {};
+  fields.forEach((f, fi) => {
+    if (f.rowIdx < 0) { out[f.key] = []; return; }
+    const nextIdx = fields.slice(fi + 1).map((n) => n.rowIdx).find((i) => i > f.rowIdx);
+    const endIdx = nextIdx ?? rows.length;
+    let text = "";
+    for (let ri = f.rowIdx; ri < endIdx; ri++) {
+      let runs = rows[ri].items;
+      if (ri === f.rowIdx) {
+        const li = runs.findIndex((it) => it.str.trim().startsWith(f.label));
+        runs = runs.slice(li);
+        runs = runs.map((it, i2) => (i2 === 0 ? { ...it, str: it.str.replace(f.label, "") } : it));
+      }
+      text += " " + runs.map((r) => r.str).join("");
+    }
+    const tokens = text.split(",").map((s) => s.trim()).filter(Boolean);
+    const names = [];
+    for (const t of tokens) {
+      if (NAME_RE.test(t)) names.push(t);
+      else break; // hit prose (a lowercase or multi-word run) → list ended
+    }
+    out[f.key] = names;
+  });
+  return out;
+}
+
+const SHAPES = { gridRows: extractGridRows, pairs: extractPairs, nameList: extractNameList };
 
 /**
  * Shape the raw keyed extraction into the ruledata table's JSON, per
@@ -158,8 +211,12 @@ export function extractTable(items, recipe) {
   const raw = fn(items, recipe);
   if (recipe.emit?.container) {
     const kf = recipe.emit.keyField;
-    return { [recipe.emit.container]: recipe.rows.map((s) => ({ [kf]: s.key, ...raw[s.key] })) };
+    return { [recipe.emit.container]: recipe.rows.map((s) => (kf ? { [kf]: s.key, ...raw[s.key] } : raw[s.key])) };
   }
   if (recipe.emit?.wrap) return { [recipe.emit.wrap]: raw };
+  if (recipe.emit?.wrapCulture) {
+    const { cultureId, ...meta } = recipe.emit.wrapCulture;
+    return { list: { [cultureId]: { ...meta, ...raw } } };
+  }
   return raw;
 }

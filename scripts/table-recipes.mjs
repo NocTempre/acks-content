@@ -36,7 +36,50 @@ const MERC_ROWS = [
   { key: "beastRider", labelRe: "beast\\s*rider" },
 ];
 
+// Class-trajectory percentages (JJ "Leveled NPCs by Percentage"): a level
+// column and six class-weight columns. The reference collapses runs of equal
+// levels into ranges; emitting one row per level (minLevel==maxLevel) resolves
+// identically in henchmen's `.find(level in [min,max])` lookup.
+const CLASS_PCT_ROWS = Array.from({ length: 15 }, (_, L) => ({
+  key: L,
+  labelRe: `^${L}$`,
+  set: { minLevel: L, maxLevel: L },
+}));
+
 export const TABLE_RECIPES = {
+  people: {
+    source: { book: "ACKS II Judges Journal", pages: "245-257" },
+    tables: {
+      classPercentages: {
+        shape: "gridRows",
+        book: "jj",
+        printedPage: 247,
+        locate: "Leveled NPCs by Percentage",
+        labelMaxX: 160,
+        cellKeys: ["fighter", "crusader", "thief", "mage", "explorer", "venturer"],
+        cellsKey: "weights",
+        cellPattern: "int",
+        rows: CLASS_PCT_ROWS,
+        emit: { container: "rows" },
+      },
+      // Auran (Tirenean) name lists — the empire's default culture. Names are
+      // DATA (persist); the appearance PROSE stays book-gated. Located on the
+      // unique Auran surname so the two-column page can't confuse cultures.
+      cultures: {
+        shape: "nameList",
+        book: "rr",
+        printedPage: 504,
+        locate: "Amadorus",
+        column: { xMin: 300, xMax: 545 },
+        fields: [
+          { key: "male", label: "Male Names:" },
+          { key: "female", label: "Female Names:" },
+          { key: "surnames", label: "Surnames:" },
+        ],
+        emit: { wrapCulture: { cultureId: "auran", label: "Tirenean (Auran)", surnameStyle: "hereditary" } },
+      },
+    },
+  },
   availability: {
     source: { book: "ACKS II Revised Rulebook", pages: "162-165, 172" },
     tables: {
