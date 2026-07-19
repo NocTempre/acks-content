@@ -864,7 +864,14 @@ function applyPattern(raw, instr, registers, misses) {
       // preserve it distinctly so the binding leaves the field blank, not 0.
       if (/^\s*(n\s*[/\\]?\s*a|nil|not applicable|—)\s*$/i.test(text)) return "N/A";
       const m = /(-?[\d,]+)/.exec(text);
-      return m ? parseInt(m[1].replace(/,/g, ""), 10) : null;
+      if (!m) return null;
+      // The match can be punctuation with no digit in it — a bare "," or "-"
+      // both satisfy the pattern — and parseInt turns those into NaN. NaN is
+      // typeof "number", so it slips past every downstream guard and only
+      // surfaces as a schema rejection at Actor.create, which reads as a bug in
+      // the importer rather than an unparseable stat. No number is `null`.
+      const n = parseInt(m[1].replace(/,/g, ""), 10);
+      return Number.isFinite(n) ? n : null;
     }
     case "dice":
       return DICE_RE.exec(text)?.[0] ?? null;

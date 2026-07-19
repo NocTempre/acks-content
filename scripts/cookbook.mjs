@@ -606,6 +606,15 @@ async function importOne(bookId, id, folderId) {
   if (!fmsActive) system.details = { ...(system.details ?? {}), biography: tag(null) };
 
   const actor = await Actor.create({ name: found.entry.name, type: "monster", folder: folderId, system, ...(Object.keys(flags ?? {}).length ? { flags } : {}) });
+  // Foundry REPORTS a schema-validation failure and returns undefined rather
+  // than throwing, so without this the next line dereferences nothing and the
+  // real error — already in the console — is buried under a TypeError from
+  // three frames away. One unimportable monster must read as one skipped
+  // monster, not as a crash in the importer.
+  if (!actor) {
+    ui.notifications.warn(`acks-content | ${found.entry.name}: the system rejected the extracted stats — skipped (see console).`);
+    return null;
+  }
   if (fmsActive) {
     // Route description SECTIONS onto the Full Monster Sheet's fields; each
     // field gets its own section-scoped lazy tag. Unrouted sections -> notes.
