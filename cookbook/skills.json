@@ -735,7 +735,10 @@
         34
       ],
       "meta": {
-        "category": "skill"
+        "category": "skill",
+        "provides": [
+          "kw:lightlessvision"
+        ]
       },
       "icon": "icons/svg/eye.svg",
       "iconNiche": "modules/game-icons-net/blacktransparent/all-seeing-eye.svg",

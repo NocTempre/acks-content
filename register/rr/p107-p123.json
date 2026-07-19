@@ -1028,7 +1028,10 @@
     ],
     "meta": {
       "category": "proficiency",
-      "general": false
+      "general": false,
+      "provides": [
+        "kw:listening"
+      ]
     },
     "icon": "icons/svg/sound.svg",
     "iconNiche": "modules/game-icons-net/blacktransparent/echo-ripples.svg"
