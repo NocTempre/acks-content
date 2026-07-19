@@ -15,9 +15,7 @@
  * PoC api (globalThis.acksContent / game.modules.get("acks-content").api):
  *   connectBook()    pick a book + your local PDF (location remembered)
  *   browseAndLoad()  GM: pick a page, choose headings, load actors/items
- *   createSamples()  load the fixed sample set (GM, acks system)
  *   applyStats()     fill monster actors from the connected book
- *   audit()          popout contrasting language options A and B
  *   bookStatus()     which books are open / remembered / absent on this seat
  *   forgetBooks()    drop remembered locations + this session's prose
  */
@@ -27,7 +25,7 @@ import { RECIPES, recipeById } from "./recipes.mjs";
 import { openBook, pageItems, extractRecipe, extractDisplay, extractRunin, extractSpoils, extractPageArt, listHeadings, setWorker } from "./extract.mjs";
 import { extractStatPairs } from "./stats.mjs";
 import { mapPairs } from "./stats-map.mjs";
-import { createSamples, createDocFor, audit as auditDialog } from "./poc.mjs";
+import { createDocFor } from "./poc.mjs";
 import {
   initCookbook, loadCookbook, cookbookImport, cookbookImportMonsters, cookbookImportAbilities, cookbookImportAbilitiesDialog, cookbookUpdateAbilities,
   cookbookFillCompanions, cookbookPruneAbilities, registerAbilityDirectoryButtons, importAbility, cookbookDebug, cookbookStub,
@@ -343,7 +341,6 @@ async function browseAndLoad() {
   if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only (creates documents and world recipes).");
 
   const options = Object.entries(BOOKS)
-    .filter(([, b]) => !b.fake)
     .map(([id, b]) => `<option value="${id}">${b.label}${sessionDocs.has(id) ? " ✓ open" : ""}</option>`)
     .join("");
   const step1 = `
@@ -550,7 +547,6 @@ function monsterRecipeForActor(actor) {
     allRecipes().find(
       (r) =>
         r.kind === "monster" &&
-        !BOOKS[r.book]?.fake &&
         (actor.name === r.name || actor.name === `${r.name} (PoC)`),
     ) ?? null
   );
@@ -594,22 +590,6 @@ async function applyStats() {
     if (await fillMonster(actor, recipe)) touched++;
   }
   if (touched) ui.notifications.info(`acks-content | filled ${touched} selected monster${touched === 1 ? "" : "s"}.`);
-}
-
-/**
- * Create the fixed sample set (poc.mjs) and immediately auto-fill each created
- * monster whose book is open this session — a populated sheet on import, no
- * separate Apply-Stats step.
- */
-async function createSamplesAndFill() {
-  await createSamples();
-  for (const recipe of allRecipes().filter((r) => r.kind === "monster" && !BOOKS[r.book]?.fake)) {
-    if (!sessionDocs.has(recipe.book)) continue;
-    const actor = game.actors.find(
-      (a) => a.type === "monster" && (a.name === recipe.name || a.name === `${recipe.name} (PoC)`),
-    );
-    if (actor) await fillMonster(actor, recipe);
-  }
 }
 
 /* -------------------------------------------- */
@@ -679,9 +659,8 @@ Hooks.once("ready", async () => {
   initCookbook({ sessionDocs, proseMem, importArtForPage: importArt });
   registerAbilityDirectoryButtons();
   await loadCookbook();
-  const audit = () => auditDialog(allRecipes(), stubFor);
   const api = {
-    connectBook, browseAndLoad, createSamples: createSamplesAndFill, applyStats, audit, bookStatus, forgetBooks,
+    connectBook, browseAndLoad, applyStats, bookStatus, forgetBooks,
     proseFor, cookbookImport, cookbookImportMonsters, cookbookImportAbilities, cookbookImportAbilitiesDialog, cookbookUpdateAbilities, cookbookFillCompanions, cookbookPruneAbilities,
     importAbility, cookbookDebug, cookbookProse, cookbookCount,
     RECIPES, BOOKS,
@@ -690,7 +669,7 @@ Hooks.once("ready", async () => {
   const module = game.modules.get(MODULE_ID);
   if (module) module.api = api;
   console.log(
-    `${MODULE_ID} | ready. Macros in "ACKS Content — Macros", or: acksContent.connectBook() · acksContent.cookbookImport() · acksContent.cookbookImportAbilitiesDialog() · acksContent.cookbookUpdateAbilities() · acksContent.browseAndLoad() · acksContent.audit().`,
+    `${MODULE_ID} | ready. Macros in "ACKS Content — Macros", or: acksContent.connectBook() · acksContent.cookbookImport() · acksContent.cookbookImportAbilitiesDialog() · acksContent.cookbookUpdateAbilities() · acksContent.browseAndLoad().`,
   );
 
   // Reopen remembered books; offer the unlock gesture for the rest.

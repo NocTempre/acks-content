@@ -87,15 +87,6 @@ function buildMacros() {
     macro("ackscMacStats000", "Apply Stats from Book (GM)", "icons/svg/combat.svg", GUARD + `api.applyStats();`, 310),
     macro("ackscMacCkDebug0", "Cookbook — Debug Raw Extraction (GM)", "icons/svg/eye.svg", GUARD + `api.cookbookDebug();`, 320),
 
-    /* --- 400s: demonstrations of the language model, not day-to-day tools. --- */
-    macro(
-      "ackscMacSamples0",
-      "Demo — Create Sample Actors & Items",
-      "icons/svg/dice-target.svg",
-      GUARD + `api.createSamples();`,
-      400,
-    ),
-    macro("ackscMacAudit000", "Demo — Audit: the two language options", "icons/svg/light.svg", GUARD + `api.audit();`, 410),
   ];
 }
 

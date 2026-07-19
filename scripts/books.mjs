@@ -3,9 +3,10 @@
  * Fingerprints use page count + metadata title — NEVER file hashes (DTRPG
  * watermarks each customer's copy, so bytes differ per person).
  *
- * "cw" is INTENTIONALLY FAKE — no such book exists. It demonstrates the
- * missing-book path: its recipes can never resolve, so their stubs are what
- * every seat sees, forever.
+ * A fake book ("cw", Codex of Whispers) sat here to demonstrate the
+ * missing-book path. Removed 2026-07-19: the cookbook now spans three real
+ * books and no seat is expected to own all of them, so an unreadable entry is
+ * the ordinary case and no longer needs a prop to show it off.
  */
 
 export const BOOKS = {
@@ -26,13 +27,6 @@ export const BOOKS = {
     short: "MM",
     pages: 441,
     titleRe: /Monstrous Manual/i,
-  },
-  cw: {
-    label: "ACKS II Codex of Whispers (FAKE — missing-book demo)",
-    short: "CW",
-    pages: 999,
-    titleRe: /Codex of Whispers/i,
-    fake: true,
   },
 };
 

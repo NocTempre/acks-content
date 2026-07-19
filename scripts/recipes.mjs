@@ -42,10 +42,6 @@ export const RECIPES = [
   { id: "item.grapplingHook", book: "rr", page: 145, mode: "runin", heading: "Grappling Hook:", cite: "RR PDF p. 145", kind: "item", name: "Grappling Hook" },
   { id: "item.herbWolfsbane", book: "rr", page: 145, mode: "runin", heading: "Herb, Wolfsbane:", cite: "RR PDF p. 145", kind: "item", name: "Herb, Wolfsbane" },
   { id: "item.holyBook", book: "rr", page: 145, mode: "runin", heading: "Holy Book:", cite: "RR PDF p. 145", kind: "item", name: "Holy Book" },
-
-  // Intentional dummies — the FAKE book (missing-book demo; can never resolve)
-  { id: "fake.shadowCant", book: "cw", page: 42, mode: "display", heading: "Shadow Cant", cite: "CW PDF p. 42 (fake)", kind: "ability", name: "Shadow Cant (fake-book demo)" },
-  { id: "fake.whisperglass", book: "cw", page: 77, mode: "runin", heading: "Whisperglass Vial:", cite: "CW PDF p. 77 (fake)", kind: "item", name: "Whisperglass Vial (fake-book demo)" },
 ];
 
 export const recipesForBook = (bookId) => RECIPES.filter((r) => r.book === bookId);
