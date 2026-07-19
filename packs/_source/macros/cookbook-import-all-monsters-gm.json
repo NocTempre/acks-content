@@ -1,0 +1,20 @@
+{
+  "_id": "ackscMacMonsAll0",
+  "_key": "!macros!ackscMacMonsAll0",
+  "name": "Cookbook — Import ALL Monsters (GM)",
+  "type": "script",
+  "img": "icons/svg/aura.svg",
+  "scope": "global",
+  "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\napi.cookbookImportMonsters();",
+  "folder": null,
+  "sort": 205,
+  "ownership": {
+    "default": 2
+  },
+  "flags": {},
+  "_stats": {
+    "coreVersion": "14",
+    "createdTime": 1784332800000,
+    "modifiedTime": 1784332800000
+  }
+}

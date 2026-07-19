@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **Import all monsters, in one press.** The monster browser gains "Select all"
+  / "Select shown" / "Clear" with a live count and a check against entries this
+  world already has, matching the ability browser; a new *Cookbook — Import ALL
+  Monsters* macro does the whole book without opening the list. Both skip what
+  is already imported, so pressing either twice tops up rather than duplicating
+  — worth having, because a monster import always creates and two actors
+  claiming one cookbook id make anything that resolves by id (a companion slot)
+  pick between them arbitrarily. Reading a whole book takes minutes, so it
+  confirms the count first and reports progress while it runs.
+
 - **Monster proficiencies find the ability the world already has.** A stat-block
   token resolved through one channel only — an authored registry `ref` — and 69
   of the 70 tokens in that registry have no ref yet, so nearly every monster

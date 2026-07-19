@@ -47,6 +47,13 @@ function buildMacros() {
     /* --- 200s: import from the cookbook. --- */
     macro("ackscMacCookbook", "Cookbook — Import Monsters (GM)", "icons/svg/mystery-man.svg", GUARD + `api.cookbookImport();`, 200),
     macro(
+      "ackscMacMonsAll0",
+      "Cookbook — Import ALL Monsters (GM)",
+      "icons/svg/aura.svg",
+      GUARD + `api.cookbookImportMonsters();`,
+      205,
+    ),
+    macro(
       "ackscMacAbilBrw0",
       "Cookbook — Browse & Import Abilities (GM)",
       "icons/svg/book.svg",

@@ -549,6 +549,44 @@ async function ensureFolder() {
   );
 }
 
+/**
+ * Cookbook ids this world already holds an actor for.
+ *
+ * Unlike an ability, a monster import always CREATES — there is no reuse to fall
+ * back on — so importing the same entry twice leaves two actors claiming one
+ * cookbook id, and anything resolving by id (a companion slot, say) then picks
+ * between them arbitrarily. Every import path filters through this, which is
+ * what makes "import all" safe to press twice.
+ */
+const importedMonsterIds = () =>
+  new Set(game.actors.map((a) => a.getFlag(MODULE_ID, "cookbook")?.id).filter(Boolean));
+
+/**
+ * Run a list of entry ids through importOne with a progress bar.
+ *
+ * Each import parses pages out of the seat's PDF, so a whole book is minutes of
+ * work: without feedback the client looks hung. Errors are per-entry — one
+ * unreadable page must not abandon the other 286.
+ */
+async function importMany(bookId, ids, folderId, label) {
+  const bar = ui.notifications.info(label, { progress: true });
+  let done = 0;
+  for (const [i, id] of ids.entries()) {
+    bar?.update?.({ pct: i / ids.length, message: `${label} ${i + 1}/${ids.length}` });
+    if (await importOne(bookId, id, folderId).catch((err) => (console.error(`${MODULE_ID} | import ${id}`, err), null))) done++;
+  }
+  bar?.update?.({ pct: 1, message: label });
+  return done;
+}
+
+/** Report an import run, naming what was skipped as already present. */
+function reportImport(done, picked, skipped) {
+  ui.notifications.info(
+    game.i18n.format(`${LANG_PREFIX}.ui.cookbookDone`, { done, picked, folder: FOLDER_NAME }) +
+      (skipped ? ` ${game.i18n.format(`${LANG_PREFIX}.ui.cookbookSkipped`, { skipped })}` : ""),
+  );
+}
+
 async function importOne(bookId, id, folderId) {
   const found = cookbookEntry(id);
   const session = ctx.sessionDocs.get(bookId);
@@ -1311,39 +1349,143 @@ export async function cookbookImport() {
   const bookId = openBooks[0]; // one cookbook book so far (MM)
   const cb = data.books.get(bookId);
   const esc = foundry.utils.escapeHTML ?? ((x) => x);
+  const have = importedMonsterIds();
   const rows = Object.entries(cb.entries)
     .sort((a, b) => a[1].pages[0] - b[1].pages[0])
     .map(
-      ([id, e]) => `<label class="acks-content-browse-row" data-name="${esc(e.name.toLowerCase())}">
+      ([id, e]) => `<label class="acks-content-browse-row" data-name="${esc(e.name.toLowerCase())}" data-have="${have.has(id) ? 1 : 0}">
         <input type="checkbox" name="sel" value="${esc(id)}">
-        <span>${esc(e.name)}</span><span class="acks-content-cite">${esc(e.cite)}</span>
+        <span>${esc(e.name)}</span>
+        <span class="acks-content-marks">${
+          have.has(id)
+            ? `<i class="fa-solid fa-check" data-tooltip="${esc(game.i18n.localize(`${LANG_PREFIX}.ui.cookbookPresent`))}"></i>`
+            : ""
+        }</span>
+        <span class="acks-content-cite">${esc(e.cite)}</span>
       </label>`,
     )
     .join("");
   const content = `
     <p class="notes">${game.i18n.format(`${LANG_PREFIX}.ui.cookbookIntro`, { n: Object.keys(cb.entries).length, book: BOOKS[bookId].label })}</p>
-    <input type="text" name="filter" placeholder="${game.i18n.localize(`${LANG_PREFIX}.ui.cookbookFilter`)}"
-      oninput="const q=this.value.toLowerCase();for(const r of this.parentElement.querySelectorAll('.acks-content-browse-row'))r.style.display=r.dataset.name.includes(q)?'':'none';">
-    <div class="acks-content-browse-list" style="max-height:360px;overflow-y:auto;">${rows}</div>`;
+    <div class="acks-content-abil-filters">
+      <input type="text" name="filter" placeholder="${game.i18n.localize(`${LANG_PREFIX}.ui.cookbookFilter`)}">
+      <label><input type="checkbox" name="hideHave"> ${game.i18n.localize(`${LANG_PREFIX}.ui.abilHidePresent`)}</label>
+    </div>
+    <div class="acks-content-abil-actions">
+      <button type="button" data-act="all">${game.i18n.localize(`${LANG_PREFIX}.ui.cookbookSelectAll`)}</button>
+      <button type="button" data-act="shown">${game.i18n.localize(`${LANG_PREFIX}.ui.abilSelectShown`)}</button>
+      <button type="button" data-act="none">${game.i18n.localize(`${LANG_PREFIX}.ui.abilClear`)}</button>
+      <span class="acks-content-abil-count"></span>
+    </div>
+    <div class="acks-content-browse-list acks-content-mon-list">${rows}</div>`;
 
   return foundry.applications.api.DialogV2.prompt({
     window: { title: game.i18n.localize(`${LANG_PREFIX}.ui.cookbookTitle`), resizable: true },
-    position: { width: 520 },
+    position: { width: 560, height: 700 },
     content,
+    render: (event, dialog) => {
+      const root = dialog.element ?? dialog;
+      const listEl = root.querySelector(".acks-content-mon-list");
+      const count = root.querySelector(".acks-content-abil-count");
+      const all = () => [...listEl.querySelectorAll(".acks-content-browse-row")];
+      const shown = () => all().filter((r) => r.style.display !== "none");
+      const tally = () => {
+        const n = listEl.querySelectorAll('input[name="sel"]:checked').length;
+        count.textContent = game.i18n.format(`${LANG_PREFIX}.ui.abilCount`, { n, shown: shown().length });
+      };
+      const refresh = () => {
+        const q = root.querySelector('[name="filter"]').value.toLowerCase();
+        const hide = root.querySelector('[name="hideHave"]').checked;
+        for (const r of all()) {
+          const ok = r.dataset.name.includes(q) && (!hide || r.dataset.have === "0");
+          r.style.display = ok ? "" : "none";
+          // A hidden row must not stay selected: what the list shows is the only
+          // honest account of what pressing Import will do.
+          if (!ok) r.querySelector('input[name="sel"]').checked = false;
+        }
+        tally();
+      };
+      const check = (rows_) => {
+        for (const r of rows_) r.querySelector('input[name="sel"]').checked = true;
+        tally();
+      };
+      for (const sel of ['[name="filter"]', '[name="hideHave"]']) {
+        root.querySelector(sel).addEventListener("input", refresh);
+      }
+      listEl.addEventListener("change", tally);
+      // "All" ignores the filter on purpose — it is the whole-book button, and
+      // clearing the filter first would silently change what the user is looking
+      // at. "Shown" is the filtered counterpart.
+      root.querySelector('[data-act="all"]').addEventListener("click", () => {
+        root.querySelector('[name="filter"]').value = "";
+        root.querySelector('[name="hideHave"]').checked = false;
+        refresh();
+        check(all());
+      });
+      root.querySelector('[data-act="shown"]').addEventListener("click", () => check(shown()));
+      root.querySelector('[data-act="none"]').addEventListener("click", () => {
+        for (const el of listEl.querySelectorAll('input[name="sel"]')) el.checked = false;
+        tally();
+      });
+      tally();
+    },
     ok: {
       label: game.i18n.localize(`${LANG_PREFIX}.ui.cookbookGo`),
       callback: async (event, button) => {
         const picked = [...button.form.querySelectorAll('input[name="sel"]:checked')].map((el) => el.value);
         if (!picked.length) return ui.notifications.warn("acks-content | nothing selected.");
+        // Re-read rather than trusting the marks drawn when the dialog opened —
+        // an import may have happened in another window since.
+        const present = importedMonsterIds();
+        const todo = picked.filter((id) => !present.has(id));
         const folder = await ensureFolder();
-        let done = 0;
-        for (const id of picked) {
-          if (await importOne(bookId, id, folder.id).catch((err) => (console.error(`${MODULE_ID} | import ${id}`, err), null))) done++;
-        }
-        ui.notifications.info(
-          game.i18n.format(`${LANG_PREFIX}.ui.cookbookDone`, { done, picked: picked.length, folder: FOLDER_NAME }),
-        );
+        const done = await importMany(bookId, todo, folder.id, game.i18n.localize(`${LANG_PREFIX}.ui.cookbookWorking`));
+        reportImport(done, picked.length, picked.length - todo.length);
       },
     },
   });
+}
+
+/**
+ * GM: import every monster the open book's cookbook ships.
+ *
+ * The counterpart to importing every ability. Skips what the world already has,
+ * so it is a top-up after connecting more of the book, not a duplicator.
+ */
+export async function cookbookImportMonsters() {
+  if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only (creates actors).");
+  const openBooks = [...data.books.keys()].filter((b) => ctx.sessionDocs.has(b));
+  if (!openBooks.length) {
+    return ui.notifications.warn(
+      `acks-content | no cookbook book is open this session — connect one first (PoC 2 / unlock dialog).`,
+    );
+  }
+  const bookId = openBooks[0];
+  const ids = Object.entries(data.books.get(bookId).entries)
+    .sort((a, b) => a[1].pages[0] - b[1].pages[0])
+    .map(([id]) => id);
+  const present = importedMonsterIds();
+  const todo = ids.filter((id) => !present.has(id));
+  if (!todo.length) {
+    return ui.notifications.info(game.i18n.format(`${LANG_PREFIX}.ui.cookbookAllPresent`, { n: ids.length }));
+  }
+  // Reading a whole book takes minutes and makes hundreds of actors, so say what
+  // is about to happen while it can still be called off.
+  const ok = await foundry.applications.api.DialogV2.confirm({
+    window: { title: game.i18n.localize(`${LANG_PREFIX}.ui.cookbookTitle`) },
+    content: `<p>${game.i18n.format(`${LANG_PREFIX}.ui.cookbookAllConfirm`, {
+      n: todo.length,
+      book: BOOKS[bookId].label,
+      folder: FOLDER_NAME,
+    })}${
+      todo.length < ids.length
+        ? ` ${game.i18n.format(`${LANG_PREFIX}.ui.cookbookAllConfirmSkip`, { skipped: ids.length - todo.length })}`
+        : ""
+    }</p>`,
+  });
+  if (!ok) return null;
+  const folder = await ensureFolder();
+  const done = await importMany(bookId, todo, folder.id, game.i18n.localize(`${LANG_PREFIX}.ui.cookbookWorking`));
+  reportImport(done, ids.length, ids.length - todo.length);
+  return { done, skipped: ids.length - todo.length };
 }
