@@ -1926,7 +1926,9 @@
     "meta": {
       "category": "proficiency",
       "general": false
-    }
+    },
+    "audited": "2026-07-18",
+    "auditor": "first-pass"
   },
   {
     "id": "def.prof.wakefulness",

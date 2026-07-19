@@ -1237,6 +1237,7 @@
       "meta": {
         "category": "skill"
       },
+      "audited": true,
       "fields": {
         "name": {
           "op": "expect",

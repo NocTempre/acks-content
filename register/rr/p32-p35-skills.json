@@ -236,7 +236,9 @@
     },
     "assists": {
       "expectTop": 2
-    }
+    },
+    "audited": "2026-07-18",
+    "auditor": "first-pass"
   },
   {
     "id": "def.skill.hideout",

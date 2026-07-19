@@ -8030,6 +8030,7 @@
         "category": "proficiency",
         "general": false
       },
+      "audited": true,
       "fields": {
         "name": {
           "op": "expect",
