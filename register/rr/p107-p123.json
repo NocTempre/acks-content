@@ -1028,9 +1028,7 @@
     "meta": {
       "category": "proficiency",
       "general": true
-    },
-    "audited": "2026-07-18",
-    "auditor": "first-pass"
+    }
   },
   {
     "id": "def.prof.lockpickingExpertise",
@@ -1224,7 +1222,9 @@
       "category": "proficiency",
       "general": true,
       "repeatable": true
-    }
+    },
+    "audited": "2026-07-18",
+    "auditor": "first-pass"
   },
   {
     "id": "def.prof.mountaineering",
@@ -1256,7 +1256,9 @@
     "meta": {
       "category": "proficiency",
       "general": false
-    }
+    },
+    "audited": "2026-07-18",
+    "auditor": "first-pass"
   },
   {
     "id": "def.prof.mysticAura",
@@ -1416,7 +1418,9 @@
     "meta": {
       "category": "proficiency",
       "general": false
-    }
+    },
+    "audited": "2026-07-18",
+    "auditor": "first-pass"
   },
   {
     "id": "def.prof.prospecting",
@@ -1528,7 +1532,9 @@
     "meta": {
       "category": "proficiency",
       "general": false
-    }
+    },
+    "audited": "2026-07-18",
+    "auditor": "first-pass"
   },
   {
     "id": "def.prof.seafaring",
@@ -1560,7 +1566,9 @@
     "meta": {
       "category": "proficiency",
       "general": true
-    }
+    },
+    "audited": "2026-07-18",
+    "auditor": "first-pass"
   },
   {
     "id": "def.prof.sensingEvil",
@@ -1640,7 +1648,9 @@
     "meta": {
       "category": "proficiency",
       "general": true
-    }
+    },
+    "audited": "2026-07-18",
+    "auditor": "first-pass"
   },
   {
     "id": "def.prof.skirmishing",
@@ -1801,7 +1811,9 @@
       "category": "proficiency",
       "general": true,
       "repeatable": true
-    }
+    },
+    "audited": "2026-07-18",
+    "auditor": "first-pass"
   },
   {
     "id": "def.prof.tracking",

@@ -4525,7 +4525,6 @@
         "category": "proficiency",
         "general": true
       },
-      "audited": true,
       "fields": {
         "name": {
           "op": "expect",
@@ -5337,6 +5336,7 @@
         "general": true,
         "repeatable": true
       },
+      "audited": true,
       "fields": {
         "name": {
           "op": "expect",
@@ -5457,6 +5457,7 @@
         "category": "proficiency",
         "general": false
       },
+      "audited": true,
       "fields": {
         "name": {
           "op": "expect",
@@ -6082,6 +6083,7 @@
         "category": "proficiency",
         "general": false
       },
+      "audited": true,
       "fields": {
         "name": {
           "op": "expect",
@@ -6495,6 +6497,7 @@
         "category": "proficiency",
         "general": false
       },
+      "audited": true,
       "fields": {
         "name": {
           "op": "expect",
@@ -6592,6 +6595,7 @@
         "category": "proficiency",
         "general": true
       },
+      "audited": true,
       "fields": {
         "name": {
           "op": "expect",
@@ -6938,6 +6942,7 @@
         "category": "proficiency",
         "general": true
       },
+      "audited": true,
       "fields": {
         "name": {
           "op": "expect",
@@ -7487,6 +7492,7 @@
         "general": true,
         "repeatable": true
       },
+      "audited": true,
       "fields": {
         "name": {
           "op": "expect",
