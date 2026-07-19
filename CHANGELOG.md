@@ -1,6 +1,58 @@
 # Changelog
 
-## Unreleased
+## 0.15.0
+
+The release where extracted mechanics stop presenting as the book's ruling
+until someone has read them against the printed page.
+
+### The audit gate
+
+- **Unverified mechanics are marked as such.** A register entry gains
+  `audited: "<date>"` only after a chef reads its FULL materialized output
+  against the page — bounds, effects, rolls, limitations. Everything else binds
+  with `extras.unaudited`, and the abilities sheet says "Machine-classified —
+  not yet chef-audited." Wrong-but-plausible output is the danger this exists
+  for: Blind Fighting prints a −2 that is a net *bonus* because it replaces a
+  −4, and no scan can know that. Every build prints the burn-down; this release
+  ships **16/120 proficiencies and 1/13 skills signed**. Needs
+  acks-abilities ≥ 0.5.0 to show the notice.
+- **Scans locate; recipes interpret.** `docs/RECIPES.md` gains the principles
+  that make it enforceable, the load-bearing one being: never generalize a fix
+  across entries. The commit that built this gate then violated it — a sampled
+  audit found one entry missing `repeatable` and the fix shipped as a regex over
+  every entry's body text. All twelve matches were true, which is exactly what
+  hid the damage: six state an unextracted per-rank progression in the very
+  sentence matched, and the pattern's passive-voice requirement silently missed
+  thirteen more. A ~52% false-negative rate reporting complete success. The
+  inference is gone; `metaCandidates` now REPORTS in both directions and the
+  register always wins.
+- **Per-entry recipes displace scan output.** A recipe may state structure and
+  carry LOCATORS — short patterns that find a value in the reader's own copy —
+  but never a value read off the page. Nothing about your book ships in this
+  module; it materializes per seat, as before.
+
+### What the chefs found
+
+- **Authored effects now REPLACE the scan, as authored rolls already did.**
+  Effects were concatenated, so a chef could add a missing effect but never
+  correct a wrong one — re-authoring shipped it twice. All six chefs reported
+  this independently and several withheld correct recipes because of it, which
+  is how a tier is supposed to fail. Two live defects it was hiding are fixed:
+  Trapfinding's +2 applied to EVERY proficiency throw where the page names two,
+  and Berserkergang shipped a −2 AC as permanent where the page gates every
+  mechanic on being enraged.
+- **25 chef-authored recipes merged, 0 rejected.** Alchemy has four correctly
+  labelled rank ladders (was three wrong-but-plausible, one carrying a rank-2
+  value under a rank-1 label); Adventuring five labelled rolls (was zero);
+  Climbing its −10 with the real printed condition; Listening one paragraph
+  instead of three. Every one was re-executed against a reference PDF by
+  `tools/merge-recipes.mjs` — a subagent's own verification claim is never taken
+  as evidence.
+- **The `rolls` recipe op.** An entry can state each throw it offers with its
+  own locator, rank/level ladder and condition, replacing a scan that guessed
+  labels from surrounding prose and sometimes named a roll "Each".
+
+### Monsters
 
 - **Import all monsters, in one press.** The monster browser gains "Select all"
   / "Select shown" / "Clear" with a live count and a check against entries this
@@ -25,6 +77,21 @@
   writes "climbing 6+"; the 6 was extracted and then dropped, so the ability
   showed the definition's generic ladder resolved at 1st level. That was
   invisible while the tiers above effectively never fired.
+
+### Also
+
+- `rollScan` no longer invents labels or scales. Naming a roll is recipe work;
+  a scan that guessed produced "Each" as often as anything useful.
+- `executor.mjs` contained two literal NUL bytes from a thousands-comma
+  sentinel, which made git and grep treat the whole file as binary — no diffs,
+  no search. Replaced with unicode escapes.
+
+**Known rough edge:** the 25 merged recipes are *correct* but not *signed* —
+merging and signing are deliberately separate, and the burn-down counts only
+signatures. Roughly 89 RR entries cannot be expressed with today's recipe
+vocabulary (percentage and rate values have no locator target, effects have no
+breakpoint ladder); those entries bind as unaudited machine drafts and say so.
+The JJ powers have not been swept at all.
 
 ## 0.14.0
 
