@@ -755,7 +755,26 @@ async function compileDefinition(doc, entry, kindRow) {
       if (h.y - endY <= 20) endY = h.y;
       else later.push(h);
     }
-    const stopY = later[0]?.y ? later[0].y - 4 : pd.height;
+    // A definition also ends at a TABLE. The RR sets a rank-progression table
+    // for several proficiencies at the foot of a column, below the last entry
+    // in it — and with no heading after that entry, the body ran to the page
+    // bottom and swallowed the table (sometimes a DIFFERENT proficiency's).
+    // Table titles are set in body type and end in "Progression", so they are
+    // findable without a per-entry assist.
+    const tableTitle = pd.items
+      .filter(
+        (it) =>
+          it.h < DEF_BODY_MAX_H &&
+          colOf(it.x, cols) === anchor.col &&
+          it.y > anchor.y + 2 &&
+          /\bProgression\s*$/i.test(it.str.trim()),
+      )
+      .sort((a, b) => a.y - b.y)[0];
+    const stopY = Math.min(
+      later[0]?.y ? later[0].y - 4 : pd.height,
+      tableTitle ? tableTitle.y - 4 : pd.height,
+      assists.descStopY ?? pd.height,
+    );
     // Bound the expect box to the heading's OWN runs. The last column runs to
     // the page edge, where the vertical chapter-tab glyphs live ("Pro/FI/c/IE"),
     // and those would otherwise join the heading text and fail the check.
@@ -773,13 +792,16 @@ async function compileDefinition(doc, entry, kindRow) {
     const paras = paragraphBoxes(toLines(body), box.x0, box.x1).map((p) => withFixes(p, pd, tabs));
     // Column-flowed continuation (see the run-in branch): a proficiency that
     // reaches the bottom of its column resumes at the top of the next.
-    const cont = columnFlow(pd, cols, anchor.col, later.length > 0, (it) => it.h >= HEADING_MIN_H);
+    // A table below the entry ends it just as a heading would, so it must also
+    // suppress the column flow — otherwise the block runs on into the next
+    // column and absorbs whichever proficiency is printed there.
+    const cont = columnFlow(pd, cols, anchor.col, later.length > 0 || !!tableTitle, (it) => it.h >= HEADING_MIN_H);
     if (cont.length) {
       const cx0 = cols[anchor.col + 1] - 5;
       const cx1 = cols[anchor.col + 2] ? cols[anchor.col + 2] - 6 : pd.width;
       paras.push(...paragraphBoxes(toLines(cont), cx0, cx1).map((p) => withFixes(p, pd, tabs)));
       bodyText = `${bodyText} ${joinBody(cont)}`.trim();
-    } else if (!later.length && anchor.col + 1 >= cols.length) {
+    } else if (!later.length && !tableTitle && anchor.col + 1 >= cols.length) {
       const pf = await pageFlow(doc, page, (it) => it.h >= HEADING_MIN_H);
       if (pf?.items.length) {
         const px0 = pf.cols[0] - 5;

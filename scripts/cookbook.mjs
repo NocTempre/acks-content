@@ -626,6 +626,9 @@ export function bindAbility(entry, node, id, opts = {}) {
     // book would withhold something the cookbook already states. Those apply
     // either way; anything pointing at a number still waits for the book.
     effects: [...aliasEffects, ...(node?.fields?.effects ?? materializeEffects(entry.fields?.effects?.specs, []))],
+    // Each roll the ability offers, so the Rolls tab can present them
+    // individually rather than the core item's single roll standing in for all.
+    ...(node?.fields?.rolls?.length ? { rolls: node.fields.rolls } : {}),
     // Immunity-granting abilities (Divine Health, Wakefulness, Fiery
     // Resistance…) materialize defenses from the seat's OWN prose via the
     // executor's vocabulary scan — nothing about which is shipped.

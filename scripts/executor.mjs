@@ -369,6 +369,50 @@ export function materializeEffects(specs, paras) {
 }
 
 /**
+ * Every ROLL an ability offers, read from the seat's own prose.
+ *
+ * An ability is not one roll. Animal Husbandry diagnoses (11+, and 7+ / 3+ once
+ * taken twice or three times), cures (18+), cures serious injury (14+) and
+ * extracts venom (18+ / 14+ / 10+). Collapsing that to a single target loses
+ * most of the proficiency, so each throw is captured separately with the label
+ * the sentence gives it and, where the book states one, its rank ladder.
+ *
+ * The LABEL and the NUMBERS come from the reader's book; nothing about them is
+ * shipped. What ships is the knowledge that throws look like this.
+ */
+export function rollScan(paras) {
+  const text = (paras ?? []).map((p) => (typeof p === "string" ? p : p.text)).join(" ");
+  if (!text) return [];
+  const out = [];
+  const seen = new Set();
+  const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 32);
+
+  // "a proficiency throw of 18+ / 14+ / 10+" — one roll whose target improves
+  // by RANK, written as a slash run.
+  for (const m of text.matchAll(/([a-z][a-z' -]{2,40}?)\s+(?:requires|takes)?[^.]{0,40}?proficiency throw of\s*(\d+)\+\s*\/\s*(\d+)\+\s*\/\s*(\d+)\+/gi)) {
+    const label = m[1].replace(/\s+/g, " ").trim();
+    const key = slug(label) || `roll${out.length}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      key, label, formula: "1d20", rollType: "above", scale: "rank",
+      target: { kind: "conditional", on: "rank", breakpoints: [1, 2, 3].map((r, i) => ({ atLevel: r, value: parseInt(m[i + 2], 10) })) },
+    });
+  }
+
+  // A plain "<verb phrase> … proficiency throw of N+" / "diagnose illness on N+".
+  for (const m of text.matchAll(/([a-z][a-z' -]{2,40}?)\s+(?:on|requires[^.]{0,40}?and a)\s+(?:a\s+)?(?:proficiency throw of\s*)?(\d+)\+/gi)) {
+    const label = m[1].replace(/\s+/g, " ").trim();
+    if (!/[a-z]{3}/.test(label)) continue;
+    const key = slug(label);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push({ key, label, formula: "1d20", rollType: "above", scale: "level", target: { kind: "flat", flat: parseInt(m[2], 10) } });
+  }
+  return out;
+}
+
+/**
  * Derive an ability's structured EFFECTS from its OWN prose, classified against
  * a SHIPPED vocabulary (the `modifierTarget` register) plus a fixed library of
  * shape patterns. Effect TYPE, TARGET and VALUE all materialize from the seat's
@@ -950,6 +994,9 @@ export async function executeEntry(doc, bookCookbook, registers, entryId, opts =
       ...materializeEffects(entry.fields?.effects?.specs, fields.description),
     ];
     if (effects.length) fields.effects = effects;
+    // Every roll the ability offers, each with its own target and progression.
+    const rolls = rollScan(fields.description);
+    if (rolls.length) fields.rolls = rolls;
   }
   // Values the books state in PROSE rather than in a labelled field — the
   // custom-class build cost, "counts as 2 1/2 custom powers". The pattern is

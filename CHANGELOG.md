@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.14.0
+
+- **Abilities extract EVERY roll they offer, not one.** Animal Husbandry
+  diagnoses, cures, cures serious injury and extracts venom; a single target
+  could only hold one of those. Each throw is now captured separately with the
+  label its sentence gives it and, where the book writes one, its rank ladder
+  (`18+ / 14+ / 10+`). Needs acks-abilities ≥ 0.4.0 to display them.
+- **Three more entries stop at their table.** The RR sets a rank-progression
+  table at the foot of a column below the last entry in it; with no heading
+  after that entry the body ran to the page bottom, swallowed the table, and
+  then flowed into the next column and absorbed the neighbouring proficiency.
+  Animal Husbandry was eating the whole Animal Training table. 7 → 4 affected
+  (the remaining four title their tables differently).
+
+**Known rough edge:** roll LABELS come from a prose heuristic and several read
+badly ("Each attempt"), and coverage is partial — Animal Husbandry yields two of
+its four rolls. Per-entry roll recipes are the fix and are not written yet.
+
 ## 0.13.0
 
 **A number's meaning is contextual, and the effect scan was ignoring context.**
