@@ -1528,7 +1528,9 @@
       316
     ],
     "meta": {
-      "category": "classPower"
+      "category": "classPower",
+      "deprecated": true,
+      "replacedBy": "def.power.sensitivityToRockAndStone"
     }
   },
   {
@@ -1573,7 +1575,9 @@
       316
     ],
     "meta": {
-      "category": "classPower"
+      "category": "classPower",
+      "deprecated": true,
+      "replacedBy": "def.power.naturalStealth"
     }
   },
   {
@@ -2559,7 +2563,9 @@
       320
     ],
     "meta": {
-      "category": "classPower"
+      "category": "classPower",
+      "deprecated": true,
+      "replacedBy": "def.prof.disguise"
     }
   },
   {
@@ -2829,7 +2835,9 @@
       321
     ],
     "meta": {
-      "category": "classPower"
+      "category": "classPower",
+      "deprecated": true,
+      "replacedBy": "def.power.attunementToNature"
     }
   },
   {

@@ -1057,6 +1057,8 @@ async function compileDefinition(doc, entry, kindRow) {
   // the recipe can be as convoluted as it likes without holding a value.
   if (entry.effects?.length) fields.effects = { op: "effects", specs: entry.effects };
 
+  metaCandidates(entry.id, entry, bodyText);
+
   return {
     id: entry.id,
     kind: entry.kind,
@@ -1064,10 +1066,12 @@ async function compileDefinition(doc, entry, kindRow) {
     book: entry.book,
     cite: `${BOOKS[entry.book].short} p.${page}`,
     pages: entry.pages,
-    // Classification facts: authored (general-list membership, repeatability)
-    // merged with ones the page states outright (build cost, retirement). Both
-    // ship as CONCLUSIONS — a flag and a number, never the sentence.
-    meta: { ...(entry.meta ?? {}), ...derivedMeta(bodyText) },
+    // Classification facts are AUTHORED, never inferred from the page here.
+    // A pattern over body text is a scan, and scans locate rather than
+    // conclude (docs/RECIPES.md, "The audit gate"): `metaCandidates` reports
+    // what the text suggests so a chef can read the entry and author the
+    // flag, and reports the inverse too. Only the register's own meta ships.
+    meta: { ...(entry.meta ?? {}) },
     // A chef read this entry's FULL materialized output against the printed
     // page and signed it off (the register records the date; only the fact
     // ships). Until then the entry's mechanics are a machine draft — the
@@ -1101,26 +1105,43 @@ function parseCount(tok) {
 }
 
 /**
- * Classification the page states outright — retirement ("has been removed from
- * ACKS II"). A FLAG, not a value: it records that an entry was withdrawn, which
- * is a fact about the entry rather than anything printed as content.
+ * Report classification flags the body text SUGGESTS but the register does not
+ * author — and, in the other direction, authored flags the text does not
+ * appear to support. Pure diagnostics: nothing here reaches a shipped node.
  *
- * The custom-class BUILD COST deliberately does NOT live here. "Counts as 2 1/2
- * custom powers" is a NUMBER off the page, and shipping it would put book values
- * in the module — the one thing this pipeline exists to avoid. It is derived at
- * runtime instead, from the reader's own prose, against the shipped pattern in
- * `registers.derive` (see DERIVE_PATTERNS).
+ * These patterns used to write straight into the compiled meta. That was the
+ * anti-pattern this pipeline exists to prevent: a book-wide regex standing in
+ * for a per-entry read (docs/RECIPES.md, "Never generalize a fix across
+ * entries"). It looked harmless because it was only setting booleans, and it
+ * was true on all twelve entries it hit — but six of those twelve state a
+ * per-rank PROGRESSION in the very sentence it matched ("each time improving
+ * the proficiency throw", "learning an additional three languages each"), and
+ * flattening them to `repeatable: true` made that missing mechanic invisible.
+ * A conclusion the chef never drew must not look like one they did.
+ *
+ * The custom-class BUILD COST is likewise absent by design: "counts as 2 1/2
+ * custom powers" is a NUMBER off the page, and shipping it would put book
+ * values in the module. It materializes at runtime from the reader's own prose
+ * against the shipped pattern in `registers.derive` (see DERIVE_PATTERNS).
  */
-function derivedMeta(bodyText) {
-  const out = {};
-  if (!bodyText) return out;
+const META_HINTS = {
   // The raw compile-time join omits some inter-run spaces ("removed fromACKS
-  // II"), so every boundary here is \s* rather than a literal space.
-  if (/removed\s*from\s*ACKS\s*II/i.test(bodyText)) out.deprecated = true;
-  // "This proficiency can be selected multiple times." — a stated FLAG, found
-  // missing on Caving by the first audit-pilot sample review.
-  if (/selected\s*(?:multiple|several)\s*times|selected\s*more\s*than\s*once/i.test(bodyText)) out.repeatable = true;
-  return out;
+  // II"), so every boundary is \s* rather than a literal space.
+  deprecated: /removed\s*from\s*ACKS\s*II/i,
+  repeatable: /selected\s*(?:multiple|several)\s*times|selected\s*more\s*than\s*once/i,
+};
+
+function metaCandidates(id, entry, bodyText) {
+  if (!bodyText) return;
+  for (const [flag, re] of Object.entries(META_HINTS)) {
+    const hinted = re.test(bodyText);
+    const authored = !!entry.meta?.[flag];
+    // A hint is a READING PROMPT, not a finding: the pattern cannot tell
+    // "can be selected multiple times" from "cannot", and does not see what
+    // the rest of the sentence goes on to say.
+    if (hinted && !authored) warn(`${id}: text may state "${flag}" — read the entry and author meta.${flag} if so`);
+    if (authored && !hinted) warn(`${id}: register authors meta.${flag} but the text does not obviously state it`);
+  }
 }
 
 /**
@@ -1306,10 +1327,16 @@ async function main() {
   for (const data of Object.values(contentOut)) {
     for (const [id, e] of Object.entries(data.entries)) {
       // A retired power keeps its entry and its flag; this resolves the pointer
-      // to whatever superseded it, falling back to the printed name.
+      // to whatever superseded it, falling back to the printed name. The
+      // REGISTER's own `replacedBy` always wins — a chef who read the entry
+      // outranks the phrase scan, which is only a candidate finder here.
       const rep = e._replacedRaw;
       delete e._replacedRaw;
-      if (rep) e.meta = { ...(e.meta ?? {}), replacedBy: resolveAlias(rep, id, knownIds) ?? rep };
+      if (rep) {
+        const found = resolveAlias(rep, id, knownIds) ?? rep;
+        if (!e.meta?.replacedBy) warn(`${id}: text suggests replacedBy "${found}" — read the entry and author meta.replacedBy`);
+        else if (e.meta.replacedBy !== found) warn(`${id}: authored replacedBy "${e.meta.replacedBy}" differs from the text's "${found}"`);
+      }
 
       const raw = e._aliasRaw;
       const explicit = e._aliasTarget;

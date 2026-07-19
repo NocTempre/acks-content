@@ -365,7 +365,8 @@
     ],
     "meta": {
       "category": "proficiency",
-      "general": true
+      "general": true,
+      "repeatable": true
     }
   },
   {
@@ -542,7 +543,8 @@
     ],
     "meta": {
       "category": "proficiency",
-      "general": true
+      "general": true,
+      "repeatable": true
     }
   },
   {
@@ -703,7 +705,8 @@
     ],
     "meta": {
       "category": "proficiency",
-      "general": true
+      "general": true,
+      "repeatable": true
     }
   },
   {
@@ -808,7 +811,8 @@
     ],
     "meta": {
       "category": "proficiency",
-      "general": true
+      "general": true,
+      "repeatable": true
     }
   },
   {
@@ -968,7 +972,8 @@
     ],
     "meta": {
       "category": "proficiency",
-      "general": true
+      "general": true,
+      "repeatable": true
     }
   },
   {
@@ -1064,7 +1069,8 @@
     ],
     "meta": {
       "category": "proficiency",
-      "general": false
+      "general": false,
+      "repeatable": true
     }
   },
   {
@@ -1080,7 +1086,8 @@
     ],
     "meta": {
       "category": "proficiency",
-      "general": false
+      "general": false,
+      "repeatable": true
     }
   },
   {
@@ -1112,7 +1119,8 @@
     ],
     "meta": {
       "category": "proficiency",
-      "general": true
+      "general": true,
+      "repeatable": true
     }
   },
   {
@@ -1189,7 +1197,8 @@
     ],
     "meta": {
       "category": "proficiency",
-      "general": true
+      "general": true,
+      "repeatable": true
     }
   },
   {
@@ -1205,7 +1214,8 @@
     ],
     "meta": {
       "category": "proficiency",
-      "general": true
+      "general": true,
+      "repeatable": true
     }
   },
   {
@@ -1781,7 +1791,8 @@
     ],
     "meta": {
       "category": "proficiency",
-      "general": true
+      "general": true,
+      "repeatable": true
     }
   },
   {
@@ -1797,7 +1808,8 @@
     ],
     "meta": {
       "category": "proficiency",
-      "general": true
+      "general": true,
+      "repeatable": true
     }
   },
   {

@@ -69,18 +69,47 @@ this design forbids. The doctrine that contains them:
    paraphrased labels, no guessed conditions presented as fact. (Structural
    conclusions the pipeline itself defines — an alias is one capability under
    two names, so it does not stack with its target — are ours to ship.)
-3. **Draft output presents as draft.** Every compiled entry is `unaudited`
+3. **Never generalize a fix across entries.** When an audit finds a defect,
+   fix THAT entry. The instinct to write a pattern that "systematically fixes
+   all entries with that language" is the standing failure mode of this
+   project, and the tell is that exact sentence: it converts one verified
+   reading into an unverified claim about entries nobody looked at. It feels
+   like leverage and it is the opposite — book language is not a schema, so a
+   pattern that is right on the cases you checked is unfalsified, not
+   correct, on the ones you didn't.
+   *Worked example (2026-07-18).* A sampled audit found Caving missing its
+   `repeatable` flag. The fix shipped as a regex over every entry's body
+   text; it set the flag on twelve, and all twelve were true — which hid the
+   real damage. Six of those twelve state a per-rank PROGRESSION in the very
+   sentence that was matched ("each time improving the proficiency throw",
+   "learning an additional three languages each"), and two of them (Language,
+   Magical Music) had NO extracted mechanics at all. Flattening them to one
+   boolean made six broken entries look handled. The pattern also had no
+   negation guard, so "cannot be selected multiple times" would have set
+   `repeatable: true` — it simply never appears in the RR.
+   A structural fix to the EXTRACTOR (a bug in how columns flow, a heading
+   that shares a run) is not this: that repairs mechanism, and its blast
+   radius is visible in the diff. Writing meaning — flags, values, labels,
+   relations — is per-entry, always.
+4. **Scan output is a reading prompt, never a conclusion.** Where a pattern
+   over book text is genuinely useful, it reports candidates
+   (`metaCandidates`, the `replacedBy` phrase check) so a chef reads that
+   entry and authors the flag in the register. The register is the only
+   source of authored meaning; the compiler merges nothing into it. A
+   candidate report and a conclusion look identical in the artifact — which
+   is precisely why the pipeline must never let a scan write one.
+5. **Draft output presents as draft.** Every compiled entry is `unaudited`
    until its register row carries an `audited: "<date>"` sign-off. The
    compiler ships the flag, the binding stamps it on the item, and the sheet
    shows it on the Mechanics and Rolls tabs. Wrong-but-plausible mechanics
    must be impossible to mistake for the book's ruling.
-4. **Audit is tracked state, not vibes.** `audited` means a chef read the
+6. **Audit is tracked state, not vibes.** `audited` means a chef read the
    entry's *full materialized output* against the printed page — description
    bounds, every effect, every roll, every limitation, nothing extra and
    nothing missing. Having authored a spec is not a sign-off; fixing one
    defect is not a sign-off. The compiler prints the burn-down
    (`chef-audited: N/M`) at every build, and release notes cite it.
-5. **The audit is tiered.** A first-pass worker (a smaller model, per the
+7. **The audit is tiered.** A first-pass worker (a smaller model, per the
    established authoring split) compares each entry's full materialized
    output against the printed page under a fixed checklist
    (`tools/audit-dump.mjs` builds the per-entry package; the checklist lives
@@ -92,7 +121,7 @@ this design forbids. The doctrine that contains them:
    reviewer may relax one, one written rule at a time. Worker-confirmed
    entries record `auditor: "first-pass"` in the register beside `audited`;
    senior sign-offs record none.
-6. **End state.** Per-entry recipes displace scan output entry by entry; the
+8. **End state.** Per-entry recipes displace scan output entry by entry; the
    scans remain a first-draft aid whose output is always flagged. When every
    shipped entry is audited, the scans demote to authoring-side tooling and
    principle 1 holds in full again.
