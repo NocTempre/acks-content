@@ -52,8 +52,20 @@ const books = fs
 const entryOf = new Map();
 for (const cb of books) for (const [id, e] of Object.entries(cb.entries ?? {})) entryOf.set(id, [cb, e]);
 
-/** The page's text in print reading order (column by column, top to bottom). */
-function pageText(pd) {
+/**
+ * The page as LINES, each carrying its geometry and its raw pdf.js runs.
+ *
+ * Lines rather than raw items because a line is the unit a chef reasons about
+ * (a `descStopY` is a line's y, a table row is a line); raw items would be
+ * ~800 objects a page of mostly noise. But each line keeps its `runs` — the
+ * unjoined pdf.js text items — because where the runs break is invisible in
+ * joined text and matters twice over: the compiler's `bodyText` drops the
+ * spaces BETWEEN runs, so a pattern written against what you read here
+ * ("proficiency throw") can fail against what the compiler sees
+ * ("proficiencythrow"). Seeing the break is the difference between writing
+ * `\s*` and losing an hour.
+ */
+function pageLines(pd) {
   const cols = detectColumns(pd.items);
   const byCol = new Map();
   for (const it of pd.items) {
@@ -61,22 +73,70 @@ function pageText(pd) {
     const c = colOf(it.x, cols);
     (byCol.get(c) ?? byCol.set(c, []).get(c)).push(it);
   }
-  const lines = [];
+  const out = [];
   for (const c of [...byCol.keys()].sort((a, b) => a - b)) {
     const items = byCol.get(c).sort((a, b) => a.y - b.y || a.x - b.x);
-    let line = [];
+    let cur = [];
+    const flush = () => {
+      if (!cur.length) return;
+      const round = (n) => Math.round(n * 10) / 10;
+      out.push({
+        col: c,
+        y: round(cur[0].y),
+        x0: round(Math.min(...cur.map((i) => i.x))),
+        x1: round(Math.max(...cur.map((i) => i.x + i.w))),
+        h: round(Math.max(...cur.map((i) => i.h))),
+        // Run x-positions: what a table's column boundaries show up as.
+        xs: cur.map((i) => round(i.x)),
+        runs: cur.map((i) => i.str),
+        text: cur.map((i) => i.str.trim()).join(" "),
+      });
+      cur = [];
+    };
     let y = -99;
     for (const it of items) {
-      if (Math.abs(it.y - y) > 2 && line.length) {
-        lines.push(line.join(" "));
-        line = [];
-      }
+      if (Math.abs(it.y - y) > 2) flush();
       y = it.y;
-      line.push(it.str.trim());
+      cur.push(it);
     }
-    if (line.length) lines.push(line.join(" "));
+    flush();
   }
-  return lines.join("\n");
+  return { cols, lines: out };
+}
+
+/** Reading-order prose, joined from the lines — what the old package shipped. */
+const linesToText = (lines) => lines.map((l) => l.text).join("\n");
+
+/**
+ * Runs of consecutive lines that share repeated x-positions — a TABLE CANDIDATE.
+ *
+ * Detection only. It reports where a grid appears to be so a chef can look, and
+ * says nothing about what the table means, which column is which, or whether it
+ * belongs to this entry. Three consecutive lines sharing at least two aligned
+ * run positions is a low bar deliberately: a missed table is worse than one to
+ * dismiss, and the chef reads the page either way.
+ */
+function tableCandidates(lines) {
+  const aligned = (a, b) => a.xs.filter((x) => b.xs.some((v) => Math.abs(v - x) < 3)).length;
+  const out = [];
+  let run = [];
+  const flush = () => {
+    if (run.length >= 3) {
+      const xs = [...new Set(run.flatMap((l) => l.xs.map((x) => Math.round(x / 3) * 3)))].sort((a, b) => a - b);
+      out.push({ col: run[0].col, y0: run[0].y, y1: run[run.length - 1].y, rows: run.length, colX: xs });
+    }
+    run = [];
+  };
+  for (const l of lines) {
+    const prev = run[run.length - 1];
+    if (prev && prev.col === l.col && aligned(prev, l) >= 2) run.push(l);
+    else {
+      flush();
+      run = [l];
+    }
+  }
+  flush();
+  return out;
 }
 
 async function main() {
@@ -88,10 +148,21 @@ async function main() {
         .map(([id]) => id);
 
   const { doc } = await openBook(fs.readFileSync(FILES[bookArg]));
-  const textCache = new Map();
-  const textOf = async (p) => {
-    if (!textCache.has(p)) textCache.set(p, pageText(await pageItems(doc, p)));
-    return textCache.get(p);
+  const pageCache = new Map();
+  const pageOf = async (p) => {
+    if (!pageCache.has(p)) {
+      const pd = await pageItems(doc, p);
+      const { cols, lines } = pageLines(pd);
+      pageCache.set(p, {
+        width: Math.round(pd.width),
+        height: Math.round(pd.height),
+        columns: cols,
+        text: linesToText(lines),
+        tableCandidates: tableCandidates(lines),
+        lines,
+      });
+    }
+    return pageCache.get(p);
   };
 
   for (const id of ids) {
@@ -116,10 +187,17 @@ async function main() {
         ...(res?.fields?.powerValue != null ? { powerValue: res.fields.powerValue } : {}),
         ...(res?.fields?.defenses ? { defenses: res.fields.defenses } : {}),
       },
-      pageText: Object.fromEntries(await Promise.all(pages.map(async (p) => [p, await textOf(p)]))),
+      // Each page as geometry AND prose. `pages[n].lines` is what a coordinate
+      // locator is written against; `pages[n].text` is the same content joined,
+      // for reading. `pageText` stays as it was so older tooling still works.
+      pages: Object.fromEntries(await Promise.all(pages.map(async (p) => [p, await pageOf(p)]))),
+      pageText: Object.fromEntries(await Promise.all(pages.map(async (p) => [p, (await pageOf(p)).text]))),
     };
     fs.writeFileSync(path.join(outDir, `${id}.json`), JSON.stringify(pkg, null, 2) + "\n");
-    console.error(`wrote ${id} (${pkg.extracted.description.length} para(s), pages ${pages.join(",")})`);
+    const tables = Object.values(pkg.pages).reduce((n, p) => n + p.tableCandidates.length, 0);
+    console.error(
+      `wrote ${id} (${pkg.extracted.description.length} para(s), pages ${pages.join(",")}, ${tables} table candidate(s))`,
+    );
   }
 }
 

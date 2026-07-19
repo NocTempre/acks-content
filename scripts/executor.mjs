@@ -333,37 +333,90 @@ const DEF_BOUNDARY =
  * tools can preview the same result.
  */
 /**
+ * Effect fields a locator may fill, and the shape each one needs.
+ *
+ * Only NUMBERS are locatable, and this list is why. Everything else an effect
+ * carries — `unit`, `period`, `target`, `mode`, `restriction` — is a conclusion
+ * about the mechanic's shape ("this is a percentage", "this is per month"),
+ * which the recipe states outright because a conclusion may ship. A number is
+ * the one thing that may not, so it is the one thing that gets a locator.
+ *
+ * `value` alone is a LevelValue SchemaField and needs the object form; a bare
+ * integer there does not survive DataModel validation. The rest are plain
+ * numbers, and `amount` is the only one the schema allows to be fractional.
+ */
+const LOCATABLE_FIELDS = {
+  value: "levelValue",
+  amount: "number",
+  range: "integer",
+  casterLevelDelta: "integer",
+  choose: "integer",
+  times: "integer",
+};
+
+/**
  * Materialize an ability's structured EFFECTS from chef-authored specs.
  *
  * The cookbook ships the effect's STRUCTURE (type, target, mode, refs, ifHas,
  * stacking) — never its numbers. A spec that carries a number points at it with
- * `from.pattern`, a short locator applied to THIS SEAT'S own extracted prose,
- * so the value materializes from the reader's book exactly like a monster stat.
- * A locator that doesn't match (different printing) drops that effect rather
- * than inventing a value.
+ * a locator applied to THIS SEAT'S own extracted prose, so the value
+ * materializes from the reader's book exactly like a monster stat. A locator
+ * that doesn't match (different printing) drops that effect rather than
+ * inventing a value.
+ *
+ * `from` is one locator or an array of them, each naming the field it fills:
+ *
+ *   "from": { "pattern": "a (-?\\d+) penalty" }                    -> value
+ *   "from": [{ "into": "amount", "pattern": "(\\d+)% per month" }]  -> amount
+ *
+ * `into` defaults to `value`, which is what every recipe written before this
+ * meant. An `into` naming a field that is not locatable drops the effect: a
+ * typo must not silently produce an effect missing the number that was the
+ * whole point of it.
  */
 export function materializeEffects(specs, paras) {
   const text = (paras ?? []).map((p) => (typeof p === "string" ? p : p.text)).join(" ");
   const out = [];
   for (const spec of specs ?? []) {
     const { from, ...effect } = spec ?? {};
-    if (from?.pattern) {
-      if (!text) continue;
+    const locators = (Array.isArray(from) ? from : from ? [from] : []).filter((l) => l?.pattern);
+    // All or nothing. An effect whose locators half-matched would ship a
+    // mechanic with one number read from the page and another silently absent,
+    // which reads as complete and is not.
+    let complete = true;
+    for (const loc of locators) {
+      const into = loc.into ?? "value";
+      const kind = LOCATABLE_FIELDS[into];
+      if (!kind || !text) {
+        complete = false;
+        break;
+      }
       let m = null;
       try {
-        m = new RegExp(from.pattern, from.flags ?? "i").exec(text);
+        m = new RegExp(loc.pattern, loc.flags ?? "i").exec(text);
       } catch {
         m = null; // a malformed locator never throws at the table
       }
-      if (!m) continue;
-      const n = parseInt(String(m[1] ?? m[0]).replace(/[^\d-]/g, ""), 10);
-      if (Number.isNaN(n)) continue;
-      // A LevelValue OBJECT, never a bare number: the ability DataModel's value
-      // is a SchemaField, so a raw integer does not survive validation.
-      effect.value =
-        from.as === "perLevel" ? { kind: "perLevel", base: n, per: from.per ?? -1 } : { kind: "flat", flat: n };
+      if (!m) {
+        complete = false;
+        break;
+      }
+      const raw = String(m[loc.group ?? 1] ?? m[0]);
+      // Strip the page's own punctuation ("1,000 gp" -> 1000) but keep the
+      // decimal point for the one field allowed to be fractional.
+      const n = kind === "number" ? parseFloat(raw.replace(/[^\d.-]/g, "")) : parseInt(raw.replace(/[^\d-]/g, ""), 10);
+      if (!Number.isFinite(n)) {
+        complete = false;
+        break;
+      }
+      effect[into] =
+        kind === "levelValue"
+          ? loc.as === "perLevel"
+            ? { kind: "perLevel", base: n, per: loc.per ?? -1 }
+            : { kind: "flat", flat: n }
+          : n;
     }
-    out.push(effect);
+    if (complete) out.push(effect);
   }
   return out;
 }
