@@ -1639,7 +1639,10 @@
         311
       ],
       "meta": {
-        "category": "classPower"
+        "category": "classPower",
+        "provides": [
+          "kw:alertness"
+        ]
       },
       "fields": {
         "name": {
@@ -1697,6 +1700,66 @@
                   22
                 ]
               }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifier",
+              "target": "surprise",
+              "mode": "add",
+              "condition": "in the wilderness",
+              "from": {
+                "pattern": "\\+(\\d+) bonus to surprise rolls when in the wilderness"
+              }
+            },
+            {
+              "type": "modifies",
+              "refs": [
+                "kw:searching"
+              ],
+              "ifHas": [
+                "kw:searching"
+              ],
+              "target": "proficiencyThrow",
+              "mode": "replace",
+              "from": {
+                "pattern": "proficient in Searching,? they gain a \\+(\\d+) bonus"
+              },
+              "note": "Replaces the 14+ Adventuring throw for a character separately proficient in Searching."
+            },
+            {
+              "type": "modifies",
+              "refs": [
+                "kw:listening"
+              ],
+              "ifHas": [
+                "kw:listening"
+              ],
+              "target": "proficiencyThrow",
+              "mode": "replace",
+              "from": {
+                "pattern": "proficient in Listening,? they gain a \\+(\\d+) bonus"
+              },
+              "note": "Replaces the 14+ Adventuring throw for a character separately proficient in Listening. Distinct from the Searching value above - this is why the entry cannot be an alias of Alertness."
+            }
+          ]
+        },
+        "rolls": {
+          "op": "rolls",
+          "specs": [
+            {
+              "key": "searchListen",
+              "label": {
+                "pattern": "Adventuring proficiency to (search or listen)"
+              },
+              "target": {
+                "pattern": "search or listen[\\s\\S]{0,80}?proficiency throw of (\\d+)\\+"
+              },
+              "condition": "using Adventuring to search or listen",
+              "note": "Used in place of the usual Adventuring search/listen target, not added to it."
             }
           ]
         }
