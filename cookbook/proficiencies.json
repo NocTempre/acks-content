@@ -173,7 +173,10 @@
         17
       ],
       "meta": {
-        "category": "fightingStyle"
+        "category": "fightingStyle",
+        "provides": [
+          "kw:fightingstyles"
+        ]
       },
       "audited": true,
       "icon": "icons/svg/combat.svg",
@@ -3814,7 +3817,10 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": false
+        "general": false,
+        "provides": [
+          "kw:familiar"
+        ]
       },
       "icon": "icons/svg/pawprint.svg",
       "iconNiche": "modules/game-icons-net/blacktransparent/barn-owl.svg",

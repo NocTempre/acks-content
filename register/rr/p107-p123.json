@@ -1158,7 +1158,10 @@
     ],
     "meta": {
       "category": "proficiency",
-      "general": false
+      "general": false,
+      "provides": [
+        "kw:familiar"
+      ]
     },
     "effects": [
       {

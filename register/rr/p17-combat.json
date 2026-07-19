@@ -45,7 +45,10 @@
       17
     ],
     "meta": {
-      "category": "fightingStyle"
+      "category": "fightingStyle",
+      "provides": [
+        "kw:fightingstyles"
+      ]
     },
     "audited": "2026-07-18",
     "auditor": "first-pass",
