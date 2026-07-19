@@ -1074,12 +1074,19 @@ export async function executeEntry(doc, bookCookbook, registers, entryId, opts =
     const scanned = defenseScan(fields.description, registers);
     if (scanned) fields.defenses = scanned;
     // Structured effects: classified from THIS SEAT'S prose against the shipped
-    // vocabulary. Per-entry assist specs merge in for shapes the scan cannot
-    // classify — their values still materialize from the book, never baked.
-    const effects = [
-      ...effectScan(fields.description, registers),
-      ...materializeEffects(entry.fields?.effects?.specs, fields.description),
-    ];
+    // vocabulary — UNLESS a chef authored specs for this entry, in which case
+    // the recipe replaces the scan outright, exactly as it does for rolls.
+    //
+    // These used to concatenate, which is a double-application bug: Trapfinding
+    // prints "+2 on Searching and Trapbreaking proficiency throws" and the scan
+    // reads it as +2 to EVERY proficiency throw, so a chef's corrected,
+    // properly-scoped effect would have shipped next to the wrong one rather
+    // than instead of it. A recipe states the entry's mechanics completely;
+    // anything the scan additionally believes is by definition not part of them.
+    const authoredEffects = entry.fields?.effects?.specs;
+    const effects = authoredEffects?.length
+      ? materializeEffects(authoredEffects, fields.description)
+      : effectScan(fields.description, registers);
     if (effects.length) fields.effects = effects;
     // Every roll the ability offers, each with its own target and progression.
     // A chef-authored recipe REPLACES the scan outright for this entry rather

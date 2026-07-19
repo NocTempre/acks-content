@@ -18,7 +18,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { openBook, pageItems } from "../scripts/extract.mjs";
-import { materializeRolls, materializeEffects } from "../scripts/executor.mjs";
+import { materializeRolls, materializeEffects, effectScan } from "../scripts/executor.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const LIB = "C:\\Proj\\acks-reference\\ACKSII";
@@ -101,6 +101,17 @@ async function main() {
       const gotLocated = got.filter((e) => e.value != null).length;
       if (withLocator && gotLocated < withLocator) {
         problems.push(`effects: ${withLocator} locators authored, ${gotLocated} resolved`);
+      }
+      // Authored effects REPLACE the scan, so the recipe must cover the whole
+      // entry. Anything the scan was carrying that the recipe drops is a
+      // regression, not a correction — surface the shortfall for review rather
+      // than silently shipping fewer mechanics than before.
+      const scanned = effectScan(paras, registers);
+      if (scanned.length > got.length) {
+        console.log(
+          `      note ${id}: scan had ${scanned.length} effect(s), recipe authors ${got.length}` +
+            ` — confirm the recipe is complete (it replaces the scan): ${scanned.map((e) => `${e.type}/${e.target ?? ""}`).join(", ")}`,
+        );
       }
     }
 

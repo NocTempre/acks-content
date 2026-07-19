@@ -497,6 +497,61 @@
               }
             }
           ]
+        },
+        "rolls": {
+          "op": "rolls",
+          "specs": [
+            {
+              "key": "dungeonbashing",
+              "label": {
+                "pattern": "(Dungeonbashing) proficiency throw"
+              },
+              "target": {
+                "pattern": "Dungeonbashing proficiency throw of (\\d+)\\+"
+              },
+              "condition": "combat action; stuck doors"
+            },
+            {
+              "key": "climbing",
+              "label": {
+                "pattern": "(Climbing) proficiency throw"
+              },
+              "target": {
+                "pattern": "Climbing proficiency throw of (\\d+)\\+"
+              },
+              "condition": "easy-to-scale obstacles only"
+            },
+            {
+              "key": "searching",
+              "label": {
+                "pattern": "(Searching) proficiency throw"
+              },
+              "target": {
+                "pattern": "Searching proficiency throw of (\\d+)\\+"
+              },
+              "condition": "one turn spent searching methodically"
+            },
+            {
+              "key": "trapbreaking",
+              "label": {
+                "pattern": "(Trapbreaking) proficiency throw"
+              },
+              "target": {
+                "pattern": "Trapbreaking proficiency throw of (\\d+)\\+"
+              },
+              "condition": "one turn spent disarming methodically"
+            },
+            {
+              "key": "listening",
+              "label": {
+                "pattern": "(Listening) proficiency throw"
+              },
+              "target": {
+                "pattern": "Listening proficiency throw of (\\d+)\\+"
+              },
+              "condition": "one round spent pausing to listen"
+            }
+          ]
         }
       }
     },
@@ -587,7 +642,8 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": true
+        "general": true,
+        "repeatable": true
       },
       "fields": {
         "name": {
@@ -712,6 +768,57 @@
               }
             }
           ]
+        },
+        "rolls": {
+          "op": "rolls",
+          "specs": [
+            {
+              "key": "identifySubstance",
+              "label": {
+                "pattern": "(identify \\w+ alchemical substances)"
+              },
+              "target": {
+                "on": "rank",
+                "pattern": "identify \\w+ alchemical substances[\\s\\S]{0,80}?of (\\d+)\\+[\\s\\S]{0,1200}?identify substances[^.;]{0,30}?(\\d+)\\+[\\s\\S]{0,600}?identify substances[^.;]{0,30}?(\\d+)\\+"
+              },
+              "condition": "one turn; by aroma and color"
+            },
+            {
+              "key": "identifyComponents",
+              "label": {
+                "pattern": "(identify special components)"
+              },
+              "target": {
+                "on": "rank",
+                "pattern": "identify which parts[\\s\\S]{0,90}?throw of (\\d+)\\+[\\s\\S]{0,1200}?special components on (\\d+)\\+[\\s\\S]{0,600}?special components on (\\d+)\\+"
+              },
+              "note": "Identifies which parts of a monster are special components."
+            },
+            {
+              "key": "extractToxinFresh",
+              "label": {
+                "pattern": "of \\d+\\+ for (fresh plants)"
+              },
+              "target": {
+                "on": "rank",
+                "pattern": "of (\\d+)\\+ for fresh[\\s\\S]{0,900}?toxins on (\\d+)\\+\\s*/[\\s\\S]{0,600}?toxins on (\\d+)\\+\\s*/"
+              },
+              "condition": "one day of dedicated activity",
+              "note": "Extracting toxin from poisonous plants; one dose on a success, spoiled plants on a failure. On an unmodified 1 the character is exposed and must make a Death saving throw."
+            },
+            {
+              "key": "extractToxinDried",
+              "label": {
+                "pattern": "and \\d+\\+ for (dried plants)"
+              },
+              "target": {
+                "on": "rank",
+                "pattern": "and (\\d+)\\+ for dried[\\s\\S]{0,900}?toxins on \\d+\\+\\s*/\\s*(\\d+)\\+[\\s\\S]{0,600}?toxins on \\d+\\+\\s*/\\s*(\\d+)\\+"
+              },
+              "condition": "one day of dedicated activity",
+              "note": "Extracting toxin from poisonous plants; one dose on a success, spoiled plants on a failure. On an unmodified 1 the character is exposed and must make a Death saving throw."
+            }
+          ]
         }
       }
     },
@@ -759,6 +866,22 @@
                   3
                 ]
               }
+            }
+          ]
+        },
+        "rolls": {
+          "op": "rolls",
+          "specs": [
+            {
+              "key": "searchListen",
+              "label": {
+                "pattern": "Adventuring proficiency to (search or listen)"
+              },
+              "target": {
+                "pattern": "search or listen[\\s\\S]{0,60}?proficiency throw of (\\d+)\\+"
+              },
+              "condition": "using Adventuring to search or listen",
+              "note": "Used in place of the usual Adventuring search/listen target, not added to it."
             }
           ]
         }
@@ -1051,7 +1174,8 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": true
+        "general": true,
+        "repeatable": true
       },
       "fields": {
         "name": {
@@ -1219,6 +1343,22 @@
               }
             }
           ]
+        },
+        "rolls": {
+          "op": "rolls",
+          "specs": [
+            {
+              "key": "activateArcaneItem",
+              "label": {
+                "pattern": "attempt to (use wands, \\w+, and other magic items)"
+              },
+              "target": {
+                "pattern": "command word[\\s\\S]{0,60}?proficiency throw of (\\d+)\\+"
+              },
+              "condition": "arcane-only wands, staffs and items",
+              "note": "No command word needed. On a failure the attempt backfires in some desultory way, at the Judge's discretion."
+            }
+          ]
         }
       }
     },
@@ -1283,6 +1423,11 @@
               "value": 1,
               "mode": "add",
               "note": "One weight category heavier than the class permits."
+            },
+            {
+              "type": "capability",
+              "condition": "in armor this proficiency makes available",
+              "note": "A spellcaster may cast spells in it."
             }
           ]
         }
@@ -1299,7 +1444,8 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": true
+        "general": true,
+        "repeatable": true
       },
       "fields": {
         "name": {
@@ -1470,6 +1616,23 @@
               }
             }
           ]
+        },
+        "rolls": {
+          "op": "rolls",
+          "specs": [
+            {
+              "key": "identify",
+              "label": {
+                "pattern": "can (identify masterwork \\w+)"
+              },
+              "target": {
+                "on": "rank",
+                "pattern": "identify[\\s\\S]{0,95}?of (\\d+)\\+[\\s\\S]{0,750}?identify[\\s\\S]{0,45}?of (\\d+)\\+[\\s\\S]{0,750}?identify[\\s\\S]{0,45}?of (\\d+)\\+[\\s\\S]{0,750}?identify[\\s\\S]{0,45}?of (\\d+)\\+"
+              },
+              "condition": "one rank per selection of the same art or craft",
+              "note": "One throw, improving at every rank; what it identifies is named on the page."
+            }
+          ]
         }
       }
     },
@@ -1484,7 +1647,8 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": true
+        "general": true,
+        "repeatable": true
       },
       "fields": {
         "name": {
@@ -1635,6 +1799,31 @@
               }
             }
           ]
+        },
+        "rolls": {
+          "op": "rolls",
+          "specs": [
+            {
+              "key": "identify",
+              "label": {
+                "pattern": "(identify plants and \\w+) with a proficiency"
+              },
+              "target": {
+                "pattern": "plants and fauna with a proficiency throw of (\\d+)\\+"
+              }
+            },
+            {
+              "key": "identifyWithPower",
+              "label": {
+                "pattern": "(identify plants and \\w+) with a throw"
+              },
+              "target": {
+                "pattern": "plants and fauna with a throw of (\\d+)\\+"
+              },
+              "condition": "has the Friend of Birds and Beasts class power",
+              "note": "Replaces the base target; the reaction bonus does not improve with it."
+            }
+          ]
         }
       }
     },
@@ -1688,6 +1877,26 @@
                   9
                 ]
               }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "immunity",
+              "conditions": [
+                "cowering",
+                "faltering",
+                "frightened"
+              ],
+              "condition": "while enraged",
+              "note": "Cowering, faltering, frightened."
+            },
+            {
+              "type": "capability",
+              "condition": "while enraged",
+              "note": "Makes no morale check."
             }
           ]
         }
@@ -1889,6 +2098,31 @@
                   5
                 ]
               }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifier",
+              "target": "reaction",
+              "mode": "add",
+              "condition": "bribe worth a week's pay",
+              "from": {
+                "pattern": "a ([+-]?\\d+) bonus for a week"
+              },
+              "note": "One tier applies, by the size of the bribe offered."
+            },
+            {
+              "type": "modifier",
+              "target": "reaction",
+              "mode": "add",
+              "condition": "bribe worth a month's pay",
+              "from": {
+                "pattern": "a ([+-]?\\d+) bonus for a month"
+              },
+              "note": "One tier applies, by the size of the bribe offered."
             }
           ]
         }
@@ -7250,7 +7484,8 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": true
+        "general": true,
+        "repeatable": true
       },
       "fields": {
         "name": {
@@ -7287,6 +7522,22 @@
                   7
                 ]
               }
+            }
+          ]
+        },
+        "rolls": {
+          "op": "rolls",
+          "specs": [
+            {
+              "key": "recognize",
+              "label": {
+                "pattern": "can (identify those of other \\w+ \\w+)"
+              },
+              "target": {
+                "pattern": "identify those of other[\\s\\S]{0,45}?throw of (\\d+)\\+"
+              },
+              "condition": "settlements other than his home settlement",
+              "note": "No throw is needed in the character's own home settlement."
             }
           ]
         }
@@ -7471,6 +7722,20 @@
               }
             }
           ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifier",
+              "target": "proficiencyThrow",
+              "forWhat": "Swimming",
+              "mode": "add",
+              "from": {
+                "pattern": "\\+(\\d+) bonus\\s+when making Swimming"
+              }
+            }
+          ]
         }
       }
     },
@@ -7520,6 +7785,15 @@
                   5
                 ]
               }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "capability",
+              "note": "Replaces part of the divine repertoire with divine spells outside the character's god's list."
             }
           ]
         }
@@ -7717,6 +7991,21 @@
               }
             }
           ]
+        },
+        "rolls": {
+          "op": "rolls",
+          "specs": [
+            {
+              "key": "track",
+              "label": {
+                "pattern": "requires a (Tracking) proficiency throw"
+              },
+              "target": {
+                "pattern": "Tracking proficiency throw of (\\d+)\\+"
+              },
+              "note": "On a failure the same area cannot be searched again for a time. Each rank past the first improves this throw; neither that improvement nor the printed circumstance modifiers are modelled here."
+            }
+          ]
         }
       }
     },
@@ -7849,6 +8138,24 @@
               }
             }
           ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifies",
+              "refs": [
+                "kw:searching",
+                "kw:trapbreaking"
+              ],
+              "target": "proficiencyThrow",
+              "mode": "add",
+              "from": {
+                "pattern": "(\\+\\d+) bonus on Searching and Trapbreaking"
+              },
+              "note": "Applies to these two throws only, not to proficiency throws generally."
+            }
+          ]
         }
       }
     },
@@ -7957,6 +8264,52 @@
                   3
                 ]
               }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifier",
+              "target": "proficiencyThrow",
+              "mode": "add",
+              "ifHas": [
+                "kw:searching",
+                "kw:trapfinding"
+              ],
+              "condition": "finding and removing wilderness traps",
+              "from": {
+                "pattern": "additional (\\+\\d+) bonus against wilderness traps"
+              },
+              "note": "Applies only if the character is separately proficient in Searching or Trapfinding, and only against wilderness traps."
+            }
+          ]
+        },
+        "rolls": {
+          "op": "rolls",
+          "specs": [
+            {
+              "key": "catchGame",
+              "label": {
+                "pattern": "Wilderness traps can (catch game)"
+              },
+              "target": {
+                "pattern": "catch game[\\s\\S]{0,160}?target value of (\\d+)\\+"
+              },
+              "note": "Thrown once per day per trap by the Judge; a failure on an unmodified 1 destroys a crude trap. The yield is stated in the description."
+            },
+            {
+              "key": "trapStumble",
+              "formula": "1d6",
+              "rollType": "below",
+              "label": {
+                "pattern": "will (stumble into the trap)"
+              },
+              "target": {
+                "pattern": "trap on a throw of \\d+-(\\d+) on 1d6"
+              },
+              "note": "Thrown when a wandering monster turns up near managed traps; on a failure it lurks nearby instead."
             }
           ]
         }
@@ -8235,7 +8588,8 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": false
+        "general": false,
+        "repeatable": true
       },
       "fields": {
         "name": {

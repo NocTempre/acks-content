@@ -128,88 +128,6 @@
                   0
                 ]
               }
-            },
-            {
-              "box": {
-                "x0": 335,
-                "x1": 612,
-                "y0": 112.56989999999996,
-                "y1": 279.77329999999995
-              },
-              "fixes": {
-                "joinSpace": [
-                  0,
-                  1,
-                  2,
-                  3,
-                  4,
-                  5,
-                  6,
-                  7,
-                  9,
-                  10,
-                  11,
-                  12,
-                  13,
-                  14,
-                  15,
-                  16,
-                  18,
-                  19,
-                  20,
-                  21,
-                  22,
-                  23,
-                  24,
-                  25,
-                  26,
-                  27,
-                  28,
-                  29,
-                  30,
-                  31,
-                  32,
-                  33,
-                  34,
-                  35,
-                  36,
-                  37,
-                  39,
-                  40,
-                  41,
-                  43,
-                  44,
-                  46,
-                  47,
-                  48,
-                  50,
-                  51,
-                  53,
-                  54,
-                  55,
-                  57,
-                  58,
-                  60,
-                  61,
-                  62,
-                  64,
-                  65,
-                  66,
-                  67,
-                  69,
-                  70
-                ],
-                "drop": [
-                  39,
-                  43,
-                  46,
-                  50,
-                  53,
-                  57,
-                  60,
-                  64
-                ]
-              }
             }
           ]
         },
@@ -228,6 +146,20 @@
             "y0": 224.74,
             "y1": 380.1597
           }
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifier",
+              "target": "proficiencyThrow",
+              "mode": "add",
+              "condition": "moving at full combat speed",
+              "from": {
+                "pattern": "full combat speed[^.]{0,24}?(-\\d+)"
+              }
+            }
+          ]
         }
       }
     },
@@ -377,106 +309,6 @@
                   0
                 ]
               }
-            },
-            {
-              "box": {
-                "x0": 323.5,
-                "x1": 612,
-                "y0": 112.31010000000003,
-                "y1": 186.34990000000005
-              },
-              "fixes": {
-                "joinSpace": [
-                  0,
-                  1,
-                  2,
-                  3,
-                  4,
-                  5,
-                  6,
-                  7,
-                  8,
-                  9,
-                  10,
-                  11,
-                  12,
-                  13,
-                  14,
-                  15,
-                  16,
-                  17,
-                  18,
-                  19,
-                  20
-                ]
-              }
-            },
-            {
-              "box": {
-                "x0": 323.5,
-                "x1": 612,
-                "y0": 225.74,
-                "y1": 379.1597
-              },
-              "fixes": {
-                "joinSpace": [
-                  0,
-                  1,
-                  2,
-                  3,
-                  4,
-                  5,
-                  6,
-                  7,
-                  8,
-                  9,
-                  10,
-                  11,
-                  12,
-                  13,
-                  14,
-                  15,
-                  16,
-                  17,
-                  18,
-                  19,
-                  20,
-                  21,
-                  22,
-                  23,
-                  24,
-                  25,
-                  26,
-                  27,
-                  28,
-                  29,
-                  30,
-                  31,
-                  32,
-                  33,
-                  34,
-                  35,
-                  36,
-                  37,
-                  38,
-                  39,
-                  40,
-                  41,
-                  42,
-                  43,
-                  44,
-                  45,
-                  46,
-                  47,
-                  48,
-                  49,
-                  50,
-                  51,
-                  52,
-                  53,
-                  54
-                ]
-              }
             }
           ]
         },
@@ -622,6 +454,20 @@
             "y0": 224.74,
             "y1": 380.1597
           }
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifier",
+              "target": "proficiencyThrow",
+              "mode": "add",
+              "condition": "methodical attempt (one turn); not a hasty attempt",
+              "from": {
+                "pattern": "methodically pick a lock[\\s\\S]{0,120}?with a \\+(\\d+) bonus"
+              }
+            }
+          ]
         }
       }
     },
@@ -854,6 +700,20 @@
             "y0": 224.74,
             "y1": 380.1597
           }
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifier",
+              "target": "proficiencyThrow",
+              "mode": "add",
+              "condition": "methodical attempt (one turn); not a hasty attempt",
+              "from": {
+                "pattern": "methodically search requires[\\s\\S]{0,110}?with a \\+(\\d+) bonus"
+              }
+            }
+          ]
         }
       }
     },
@@ -1017,6 +877,20 @@
             "y0": 224.74,
             "y1": 380.1597
           }
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifier",
+              "target": "proficiencyThrow",
+              "mode": "add",
+              "condition": "running",
+              "from": {
+                "pattern": "If he runs, he takes a (-\\d+) penalty"
+              }
+            }
+          ]
         }
       }
     },
@@ -1072,6 +946,20 @@
                   0
                 ]
               }
+            }
+          ]
+        },
+        "rolls": {
+          "op": "rolls",
+          "specs": [
+            {
+              "key": "identifyForeign",
+              "target": {
+                "pattern": "other urban settlements with a proficiency throw of (\\d+)\\+"
+              },
+              "rollType": "above",
+              "formula": "1d20",
+              "condition": "an urban settlement other than his home settlement"
             }
           ]
         }
@@ -1222,6 +1110,22 @@
             "y0": 224.74,
             "y1": 380.1597
           }
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifier",
+              "target": "proficiencyThrow",
+              "forWhat": "Trapbreaking",
+              "mode": "add",
+              "condition": "methodical attempt (one turn)",
+              "from": {
+                "pattern": "methodically disarm[\\s\\S]{0,120}?with\\s*a \\+(\\d+) bonus"
+              },
+              "note": "Applies only to the slow method; a hasty attempt uses the unmodified throw."
+            }
+          ]
         }
       }
     },

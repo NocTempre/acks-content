@@ -1137,6 +1137,28 @@ const META_HINTS = {
   repeatable: /selected\s*(?:multiple|several)\s*times|selected\s*more\s*than\s*once/i,
 };
 
+/**
+ * The high-recall counterpart to META_HINTS, used ONLY to decide whether the
+ * page is silent on a flag — never to suggest authoring one.
+ *
+ * The precise hints above are a reading prompt and are deliberately narrow.
+ * Measured against the RR they miss roughly half the repeatable entries,
+ * because the book writes the active "a character can select Bargaining
+ * multiple times" as often as the passive form. So a hint MISSING is no
+ * evidence at all that a chef's authored flag is wrong, and warning on that
+ * disagreement just trains everyone to ignore warnings. These loose patterns
+ * decide the reverse direction: complain only when nothing on the page is
+ * even in the neighbourhood.
+ */
+const META_PRESENT = {
+  deprecated: /removed|no\s*longer|retired/i,
+  // Every gap is \s* for the same reason the precise hints above are: the
+  // compile-time run join drops inter-run spaces, so "selected multiple times"
+  // can arrive as "selectedmultipletimes". A literal-space version of this net
+  // reported five entries as unsupported that I had read and verified myself.
+  repeatable: /multiple\s*times|more\s*than\s*once|additional\s*times?|each\s*selection|again/i,
+};
+
 function metaCandidates(id, entry, bodyText) {
   if (!bodyText) return;
   for (const [flag, re] of Object.entries(META_HINTS)) {
@@ -1146,7 +1168,9 @@ function metaCandidates(id, entry, bodyText) {
     // "can be selected multiple times" from "cannot", and does not see what
     // the rest of the sentence goes on to say.
     if (hinted && !authored) warn(`${id}: text may state "${flag}" — read the entry and author meta.${flag} if so`);
-    if (authored && !hinted) warn(`${id}: register authors meta.${flag} but the text does not obviously state it`);
+    if (authored && !META_PRESENT[flag].test(bodyText)) {
+      warn(`${id}: register authors meta.${flag} but nothing on the page suggests it — re-read the entry`);
+    }
   }
 }
 

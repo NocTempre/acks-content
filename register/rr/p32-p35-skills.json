@@ -33,8 +33,20 @@
         "table": "Thief Skills",
         "column": "Climbing",
         "page": 33
+      },
+      "descStopY": 745
+    },
+    "effects": [
+      {
+        "type": "modifier",
+        "target": "proficiencyThrow",
+        "mode": "add",
+        "condition": "moving at full combat speed",
+        "from": {
+          "pattern": "full combat speed[^.]{0,24}?(-\\d+)"
+        }
       }
-    }
+    ]
   },
   {
     "id": "def.skill.hiding",
@@ -77,7 +89,8 @@
         "table": "Thief Skills",
         "column": "Listening",
         "page": 33
-      }
+      },
+      "descStopY": 700
     }
   },
   {
@@ -100,7 +113,18 @@
         "column": "Lockpicking",
         "page": 33
       }
-    }
+    },
+    "effects": [
+      {
+        "type": "modifier",
+        "target": "proficiencyThrow",
+        "mode": "add",
+        "condition": "methodical attempt (one turn); not a hasty attempt",
+        "from": {
+          "pattern": "methodically pick a lock[\\s\\S]{0,120}?with a \\+(\\d+) bonus"
+        }
+      }
+    ]
   },
   {
     "id": "def.skill.pickpocketing",
@@ -144,7 +168,18 @@
         "column": "Searching",
         "page": 33
       }
-    }
+    },
+    "effects": [
+      {
+        "type": "modifier",
+        "target": "proficiencyThrow",
+        "mode": "add",
+        "condition": "methodical attempt (one turn); not a hasty attempt",
+        "from": {
+          "pattern": "methodically search requires[\\s\\S]{0,110}?with a \\+(\\d+) bonus"
+        }
+      }
+    ]
   },
   {
     "id": "def.skill.shadowySenses",
@@ -181,7 +216,18 @@
         "column": "Sneaking",
         "page": 33
       }
-    }
+    },
+    "effects": [
+      {
+        "type": "modifier",
+        "target": "proficiencyThrow",
+        "mode": "add",
+        "condition": "running",
+        "from": {
+          "pattern": "If he runs, he takes a (-\\d+) penalty"
+        }
+      }
+    ]
   },
   {
     "id": "def.skill.streetwise",
@@ -196,7 +242,18 @@
     ],
     "meta": {
       "category": "skill"
-    }
+    },
+    "rolls": [
+      {
+        "key": "identifyForeign",
+        "target": {
+          "pattern": "other urban settlements with a proficiency throw of (\\d+)\\+"
+        },
+        "rollType": "above",
+        "formula": "1d20",
+        "condition": "an urban settlement other than his home settlement"
+      }
+    ]
   },
   {
     "id": "def.skill.trapbreaking",
@@ -218,7 +275,20 @@
         "column": "Trapbreaking",
         "page": 33
       }
-    }
+    },
+    "effects": [
+      {
+        "type": "modifier",
+        "target": "proficiencyThrow",
+        "forWhat": "Trapbreaking",
+        "mode": "add",
+        "condition": "methodical attempt (one turn)",
+        "from": {
+          "pattern": "methodically disarm[\\s\\S]{0,120}?with\\s*a \\+(\\d+) bonus"
+        },
+        "note": "Applies only to the slow method; a hasty attempt uses the unmodified throw."
+      }
+    ]
   },
   {
     "id": "def.skill.deciphering",
