@@ -415,7 +415,9 @@
     "meta": {
       "category": "proficiency",
       "general": false
-    }
+    },
+    "audited": "2026-07-18",
+    "auditor": "first-pass"
   },
   {
     "id": "def.prof.combatReflexes",
@@ -561,7 +563,9 @@
     "meta": {
       "category": "proficiency",
       "general": false
-    }
+    },
+    "audited": "2026-07-18",
+    "auditor": "first-pass"
   },
   {
     "id": "def.prof.divineHealth",
@@ -893,7 +897,9 @@
     "meta": {
       "category": "proficiency",
       "general": true
-    }
+    },
+    "audited": "2026-07-18",
+    "auditor": "first-pass"
   },
   {
     "id": "def.prof.kinSlaying",
@@ -1022,7 +1028,9 @@
     "meta": {
       "category": "proficiency",
       "general": true
-    }
+    },
+    "audited": "2026-07-18",
+    "auditor": "first-pass"
   },
   {
     "id": "def.prof.lockpickingExpertise",

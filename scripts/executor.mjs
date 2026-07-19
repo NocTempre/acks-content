@@ -387,6 +387,13 @@ export function rollScan(paras) {
   const seen = new Set();
   const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 32);
 
+  // Spans already claimed by the rank-ladder pass, so the plain-roll pass below
+  // cannot re-read a ladder's first step as a separate flat throw. Without this
+  // Animal Husbandry yields both "18+/14+/10+ by rank" AND a bogus flat 18+,
+  // i.e. one printed roll presented as two, the second one wrong.
+  const claimed = [];
+  const inClaimed = (i) => claimed.some(([a, b]) => i >= a && i < b);
+
   // "a proficiency throw of 18+ / 14+ / 10+" — one roll whose target improves
   // by RANK, written as a slash run.
   for (const m of text.matchAll(/([a-z][a-z' -]{2,40}?)\s+(?:requires|takes)?[^.]{0,40}?proficiency throw of\s*(\d+)\+\s*\/\s*(\d+)\+\s*\/\s*(\d+)\+/gi)) {
@@ -394,8 +401,9 @@ export function rollScan(paras) {
     const key = slug(label) || `roll${out.length}`;
     if (seen.has(key)) continue;
     seen.add(key);
+    claimed.push([m.index, m.index + m[0].length]);
     out.push({
-      key, label, formula: "1d20", rollType: "above", scale: "rank",
+      key, formula: "1d20", rollType: "above", scale: "rank",
       target: { kind: "conditional", on: "rank", breakpoints: [1, 2, 3].map((r, i) => ({ atLevel: r, value: parseInt(m[i + 2], 10) })) },
     });
   }
@@ -404,11 +412,27 @@ export function rollScan(paras) {
   for (const m of text.matchAll(/([a-z][a-z' -]{2,40}?)\s+(?:on|requires[^.]{0,40}?and a)\s+(?:a\s+)?(?:proficiency throw of\s*)?(\d+)\+/gi)) {
     const label = m[1].replace(/\s+/g, " ").trim();
     if (!/[a-z]{3}/.test(label)) continue;
+    if (inClaimed(m.index)) continue;
     const key = slug(label);
     if (!key || seen.has(key)) continue;
     seen.add(key);
-    out.push({ key, label, formula: "1d20", rollType: "above", scale: "level", target: { kind: "flat", flat: parseInt(m[2], 10) } });
+    // NO `scale` on a flat target. A scale says "this number varies with
+    // something", and a flat throw does not vary — carrying the schema's
+    // default made the Rolls tab appear to claim a level progression that the
+    // page never states (found by first-pass audit on Mapping). The field is
+    // inert for flat values, so the claim was invisible in behaviour and
+    // misleading on inspection, which is the worst combination.
+    out.push({ key, label, formula: "1d20", rollType: "above", target: { kind: "flat", flat: parseInt(m[2], 10) } });
   }
+  // NO LABELS from a scan, ever. What a roll is FOR is a judgment about the
+  // sentence, and this scan cannot make it: around Mapping's throw it read
+  // "and succeeding", and around Animal Husbandry's it read "Each" — a parser
+  // artifact presented as the roll's name. A first attempt at filtering the
+  // bad ones out was the same mistake one level up (it dropped an informative
+  // phrase and kept a meaningless one), because there is no general rule here
+  // to write. Naming the rolls is per-entry recipe work; until a recipe names
+  // one, the sheet says "Proficiency throw" and claims nothing.
+  for (const r of out) delete r.label;
   return out;
 }
 
