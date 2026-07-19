@@ -1,5 +1,79 @@
 # Changelog
 
+## 0.16.0
+
+The release where a live import found what offline checks could not.
+
+### Fixed from a real mass import
+
+- **An unparseable stat is a skipped monster, not a crash.** `int` could
+  return NaN — `/(-?[\d,]+)/` matches punctuation with no digit in it, so a
+  morale printed "N/A when controlled, +4 otherwise" parsed the comma to
+  `parseInt("")`. NaN is `typeof "number"`, so it slid past every guard and
+  first surfaced inside `Actor.create`. And because Foundry *reports* a
+  validation failure and returns undefined rather than throwing, the next line
+  raised a TypeError three frames away that buried the real error. One
+  monster in 287; it fired twice per occurrence and hid its own cause.
+- **Apply Stats reaches cookbook monsters, and actors with no token.** It
+  required a selected token — an imported bestiary is mostly actors nobody has
+  dragged out — and resolved names against the dozen PoC recipes, so it could
+  not touch *any* cookbook monster either way. It now targets open sheets too,
+  and asks an imported actor which entry it came from instead of guessing.
+- **Book status counts the cookbook.** It measured `allRecipes()` against
+  `proseMem`, both of which predate the cookbook, so a seat holding the whole
+  MM saw a denominator of a dozen and a numerator stuck at zero. Now MM 287 /
+  RR 133 / JJ 327.
+- **A description stub clears when its book arrives.** The tag resolves per
+  render, so a sheet drawn before connecting kept telling the reader to do the
+  thing they had just done.
+- **Connect says which books are open**, and `restoreBooks` stopped swallowing
+  every failure — "it didn't reconnect" and "there was nothing to reconnect"
+  were indistinguishable from outside.
+
+### Monsters
+
+- **Token size follows the printed size class.** A Gigantic monster on a 1×1
+  token is wrong before anyone reads a stat.
+- **Import all monsters**, from the browser or a new macro. Both skip what is
+  already imported, so pressing either twice tops up rather than duplicating —
+  which matters because a monster import always creates, and two actors
+  claiming one cookbook id make anything resolving by id pick arbitrarily.
+- **Stat-block proficiencies find the ability the world already has**, in
+  three tiers: reuse the world item, else build from the cookbook, else mint a
+  namesake. 69 of the registry's 70 tokens have no ref, so nearly every
+  monster used to mint an empty namesake while the definition sat unreachable.
+
+### Icons
+
+- **Every RR ability has one**: 120 proficiencies and 13 skills, hand-picked,
+  every path verified against a real install. Optional game-icons.net upgrades
+  where core has nothing — Acrobatics, Blind Fighting, Caving and Mapping all
+  scored *nothing* in core — always with a core fallback beneath, so a seat
+  without the pack sees a duller icon and never a broken one.
+
+### Extraction
+
+- **Locators reach every numeric effect field**, not just `value`. `amount`,
+  `range`, `casterLevelDelta`, `choose` and `times` were unreachable, which
+  made every percentage and rate mechanic in both books unwritable.
+- **Scoping specs for eight reaction proficiencies** (Diplomacy, Intimidation,
+  Seduction, Mystic Aura, Beast Friendship, Folkways, Bargaining, Bribery),
+  carrying which tone a bonus is limited to and which targets it applies
+  against. Without them an imported Diplomacy is +1 on *every* reaction roll.
+  Needs acks-lib ≥ 0.6.0.
+- **Audit packages carry page geometry** — line boxes, columns, table
+  candidates, and each line's raw unjoined runs, because the compiler joins
+  runs *without* spaces and the package joins them *with*, so a pattern that
+  works when you read it fails when it compiles.
+- **Validate catches a cookbook that lags its register**, after the shipped
+  0.15.0 cookbook was found doing exactly that.
+
+### Removed
+
+- The PoC demos and the fake "Codex of Whispers" book. The missing-book path
+  they demonstrated is now the ordinary case. **Worlds that imported the demo
+  macros keep them** — Foundry does not delete on compendium removal.
+
 ## 0.15.0
 
 The release where extracted mechanics stop presenting as the book's ruling
