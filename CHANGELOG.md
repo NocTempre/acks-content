@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- **Monster proficiencies find the ability the world already has.** A stat-block
+  token resolved through one channel only — an authored registry `ref` — and 69
+  of the 70 tokens in that registry have no ref yet, so nearly every monster
+  minted a fresh, empty namesake ability. Resolution is now three tiers: reuse
+  the world item already standing for the definition, else build it from the
+  shipped cookbook, else mint the namesake as before. The name index spans
+  proficiencies, powers AND skills, so a monster can reference a class power;
+  the 14 names that are both (Alertness, Climbing, Acrobatics…) resolve to
+  whichever the world actually imported, and only a real guess is reported.
+- **A monster's own printed throw target now reaches the ability.** The block
+  writes "climbing 6+"; the 6 was extracted and then dropped, so the ability
+  showed the definition's generic ladder resolved at 1st level. That was
+  invisible while the tiers above effectively never fired.
+
 ## 0.14.0
 
 - **Abilities extract EVERY roll they offer, not one.** Animal Husbandry

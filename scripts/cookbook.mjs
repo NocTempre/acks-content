@@ -30,6 +30,8 @@ const data = { registers: null, books: new Map(), content: new Map() };
 const CONTENT_FILES = ["proficiencies", "powers", "skills"];
 /** Injected module state (session docs + prose memory) — set by initCookbook. */
 let ctx = null;
+/** Name collisions already reported this session, so a bulk import says each once. */
+const warnedAmbiguous = new Set();
 
 export function initCookbook(moduleCtx) {
   ctx = moduleCtx;
@@ -433,23 +435,87 @@ export function bindMonster(node) {
       });
     }
   }
-  for (const prof of f.stats?.proficiencies ?? []) {
-    if (!prof.text || /^none/i.test(prof.text)) continue;
-    // Prefer the SHARED definition: when the token resolved to a def ref the
-    // cookbook carries, embed THAT ability (lazy descriptor, classification,
-    // shared cookbook id) instead of minting a bare namesake. A registry miss
-    // degrades to a plain named ability — never a failure.
-    const shared = prof.ref ? cookbookEntry(prof.ref) : null;
-    if (shared) {
-      // When the stat block named it by an older name, the EMBEDDED copy records
-      // the rename (not the shared world item — that would stamp one source's
-      // history onto everyone's). The sheet then explains why the name on the
-      // page and the name in the book differ.
-      const renamed = prof.convertedFrom ? { conversionStatus: "renamed", conversionFrom: prof.convertedFrom } : {};
-      items.push({ img: "icons/svg/book.svg", ...bindAbility(shared.entry, null, prof.ref, renamed) });
+  // Stat-block proficiency tokens resolve in three tiers — reuse what the world
+  // already has, else build it from the cookbook, else mint a namesake. Both
+  // indexes are built once per monster and only when there is a token to spend
+  // them on (most monsters print none).
+  const profs = (f.stats?.proficiencies ?? []).filter((p) => p.text && !/^none/i.test(p.text));
+  const nameIndex = profs.length ? abilityNameIndex() : null;
+  const loadedById = profs.length ? loadedAbilityIndex() : new Map();
+  const present = new Set(loadedById.keys());
+  for (const prof of profs) {
+    // When the stat block named it by an older name, the EMBEDDED copy records
+    // the rename (not the shared world item — that would stamp one source's
+    // history onto everyone's). The sheet then explains why the name on the
+    // page and the name in the book differ.
+    const renamed = prof.convertedFrom ? { conversionStatus: "renamed", conversionFrom: prof.convertedFrom } : {};
+
+    // WHICH definition this is. An authored registry `ref` is a decision someone
+    // made and wins outright; without one the printed name is only a guess, so
+    // it is resolved against the ids this world actually holds before category
+    // preference applies. 14 names ("Alertness", "Climbing") are both a
+    // proficiency and a class power, and a world that imported one list and not
+    // the other has already answered which was meant.
+    const guess = prof.ref ? null : idForName(nameIndex, prof.text, present);
+    const id = prof.ref ?? guess?.id ?? null;
+    // A guess is reported, but ONCE per distinct resolution: a bulk import walks
+    // hundreds of blocks and the same handful of shared names ("climbing") would
+    // otherwise bury the console in the same line.
+    if (guess?.ambiguous && !warnedAmbiguous.has(`${prof.text}>${id}`)) {
+      warnedAmbiguous.add(`${prof.text}>${id}`);
+      console.warn(`${MODULE_ID} | "${prof.text}" matches several definitions; adopted ${id}.`);
+    }
+
+    // The block prints THIS creature's own throw target ("climbing 6+"), split
+    // off by the refList's stripRoll. It outranks the definition's generic
+    // ladder — which bindAbility can only resolve at 1st level, having no actor
+    // to read — and it is materialized from the seat's own page like every other
+    // value. Until now nothing consumed it, which was invisible while the tiers
+    // below effectively never fired.
+    const withTarget = (item) =>
+      prof.target == null
+        ? item
+        : {
+            ...item,
+            system: {
+              ...item.system,
+              roll: item.system?.roll || "1d20",
+              rollType: item.system?.rollType || "above",
+              rollTarget: prof.target,
+            },
+          };
+
+    // 1. ALREADY LOADED — copy the item the world holds. Worth preferring over a
+    //    fresh bind: this path has no executed node for the ability, so building
+    //    from the cookbook yields structure only, while an item imported with
+    //    the book open already materialized its throws and effects. It also
+    //    inherits whatever the GM tuned.
+    const loaded = id ? loadedById.get(id) : null;
+    if (loaded) {
+      const src = loaded.toObject();
+      // Identity and filing belong to the world item, not to this copy of it.
+      delete src._id;
+      delete src.folder;
+      delete src.sort;
+      if (prof.convertedFrom) {
+        const abil = ((src.flags ??= {})["acks-abilities"] ??= {});
+        abil.extras = { ...(abil.extras ?? {}), ...renamed };
+      }
+      items.push(withTarget(src));
       continue;
     }
-    items.push({
+
+    // 2. COULD BE LOADED — the cookbook carries the definition, so embed THAT
+    //    ability (lazy descriptor, classification, shared cookbook id) rather
+    //    than a bare namesake.
+    const shared = id ? cookbookEntry(id) : null;
+    if (shared) {
+      items.push(withTarget({ img: "icons/svg/book.svg", ...bindAbility(shared.entry, null, id, renamed) }));
+      continue;
+    }
+
+    // 3. Nothing to point at — degrade to a plain named ability, never a failure.
+    items.push(withTarget({
       name: prof.text,
       type: "ability",
       img: "icons/svg/book.svg",
@@ -457,7 +523,7 @@ export function bindMonster(node) {
         description: "", proficiencytype: "general", favorite: false, pattern: "white",
         requirements: "", roll: "", rollType: "above", rollTarget: 0, blindroll: false, save: "",
       },
-    });
+    }));
   }
   for (const sp of f.spoils ?? []) {
     items.push({
@@ -833,6 +899,22 @@ function abilityNameIndex() {
 }
 
 /**
+ * Definition id -> the world item already standing for it.
+ *
+ * Doubles as the "which definitions does this world hold" signal that settles a
+ * name collision without guessing. First one wins: duplicates are a world the
+ * GM built by hand, and picking the earliest is at least stable across runs.
+ */
+function loadedAbilityIndex() {
+  const byId = new Map();
+  for (const item of game.items) {
+    const id = item.getFlag(MODULE_ID, "cookbook")?.id;
+    if (id && !byId.has(id)) byId.set(id, item);
+  }
+  return byId;
+}
+
+/**
  * Pick among same-named definitions.
  *
  * A collision stops being a guess when only ONE of the candidates is actually
@@ -1005,7 +1087,7 @@ export async function cookbookUpdateAbilities() {
 
   // Which definitions the world already holds — the signal that resolves a
   // name collision without guessing.
-  const present = new Set(game.items.filter((i) => i.getFlag(MODULE_ID, "cookbook")?.id).map((i) => i.getFlag(MODULE_ID, "cookbook").id));
+  const present = new Set(loadedAbilityIndex().keys());
   const nodeCache = new Map();
   let updated = 0;
   let adopted = 0;
