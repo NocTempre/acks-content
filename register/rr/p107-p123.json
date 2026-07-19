@@ -265,7 +265,41 @@
     "meta": {
       "category": "proficiency",
       "general": false
-    }
+    },
+    "effects": [
+      {
+        "type": "modifier",
+        "target": "attackThrow",
+        "mode": "replace",
+        "condition": "blinded or unseen foe",
+        "from": {
+          "pattern": "only a (-?\\d+) penalty on attack throws"
+        },
+        "note": "Replaces the base non-visibility penalty; a smaller penalty, so a net gain."
+      },
+      {
+        "type": "modifier",
+        "target": "surprise",
+        "value": {
+          "kind": "flat",
+          "flat": 0
+        },
+        "mode": "set",
+        "condition": "blinded",
+        "note": "The blinded surprise penalty does not apply."
+      },
+      {
+        "type": "modifier",
+        "target": "speed",
+        "value": {
+          "kind": "flat",
+          "flat": 0
+        },
+        "mode": "set",
+        "condition": "blinded",
+        "note": "The blinded speed reduction does not apply."
+      }
+    ]
   },
   {
     "id": "def.prof.bribery",

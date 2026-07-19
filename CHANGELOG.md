@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.13.0
+
+**A number's meaning is contextual, and the effect scan was ignoring context.**
+Blind Fighting reads "suffers only a -2 penalty on attack throws … instead of
+the base -4". Scanned for a number and a target alone that stored a -2 penalty,
+when the ability is really a net +2 — a wrong mechanic that looks right, which
+is worse than none.
+
+- Every candidate modifier is now judged against the SENTENCE it came from.
+  A number that is a die face ("on an unmodified roll of 1"), a voided penalty
+  ("does not suffer", "nor is his speed reduced"), or the opponent's penalty is
+  DROPPED rather than recorded wrongly. One that supersedes a default is marked
+  `replace`. Six wrong modifiers removed; the opponent-penalty misreadings halved.
+- **Situational bonuses now say they are situational.** 85 modifiers were stored
+  as though they always applied — "+4 on attack throws" is only while ambushing,
+  "+2 on reaction rolls" only when negotiating. The scan cannot state the
+  circumstance without copying the sentence, so it marks the effect situational
+  and leaves the circumstance to the description. The sheet shows the qualifier.
+- **Blind Fighting is authored as a recipe**, since no scan can read it: a
+  conditional replacement of a worse default, plus two penalties it negates
+  outright. Its numbers still materialize from the reader's book.
+- Fixed: a spec value resolved through `from` was emitted as a bare number
+  instead of a LevelValue object, so it could not satisfy the ability schema.
+
 ## 0.12.1
 
 - Reverts the compiled `packs/` to the v0.11.0 build; 0.12.0 swept up LevelDB

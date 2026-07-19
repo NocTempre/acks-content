@@ -358,8 +358,10 @@ export function materializeEffects(specs, paras) {
       if (!m) continue;
       const n = parseInt(String(m[1] ?? m[0]).replace(/[^\d-]/g, ""), 10);
       if (Number.isNaN(n)) continue;
+      // A LevelValue OBJECT, never a bare number: the ability DataModel's value
+      // is a SchemaField, so a raw integer does not survive validation.
       effect.value =
-        from.as === "perLevel" ? { kind: "perLevel", base: n, per: from.per ?? -1 } : n;
+        from.as === "perLevel" ? { kind: "perLevel", base: n, per: from.per ?? -1 } : { kind: "flat", flat: n };
     }
     out.push(effect);
   }
@@ -399,6 +401,70 @@ export function effectScan(paras, registers) {
   // DataModel directly (a bare number would fail the SchemaField).
   const flat = (n) => ({ kind: "flat", flat: n });
 
+  /* --- Context. A NUMBER'S MEANING IS CONTEXTUAL. ---
+   *
+   * Blind Fighting reads "suffers only a -2 penalty on attack throws … instead
+   * of the base -4 penalty". Scanned for a number and a target alone, that
+   * stores a -2 penalty — when the ability is really a net +2. Recording it is
+   * worse than recording nothing, because a wrong mechanic looks right.
+   *
+   * So every candidate is judged against the SENTENCE it came from:
+   *   replace  the number stands but supersedes a default ("instead of")
+   *   skip     the context inverts or voids it, or the number is not a
+   *            modifier at all (a die face, an opponent's penalty)
+   * Anything the scan cannot model honestly is dropped and left to a recipe.
+   */
+  const bounds = [];
+  {
+    let at = 0;
+    for (const s of text.split(/(?<=\.)\s+/)) {
+      bounds.push({ start: at, end: at + s.length, s });
+      at += s.length + 1;
+    }
+  }
+  const sentenceAt = (i) => bounds.find((b) => i >= b.start && i <= b.end)?.s ?? text;
+
+  /** A number that is a DIE FACE, not a modifier: "on an unmodified roll of 1". */
+  const isDieFace = (sentence, n) =>
+    new RegExp(`(?:unmodified|natural)\\s+(?:die\\s+)?rolls?\\s+of\\s+${Math.abs(n)}\\b|rolls?\\s+of\\s+${Math.abs(n)}\\s*(?:-|–|to)\\s*\\d`, "i").test(sentence);
+
+  const judge = (sentence, n) => {
+    if (isDieFace(sentence, n)) return "skip";
+    // "does not suffer a penalty", "nor is his speed reduced" — the penalty is
+    // VOIDED here, so emitting it as an active modifier inverts the ability.
+    if (/\b(?:does not|doesn't|no longer|never)\s+suffers?\b|\bnor is\b|\bwithout (?:any )?penalt/i.test(sentence)) return "skip";
+    // "instead of the base -4" is decisive: the number is this character's, and
+    // it SUPERSEDES a default. Checked before the opponent rule, which would
+    // otherwise skip it for merely mentioning the enemies it applies against.
+    // A replacement is almost always conditional too ("when blinded"), and the
+    // scan cannot read the condition — so it defers to a recipe rather than
+    // storing an unconditional value that would be wrong most of the time.
+    if (/\binstead of\b|\brather than\b|\bin lieu of\b/i.test(sentence)) {
+      return /\b(?:if|when|while|unless|against)\b/i.test(sentence) ? "skip" : "replace";
+    }
+    // A penalty stated for the OPPONENT is not a modifier on this character.
+    if (/\bopponents?\b|\benemies\b|\benemy\b|\btargets?\b/i.test(sentence) && n < 0) return "skip";
+    // Most bonuses are SITUATIONAL — "+4 on attack throws when ambushing",
+    // "+2 on reaction rolls when negotiating". The number is right but it is not
+    // unconditional, and storing it bare claims it always applies. The scan
+    // cannot state the condition without copying the sentence, so it marks the
+    // effect situational and leaves the circumstance to the description.
+    if (/\b(?:if|when|while|unless|against|versus|vs\.?)\b/i.test(sentence)) return "conditional";
+    return "add";
+  };
+
+  /** Push a modifier only if its context supports the reading. */
+  const pushModifier = (e, index) => {
+    const sentence = sentenceAt(index);
+    const v = judge(sentence, e.value?.flat ?? 0);
+    if (v === "skip") return;
+    push({
+      ...e,
+      mode: v === "replace" ? "replace" : "add",
+      ...(v === "conditional" ? { condition: "situational" } : {}),
+    });
+  };
+
   const OWNER = "(?:all\\s+|his\\s+|her\\s+|their\\s+|its\\s+|the\\s+)?";
   // The target phrase must be long enough to reach the end of a two-activity
   // name ("Hiding and Sneaking proficiency throws"), which a shorter cap cuts
@@ -411,12 +477,12 @@ export function effectScan(paras, registers) {
     let n = parseInt(m[1], 10);
     if (Number.isNaN(n)) continue;
     if (/penalty/i.test(m[2])) n = -Math.abs(n);
-    push({ type: "modifier", target: key, value: flat(n), mode: "add" });
+    pushModifier({ type: "modifier", target: key, value: flat(n) }, m.index);
   }
   // "gains a +2 to saving throws" (no bonus/penalty word — require an explicit sign)
   for (const m of text.matchAll(new RegExp(`([+-]\\d+)\\s+(?:to|on)\\s+(${TARGET})`, "gi"))) {
     const key = classify(m[2]);
-    if (key) push({ type: "modifier", target: key, value: flat(parseInt(m[1], 10)), mode: "add" });
+    if (key) pushModifier({ type: "modifier", target: key, value: flat(parseInt(m[1], 10)) }, m.index);
   }
   // Reversed order: "+1 initiative bonus" / "-2 saving throw penalty".
   for (const m of text.matchAll(/([+-]\d+)\s+([a-z][a-z' -]{2,30}?)\s+(bonus|penalty)\b/gi)) {
@@ -424,7 +490,7 @@ export function effectScan(paras, registers) {
     if (!key) continue;
     let n = parseInt(m[1], 10);
     if (/penalty/i.test(m[3])) n = -Math.abs(n);
-    push({ type: "modifier", target: key, value: flat(n), mode: "add" });
+    pushModifier({ type: "modifier", target: key, value: flat(n) }, m.index);
   }
   // Verb form: "his maximum number of cleaves is increased by 1", "morale score
   // is increased by 1". Rejects "increased TO 2x" (a multiplier, not a delta).
@@ -432,7 +498,7 @@ export function effectScan(paras, registers) {
     const key = classify(m[1]);
     if (!key) continue;
     const n = parseInt(m[3], 10);
-    push({ type: "modifier", target: key, value: flat(/increase/i.test(m[2]) ? n : -n), mode: "add" });
+    pushModifier({ type: "modifier", target: key, value: flat(/increase/i.test(m[2]) ? n : -n) }, m.index);
   }
   // "succeeds on a Dungeonbashing proficiency throw of 18+" — the capitalised
   // qualifier says WHICH activity, so a bundle like Adventuring's five throws
