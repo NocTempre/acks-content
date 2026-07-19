@@ -227,12 +227,22 @@ function computeFixes(runs) {
  * items (e.g. divider-heading lines caught inside a row box) to ship as
  * `fixes.drop` ordinals so the executor discards them.
  */
-function withFixes(instr, pd, dropSet) {
+function withFixes(instr, pd, dropSet, stripMap) {
   const runs = runsIn(pd, instr);
   const fixes = computeFixes(runs) ?? {};
   if (dropSet) {
     const drop = runs.map((r, i) => (dropSet.has(r) ? i : -1)).filter((i) => i >= 0);
     if (drop.length) fixes.drop = drop;
+  }
+  // How many leading characters of a run belong to the heading rather than the
+  // prose. Ships as a COUNT, not the text — the characters live in the reader's
+  // book, and the recipe only says how many of them to skip.
+  if (stripMap?.size) {
+    const strip = {};
+    runs.forEach((r, i) => {
+      if (stripMap.has(r)) strip[i] = stripMap.get(r);
+    });
+    if (Object.keys(strip).length) fixes.stripPrefix = strip;
   }
   if (Object.keys(fixes).length) instr.fixes = fixes;
   return instr;
@@ -871,10 +881,32 @@ async function compileDefinition(doc, entry, kindRow) {
       .filter((it) => Math.abs(it.y - anchor.y) <= 2 && colOf(it.x, cols) === col && it.x >= anchor.x)
       .sort((a, b) => a.x - b.x);
     const headRuns = new Set();
+    // A run the heading only PARTLY covers: run -> how many leading characters
+    // are heading. The PDF frequently emits "Acrobatics" and ": The character
+    // is trained to…" as two runs, so the run carrying the colon carries the
+    // opening sentence too. Dropping it wholesale loses that sentence — ten
+    // entries were starting mid-sentence for exactly this reason.
+    const stripMap = new Map();
     let headEnd = anchor.x + (anchor.w ?? 60) - 1;
+    const fold = (s) => s.replace(/\s+/g, " ").trim();
     let acc = "";
     for (const it of sameLine) {
-      if (acc.replace(/\s+/g, " ").trim().length >= want.length) break;
+      if (fold(acc).length >= want.length) break;
+      // Does this run overshoot the heading? Find the fewest of its characters
+      // that finish covering `want`; anything past that is prose.
+      let need = it.str.length;
+      for (let k = 1; k <= it.str.length; k++) {
+        if (fold(acc + it.str.slice(0, k)).length >= want.length) {
+          need = k;
+          break;
+        }
+      }
+      if (need < it.str.length) {
+        stripMap.set(it, need);
+        acc += it.str.slice(0, need);
+        headEnd = it.x + (it.w ?? 30) - 1;
+        break;
+      }
       headRuns.add(it);
       acc += it.str;
       headEnd = it.x + (it.w ?? 30) - 1;
@@ -909,7 +941,9 @@ async function compileDefinition(doc, entry, kindRow) {
     bodyText = joinBody(body);
     // Drop the heading by run ORDINAL rather than by text: that works whether
     // the PDF emitted it as one run or split it across several.
-    const paras = paragraphBoxes(toLines(body), box.x0, box.x1).map((p, i) => withFixes(p, pd, i === 0 ? new Set([...headRuns, ...tabs]) : tabs));
+    const paras = paragraphBoxes(toLines(body), box.x0, box.x1).map((p, i) =>
+      withFixes(p, pd, i === 0 ? new Set([...headRuns, ...tabs]) : tabs, i === 0 ? stripMap : null),
+    );
     // Column-flowed continuation: an entry reaching the column bottom resumes
     // at the top of the next column, which is where ~1 in 5 entries lost their
     // second half.

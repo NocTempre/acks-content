@@ -92,16 +92,31 @@ export function joinRuns(runs, fixes = {}, dropText) {
   const drop = new Set(fixes.drop ?? []);
   const joinSpace = new Set(fixes.joinSpace ?? []);
   const mergeHyphen = new Set(fixes.mergeHyphen ?? []);
+  // A run-in heading can share its run with the prose that follows it — the PDF
+  // emits `Acrobatics` and `: The character is trained to…` as two runs, so the
+  // colon and the whole first line arrive together. Dropping that run to lose
+  // the heading would take the opening sentence with it; strip the heading's
+  // characters off the front instead.
+  const strip = fixes.stripPrefix ?? {};
   let out = "";
   runs.forEach((r, i) => {
     if (drop.has(i) || (dropText && r.str.trim() === dropText)) return;
     let s = r.str;
+    if (strip[i]) s = s.slice(strip[i]);
     if (mergeHyphen.has(i)) s = s.replace(/-\s*$/, "");
     out += s;
     if (joinSpace.has(i)) out += " ";
   });
   return out;
 }
+
+/**
+ * Drop a trailing "[Class, Class, …]" list — the classes a JJ custom power is
+ * available to. Deliberately tight: it must be the LAST thing in the text and
+ * contain only capitalised names, so a bracket used for anything else survives.
+ */
+const OWNER_LIST = /\s*\[\s*[A-Z][A-Za-z'’’.\- ]*(?:,\s*[A-Z][A-Za-z'’’.\- ]*)*\s*\]\s*$/;
+const stripOwnerList = (text) => String(text ?? "").replace(OWNER_LIST, "").trim();
 
 /** Names vary by small-caps and spacing between books, so compare folded. */
 const convKey = (s) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -422,11 +437,34 @@ export function effectScan(paras, registers) {
   // "succeeds on a Dungeonbashing proficiency throw of 18+" — the capitalised
   // qualifier says WHICH activity, so a bundle like Adventuring's five throws
   // stays five distinct effects instead of collapsing on the number.
+  // A throw stated at 1st level often improves with level a sentence later —
+  // "At 1st level the character must make a proficiency throw of 18+ … The
+  // proficiency throw required reduces by 1 per level." Read flat, that loses
+  // the entire progression, so the improvement is folded into the value.
+  const perLevel = text.match(
+    /throw(?:\s+required)?\s+(?:is\s+)?(reduce[sd]?|improve[sd]?|decrease[sd]?|lower(?:s|ed)?)\s+by\s+(\d+)\s+per\s+level/i,
+  );
   for (const m of text.matchAll(/(?:([A-Z][A-Za-z-]+)\s+)?proficiency throw of (\d+)\+/g)) {
-    const e = { type: "throw", value: flat(parseInt(m[2], 10)), roll: "1d20", rollType: "above" };
+    const base = parseInt(m[2], 10);
+    // "Reduces" makes the target NUMBER smaller, which makes the throw easier —
+    // so the step is negative however the book phrases it.
+    const value = perLevel ? { kind: "perLevel", base, per: -Math.abs(parseInt(perLevel[2], 10)) } : flat(base);
+    const e = { type: "throw", value, roll: "1d20", rollType: "above" };
     if (m[1]) e.forWhat = m[1];
     push(e);
   }
+  /* --- Limitations: what switches the ability OFF ---
+   * Only shapes that reduce to a VALUE are classified — an encumbrance ceiling,
+   * an armour weight. The books state plenty of other restrictions in prose
+   * ("cannot tumble past the same enemy on two consecutive rounds"), and those
+   * stay in the lazy description on purpose: copying the sentence into a flag
+   * would put book prose into world data, where a seat without the book could
+   * read it. A conclusion may ship; a sentence may not. */
+  const enc = text.match(/encumbrance of more than (\d+) stone/i);
+  if (enc) push({ type: "limitation", condition: "encumbrance", value: flat(parseInt(enc[1], 10)) });
+  const armour = text.match(/wearing (medium or heavy|heavy|medium|light) armou?r[^.]{0,90}\bcannot\b/i);
+  if (armour) push({ type: "limitation", condition: "armor", note: armour[1].toLowerCase() });
+
   /* --- Spell-like abilities: "can cast X (as the spell) once per week" --- */
   const FREQ = [
     [/\bat will\b/i, "atWill"],
@@ -672,7 +710,13 @@ async function execInstruction(instr, ctx) {
         const text = clean(joinRuns(runs, para.fixes ?? instr.fixes, para.dropText));
         if (text) paras.push({ type: "paragraph", ...(para.section ? { section: para.section } : {}), text });
       }
-      return paras;
+      // The JJ closes a custom power with the classes that may take it —
+      // "[Beastmaster, Cultist of Atlach-Nacha, Elven Nightblade, Fool]". That
+      // is the CONTAINER's business, not the ability's: an ability does not know
+      // who may take it. Strip it so the description is the ability itself.
+      const last = paras[paras.length - 1];
+      if (last) last.text = stripOwnerList(last.text);
+      return paras.filter((p) => p.text);
     }
     case "value": {
       const runs = runsIn(pd, instr);

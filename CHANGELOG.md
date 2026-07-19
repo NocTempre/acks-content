@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.12.0
+
+Four defects, all found by auditing a single entry (JJ Acrobatics) and all
+systemic.
+
+- **Ten entries were losing their opening sentence.** Where the PDF emits a
+  run-in heading as `Acrobatics` + `: The character is trained to…`, the colon
+  and the whole first line share one run. Dropping that run to remove the
+  heading took the sentence with it. The recipe now records how many leading
+  CHARACTERS of that run are heading — a count, never the text — and the rest
+  survives. 10 → 0.
+- **249 entries carried a class list in their description.** A JJ power closes
+  with "[Beastmaster, Cultist of Atlach-Nacha, …]", which is the CONTAINER's
+  business: an ability does not know who may take it. Stripped. 249 → 0.
+- **Throws that improve with level were read as flat.** "A proficiency throw of
+  18+ … reduces by 1 per level" was stored as a permanent 18+, losing the entire
+  progression. Now a per-level value, with the step negative however the book
+  phrases the improvement.
+- **Limitations were never classified at all.** An encumbrance ceiling and an
+  armour-weight restriction now materialize as `limitation` effects. Only shapes
+  that reduce to a VALUE are taken — restrictions the books state as prose stay
+  in the lazy description on purpose, because copying the sentence into a flag
+  would put book text where a seat without the book could read it.
+
 ## 0.11.0
 
 - **Build costs are no longer baked into the module.** "Counts as 2 1/2 custom
