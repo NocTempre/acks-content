@@ -744,8 +744,8 @@ function applyPattern(raw, instr, registers, misses) {
       const main = instr.table ? lookup(registers, instr.table, m[1].trim(), misses) : { text: m[1].trim() };
       // splitTop keeps "1,600 st." whole (thousands comma is between digits and
       // not a list separator; protect digit,digit before the top-level split).
-      const paren = splitTop((m[2] ?? "").replace(/(\d),(\d)/g, "$1 $2"))
-        .map((t) => t.replace(/ /g, ","))
+      const paren = splitTop((m[2] ?? "").replace(/(\d),(\d)/g, "$10000$2"))
+        .map((t) => t.replace(/0000/g, ","))
         .map((t) => (instr.parenTable ? lookup(registers, instr.parenTable, t, misses) : { text: t }));
       return { ...main, ...(paren.length ? { paren } : {}) };
     }
