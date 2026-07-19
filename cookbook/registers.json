@@ -2083,6 +2083,9 @@
       "reaction roll": {
         "key": "reaction"
       },
+      "reactions": {
+        "key": "reaction"
+      },
       "saving throws": {
         "key": "save"
       },
@@ -2125,7 +2128,28 @@
       "morale score": {
         "key": "morale"
       },
+      "morale scores": {
+        "key": "morale"
+      },
+      "morale rolls": {
+        "key": "morale"
+      },
+      "morale roll": {
+        "key": "morale"
+      },
       "loyalty score": {
+        "key": "loyalty"
+      },
+      "loyalty scores": {
+        "key": "loyalty"
+      },
+      "loyalty rolls": {
+        "key": "loyalty"
+      },
+      "loyalty roll": {
+        "key": "loyalty"
+      },
+      "loyalty": {
         "key": "loyalty"
       },
       "proficiency throws": {
