@@ -12,7 +12,9 @@
     ],
     "meta": {
       "category": "weaponProficiency"
-    }
+    },
+    "icon": "icons/svg/sword.svg",
+    "iconNiche": "modules/game-icons-net/blacktransparent/sword-array.svg"
   },
   {
     "id": "def.prof.armorProficiency",
@@ -27,7 +29,9 @@
     ],
     "meta": {
       "category": "armorProficiency"
-    }
+    },
+    "icon": "icons/svg/shield.svg",
+    "iconNiche": "modules/game-icons-net/blacktransparent/armor-vest.svg"
   },
   {
     "id": "def.prof.fightingStyles",
@@ -44,7 +48,9 @@
       "category": "fightingStyle"
     },
     "audited": "2026-07-18",
-    "auditor": "first-pass"
+    "auditor": "first-pass",
+    "icon": "icons/svg/combat.svg",
+    "iconNiche": "modules/game-icons-net/blacktransparent/duel.svg"
   },
   {
     "id": "def.prof.nonProficientUse",
@@ -59,6 +65,8 @@
     ],
     "meta": {
       "category": "proficiency"
-    }
+    },
+    "icon": "icons/svg/cancel.svg",
+    "iconNiche": "modules/game-icons-net/blacktransparent/broken-shield.svg"
   }
 ]

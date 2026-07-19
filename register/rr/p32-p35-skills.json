@@ -48,7 +48,8 @@
         }
       }
     ],
-    "icon": "icons/tools/hand/claws-climbing.webp"
+    "icon": "icons/tools/hand/claws-climbing.webp",
+    "iconNiche": "modules/game-icons-net/blacktransparent/mountain-climbing.svg"
   },
   {
     "id": "def.skill.hiding",
@@ -264,7 +265,8 @@
         "condition": "an urban settlement other than his home settlement"
       }
     ],
-    "icon": "icons/svg/city.svg"
+    "icon": "icons/svg/city.svg",
+    "iconNiche": "modules/game-icons-net/blacktransparent/hooded-figure.svg"
   },
   {
     "id": "def.skill.trapbreaking",

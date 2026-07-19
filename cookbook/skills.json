@@ -85,6 +85,7 @@
         "category": "skill"
       },
       "icon": "icons/tools/hand/claws-climbing.webp",
+      "iconNiche": "modules/game-icons-net/blacktransparent/mountain-climbing.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -917,6 +918,7 @@
         "category": "skill"
       },
       "icon": "icons/svg/city.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/hooded-figure.svg",
       "fields": {
         "name": {
           "op": "expect",

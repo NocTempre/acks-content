@@ -14,6 +14,8 @@
       "meta": {
         "category": "weaponProficiency"
       },
+      "icon": "icons/svg/sword.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/sword-array.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -116,6 +118,8 @@
       "meta": {
         "category": "armorProficiency"
       },
+      "icon": "icons/svg/shield.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/armor-vest.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -172,6 +176,8 @@
         "category": "fightingStyle"
       },
       "audited": true,
+      "icon": "icons/svg/combat.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/duel.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -297,6 +303,8 @@
       "meta": {
         "category": "proficiency"
       },
+      "icon": "icons/svg/cancel.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/broken-shield.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -359,6 +367,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/direction.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/backpack.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -568,6 +578,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/jump.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/acrobatic.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -645,6 +657,8 @@
         "general": true,
         "repeatable": true
       },
+      "icon": "icons/svg/pill.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/cauldron.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -835,6 +849,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/eye.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/hunter-eyes.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -900,6 +916,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/terror.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/hidden.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -988,6 +1006,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/pawprint.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/cow.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -1177,6 +1197,8 @@
         "general": true,
         "repeatable": true
       },
+      "icon": "icons/svg/pawprint.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/jumping-dog.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -1273,6 +1295,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/aura.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/spell-book.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -1375,6 +1399,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/shield.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/helmet.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -1447,6 +1473,8 @@
         "general": true,
         "repeatable": true
       },
+      "icon": "icons/svg/statue.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/anvil.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -1650,6 +1678,8 @@
         "general": true,
         "repeatable": true
       },
+      "icon": "icons/svg/coins.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/trade.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -1705,6 +1735,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/explosion.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/magic-swirl.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -1753,6 +1785,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/pawprint.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/wolf-head.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -1840,6 +1874,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/terror.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/enrage.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -1915,6 +1951,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/skull.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/evil-book.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -1977,6 +2015,8 @@
         "general": false
       },
       "audited": true,
+      "icon": "icons/svg/blind.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/blindfold.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -2065,6 +2105,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/coins.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/coins-pile.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -2141,6 +2183,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/light.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/book-aura.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -2195,6 +2239,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/padlock.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/lock-picking.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -2249,6 +2295,8 @@
         "repeatable": true
       },
       "audited": true,
+      "icon": "icons/svg/cave.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/cave-entrance.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -2301,6 +2349,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/ladder.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/mountain-climbing.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -2357,6 +2407,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/book.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/spell-book.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -2411,6 +2463,8 @@
         "general": false
       },
       "audited": true,
+      "icon": "icons/svg/combat.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/enrage.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -2458,6 +2512,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/upgrade.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/dodge.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -2505,6 +2561,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/net.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/hunting-bolas.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -2562,6 +2620,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/tower-flag.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/knight-banner.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -2613,6 +2673,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/statue.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/meditation.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -2662,6 +2724,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/leg.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/contortionist.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -2717,6 +2781,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/mage-shield.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/magic-shield.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -2768,6 +2834,8 @@
         "general": true
       },
       "audited": true,
+      "icon": "icons/svg/hanging-sign.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/conversation.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -2817,6 +2885,8 @@
         "general": true,
         "repeatable": true
       },
+      "icon": "icons/svg/mystery-man.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/duality-mask.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -2936,6 +3006,8 @@
         "general": false
       },
       "audited": true,
+      "icon": "icons/svg/holy-shield.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/prayer.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -2982,6 +3054,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/heal.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/healing-shield.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -3029,6 +3103,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/direction.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/old-wagon.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -3080,6 +3156,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/door-steel.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/hammer-break.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -3156,6 +3234,8 @@
         "general": false
       },
       "audited": true,
+      "icon": "icons/svg/tankard.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/barrel.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -3213,6 +3293,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/sound.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/echo-ripples.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -3265,6 +3347,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/fire.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/fire-ray.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -3321,6 +3405,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/wing.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/elf-ear.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -3372,6 +3458,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/regen.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/muscle-up.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -3428,6 +3516,8 @@
         "general": true,
         "repeatable": true
       },
+      "icon": "icons/svg/bridge.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/gears.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -3485,6 +3575,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/book.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/scroll-unfurled.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -3538,6 +3630,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/barrel.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/cauldron.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -3653,6 +3747,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/pawprint.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/barn-owl.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -3727,6 +3823,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/upgrade.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/duel.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -3834,6 +3932,8 @@
         "general": true,
         "repeatable": true
       },
+      "icon": "icons/svg/village.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/conversation.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -3924,6 +4024,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/dice-target.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/coinflip.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -4006,6 +4108,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/combat.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/goblin-head.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -4098,6 +4202,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/heal.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/healing.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -4259,6 +4365,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/invisible.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/magic-shield.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -4309,6 +4417,8 @@
         "general": true
       },
       "audited": true,
+      "icon": "icons/svg/terror.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/shouting.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -4359,6 +4469,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/blood.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/daggers.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -4407,6 +4519,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/book.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/book-pile.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -4484,6 +4598,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/item-bag.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/wood-axe.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -4557,6 +4673,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/levels.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/compass.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -4617,6 +4735,8 @@
         "general": true,
         "repeatable": true
       },
+      "icon": "icons/svg/book.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/conversation.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -4672,6 +4792,8 @@
           "kw:layingonhands"
         ]
       },
+      "icon": "icons/svg/heal.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/healing.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -4758,6 +4880,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/angel.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/tattered-banner.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -4809,6 +4933,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/deaf.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/talk.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -4858,6 +4984,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/padlock.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/lock-picking.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -4906,6 +5034,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/book.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/book-aura.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -4961,6 +5091,8 @@
         "general": false,
         "repeatable": true
       },
+      "icon": "icons/svg/clockwork.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/gears.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -5019,6 +5151,8 @@
         "general": false,
         "repeatable": true
       },
+      "icon": "icons/svg/sound.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/music-spell.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -5202,6 +5336,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/tower-flag.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/swords-power.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -5322,6 +5458,8 @@
         "general": true,
         "repeatable": true
       },
+      "icon": "icons/svg/bridge.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/treasure-map.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -5373,6 +5511,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/combat.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/battle-gear.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -5450,6 +5590,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/portal.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/pentacle.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -5511,6 +5653,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/daze.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/magic-swirl.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -5567,6 +5711,8 @@
         "general": true,
         "repeatable": true
       },
+      "icon": "icons/svg/castle.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/chess-knight.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -5621,6 +5767,8 @@
         "repeatable": true
       },
       "audited": true,
+      "icon": "icons/svg/sound.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/talk.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -5671,6 +5819,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/mountain.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/mountain-road.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -5742,6 +5892,8 @@
         "general": false
       },
       "audited": true,
+      "icon": "icons/svg/combat.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/horse-head.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -5791,6 +5943,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/aura.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/beams-aura.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -5867,6 +6021,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/oak.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/herbs-bundle.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -5944,6 +6100,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/direction.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/compass.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -5995,6 +6153,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/pawprint.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/footprint.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -6044,6 +6204,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/sound.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/harp.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -6146,6 +6308,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/poison.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/poison-bottle.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -6199,6 +6363,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/target.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/archery-target.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -6253,6 +6419,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/card-hand.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/magic-broom.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -6305,6 +6473,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/hanging-sign.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/teacher.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -6368,6 +6538,8 @@
         "general": false
       },
       "audited": true,
+      "icon": "icons/svg/sun.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/crystal-ball.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -6416,6 +6588,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/mountain.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/mining.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -6468,6 +6642,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/silenced.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/magic-swirl.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -6519,6 +6695,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/chest.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/gem-chain.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -6598,6 +6776,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/tankard.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/drinking.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -6678,6 +6858,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/pawprint.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/horse-head.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -6734,6 +6916,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/holy-shield.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/holy-symbol.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -6782,6 +6966,8 @@
         "general": false
       },
       "audited": true,
+      "icon": "icons/svg/walk.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/run.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -6828,6 +7014,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/anchor.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/sail.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -6880,6 +7068,8 @@
         "general": true
       },
       "audited": true,
+      "icon": "icons/svg/card-joker.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/charm.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -6978,6 +7168,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/terror.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/evil-moon.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -7037,6 +7229,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/angel.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/holy-grail.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -7096,6 +7290,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/aura.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/beams-aura.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -7149,6 +7345,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/tower.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/siege-ram.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -7227,6 +7425,8 @@
         "general": true
       },
       "audited": true,
+      "icon": "icons/svg/hanging-sign.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/whistle.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -7277,6 +7477,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/direction.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/run.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -7342,6 +7544,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/cowled.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/hidden.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -7391,6 +7595,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/target.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/crosshair.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -7439,6 +7645,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/eye.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/crystal-ball.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -7490,6 +7698,8 @@
         "general": true,
         "repeatable": true
       },
+      "icon": "icons/svg/city.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/hooded-figure.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -7559,6 +7769,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/tankard.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/campfire.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -7612,6 +7824,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/sword.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/sword-brandish.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -7663,6 +7877,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/waterfall.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/swimfins.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -7755,6 +7971,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/temple.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/holy-oak.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -7817,6 +8035,8 @@
         "repeatable": true
       },
       "audited": true,
+      "icon": "icons/svg/temple.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/prayer-beads.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -7897,6 +8117,8 @@
         "general": true,
         "repeatable": true
       },
+      "icon": "icons/svg/pawprint.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/deer-track.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -8025,6 +8247,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/degen.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/transform.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -8109,6 +8333,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/trap.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/wolf-trap.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -8175,6 +8401,8 @@
         "category": "proficiency",
         "general": true
       },
+      "icon": "icons/svg/net.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/wolf-trap.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -8331,6 +8559,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/combat.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/fist.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -8381,6 +8611,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/mage-shield.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/concentration-orb.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -8434,6 +8666,8 @@
         "general": false
       },
       "audited": true,
+      "icon": "icons/svg/combat.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/long-legged-spider.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -8487,6 +8721,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/light.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/sleepy.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -8546,6 +8782,8 @@
         "category": "proficiency",
         "general": false
       },
+      "icon": "icons/svg/thrust.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/knife-thrust.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -8594,6 +8832,8 @@
         "general": false,
         "repeatable": true
       },
+      "icon": "icons/svg/target.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/sword-brandish.svg",
       "fields": {
         "name": {
           "op": "expect",

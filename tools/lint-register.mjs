@@ -58,6 +58,10 @@ function capStrings(obj, label, keyPath = "") {
         if (v.length > MAX_PATTERN) err(`${label}: ${keyPath}${k} is ${v.length} chars (>${MAX_PATTERN})`);
         continue;
       }
+      // Icon paths are validated by their own shape rule above and are
+      // routinely longer than the prose cap — a module path plus a descriptive
+      // filename runs past 60 characters without being remotely prose.
+      if (k === "icon" || k === "iconNiche") continue;
       const cap = k === "note" ? MAX_NOTE : MAX_STR;
       if (v.length > cap) err(`${label}: ${keyPath}${k} is ${v.length} chars (>${cap}) — looks like prose`);
     } else if (v && typeof v === "object") {
