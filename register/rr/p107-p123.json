@@ -93,7 +93,51 @@
     "meta": {
       "category": "proficiency",
       "general": true
-    }
+    },
+    "rolls": [
+      {
+        "key": "diagnose",
+        "label": {
+          "pattern": "(Diagnosis)\\s"
+        },
+        "target": {
+          "on": "rank",
+          "pattern": "proficiency throw of (\\d+)\\+[\\s\\S]{0,900}?diagnose illness on (\\d+)\\+[\\s\\S]{0,900}?diagnose illness on (\\d+)\\+"
+        },
+        "note": "Identifies whether the affliction is magical or mundane; no retry until further symptoms."
+      },
+      {
+        "key": "cure",
+        "label": {
+          "pattern": "(cure light \\w+)"
+        },
+        "target": {
+          "pattern": "cure light injury[\\s\\S]{0,320}?proficiency throw of (\\d+)\\+"
+        },
+        "condition": "two ranks; the affliction must already be diagnosed"
+      },
+      {
+        "key": "cureSerious",
+        "label": {
+          "pattern": "(cure serious \\w+)"
+        },
+        "target": {
+          "pattern": "cure serious injury[^.]{0,90}?proficiency throw of (\\d+)\\+"
+        },
+        "condition": "three ranks"
+      },
+      {
+        "key": "extractVenom",
+        "label": {
+          "pattern": "(extract venom) from slain"
+        },
+        "target": {
+          "on": "rank",
+          "pattern": "extract venom[\\s\\S]{0,220}?throw of (\\d+)\\+\\s*/\\s*(\\d+)\\+\\s*/\\s*(\\d+)\\+"
+        },
+        "note": "On an unmodified 1 the character is exposed and must make a Death saving throw."
+      }
+    ]
   },
   {
     "id": "def.prof.animalTraining",

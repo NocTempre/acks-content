@@ -369,6 +369,69 @@ export function materializeEffects(specs, paras) {
 }
 
 /**
+ * Materialize an ability's ROLLS from chef-authored specs — the per-entry
+ * recipe that displaces `rollScan` for entries a chef has actually read.
+ *
+ * What the RECIPE ships: how many rolls the entry offers, each one's stable
+ * key, its roll type and formula, and WHERE to find its parts. What comes from
+ * the seat's own book: the label (what the roll is for), the target number,
+ * and every step of a rank or level ladder. A spec whose locator does not
+ * match drops that roll rather than inventing one — a missing roll is honest,
+ * a fabricated target is not.
+ *
+ *   { key, label:{pattern,group?}, target:{pattern} | {pattern,on,steps},
+ *     rollType?, formula?, condition?, note? }
+ *
+ * `target.on` names a VALUE_SCALES scale ("rank", "level"): the locator's
+ * capture groups become the ladder's steps in order, so "18+ / 14+ / 10+"
+ * with on:"rank" is ranks 1/2/3. `steps` overrides the step numbers when the
+ * book's ladder does not start at 1.
+ */
+export function materializeRolls(specs, paras) {
+  const text = (paras ?? []).map((p) => (typeof p === "string" ? p : p.text)).join(" ");
+  if (!text) return [];
+  const out = [];
+  const run = (loc) => {
+    if (!loc?.pattern) return null;
+    try {
+      return new RegExp(loc.pattern, loc.flags ?? "i").exec(text);
+    } catch {
+      return null; // a malformed locator never throws at the table
+    }
+  };
+  for (const spec of specs ?? []) {
+    const { label, target, ...rest } = spec ?? {};
+    const roll = { formula: "1d20", rollType: "above", ...rest };
+
+    const lm = run(label);
+    if (label && !lm) continue; // the recipe expects a name it cannot find here
+    if (lm) {
+      const text0 = String(lm[label.group ?? 1] ?? "").replace(/\s+/g, " ").trim();
+      if (text0) roll.label = text0;
+    }
+
+    const tm = run(target);
+    if (!tm) continue; // no target materialized — drop the roll, never guess
+    if (target.on) {
+      const nums = tm.slice(1).filter((g) => g != null).map((g) => parseInt(String(g).replace(/[^\d-]/g, ""), 10));
+      const steps = target.steps ?? nums.map((_, i) => i + 1);
+      const breakpoints = nums
+        .map((value, i) => ({ atLevel: steps[i] ?? i + 1, value }))
+        .filter((b) => !Number.isNaN(b.value));
+      if (!breakpoints.length) continue;
+      roll.scale = target.on;
+      roll.target = { kind: "conditional", on: target.on, breakpoints };
+    } else {
+      const n = parseInt(String(tm[target.group ?? 1] ?? tm[0]).replace(/[^\d-]/g, ""), 10);
+      if (Number.isNaN(n)) continue;
+      roll.target = { kind: "flat", flat: n };
+    }
+    out.push(roll);
+  }
+  return out;
+}
+
+/**
  * Every ROLL an ability offers, read from the seat's own prose.
  *
  * An ability is not one roll. Animal Husbandry diagnoses (11+, and 7+ / 3+ once
@@ -980,7 +1043,7 @@ export async function executeEntry(doc, bookCookbook, registers, entryId, opts =
 
   for (const [field, instr] of Object.entries(entry.fields ?? {})) {
     if (opts.skipOps?.includes(instr.op)) continue; // caller choice (e.g. verify without art)
-    if (field === "effects") continue; // assist specs applied below, once description exists
+    if (field === "effects" || field === "rolls") continue; // assist specs applied below, once description exists
     const ctx = { doc, registers, getPage, claims, misses, field };
     let result = null;
     try {
@@ -1019,7 +1082,12 @@ export async function executeEntry(doc, bookCookbook, registers, entryId, opts =
     ];
     if (effects.length) fields.effects = effects;
     // Every roll the ability offers, each with its own target and progression.
-    const rolls = rollScan(fields.description);
+    // A chef-authored recipe REPLACES the scan outright for this entry rather
+    // than merging with it: the recipe states how many rolls the entry has, so
+    // anything the scan additionally thinks it sees is a duplicate or an
+    // artifact. Scans are the draft for entries nobody has read yet.
+    const authored = materializeRolls(entry.fields?.rolls?.specs, fields.description);
+    const rolls = entry.fields?.rolls?.specs?.length ? authored : rollScan(fields.description);
     if (rolls.length) fields.rolls = rolls;
   }
   // Values the books state in PROSE rather than in a labelled field — the

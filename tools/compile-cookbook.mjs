@@ -1057,6 +1057,12 @@ async function compileDefinition(doc, entry, kindRow) {
   // the recipe can be as convoluted as it likes without holding a value.
   if (entry.effects?.length) fields.effects = { op: "effects", specs: entry.effects };
 
+  // Chef-authored ROLL recipes. The recipe ships how MANY rolls the entry has
+  // and where each one's parts live; the label, the target and every ladder
+  // step materialize from the reader's own book. Present means the chef read
+  // this entry, so the recipe replaces the generic scan entirely.
+  if (entry.rolls?.length) fields.rolls = { op: "rolls", specs: entry.rolls };
+
   metaCandidates(entry.id, entry, bodyText);
 
   return {
