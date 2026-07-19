@@ -9,9 +9,14 @@ build/release plumbing.
 
 - `scripts/` — ESM runtime, entry `scripts/module.mjs`; `templates/` — .hbs;
   `styles/`; `lang/en.json` — flat i18n keys prefixed `ACKS-CONTENT.`
-- `packs/_source/` — JSON pack sources (committed) → compiled LevelDB in
-  `packs/` (committed and shipped; binary — protected by `.gitattributes`,
-  never weaken it)
+- `packs/` — compiled LevelDB compendia. **Build output: gitignored, rebuilt
+  by CI, shipped in module.zip.** Never committed, never hand-managed; there
+  is no pack churn to discard. Foundry cannot read `packs/_source` at runtime,
+  so the compiled dirs must stay in the zip.
+- `packs/_source/` — JSON pack sources (committed). **Also GENERATED:**
+  `build:packs` deletes and rewrites them from `tools/pack-data.mjs`, so
+  editing them directly is silently undone on the next build. Edit
+  `tools/pack-data.mjs` — it is the source of truth for all pack content.
 - `tools/` — dev harness. `build-packs.mjs` and `validate.mjs` are **synced
   from acks-module-template — never hand-edit**; change the template, then run
   `/acks-sync-toolchain`. `pack-data.mjs` (and data files it re-exports) are
@@ -26,9 +31,9 @@ build/release plumbing.
 
 - `npm install` once, then `npm run build:packs` and `npm run validate`
   (`npm test` where `tools/test-logic.mjs` exists).
-- After a local build with unchanged sources, discard LevelDB timestamp churn:
-  `git restore packs/ && git clean -fd packs/`. Commit rebuilt packs only when
-  `packs/_source` actually changed.
+- Run `build:packs` after cloning, or compendiums are empty (the compiled
+  packs are not in git). Commit `packs/_source` when it changes; the compiled
+  dirs are ignored, so there is nothing to review or discard.
 - Foundry dev install (junction, not copy):
   `New-Item -ItemType Junction -Path "$env:LOCALAPPDATA\FoundryVTT\Data\modules\acks-content" -Target "C:\Proj\acks-content"`
 ## Live testing
@@ -47,9 +52,9 @@ release, and whenever you change a runtime surface:
 
 1. Confirm the dev install is a junction to this working tree (above), so what
    you test is what you ship.
-2. **Shut down any running world before pack work** — a running world holds
-   LevelDB locks on `packs/`, and `build:packs` / `git restore` / `git clean`
-   will fail on the LOG files. Order: shut down → build packs → launch → test.
+2. **Shut down any running world before rebuilding packs** — it holds LevelDB
+   locks on `packs/` and `build:packs` fails on the LOG files. Order: shut
+   down → build packs → launch → test.
 3. Enable the module in the test world and check: it reaches `ready` with **no
    console errors** (check `init`, `setup`, and `ready` — a throw in one leaves
    the rest silently dead); every registered setting appears AND gates
@@ -57,8 +62,8 @@ release, and whenever you change a runtime surface:
    **the feature you changed, exercised end-to-end through the UI**. For Active
    Effects, sheets, and drag-and-drop, verify the write landed on the target
    field — not merely that the code ran.
-4. Shut the world down before committing: it releases the pack locks, and
-   runtime LOG/MANIFEST churn must never be committed.
+4. The world may stay running while you commit — compiled packs are
+   gitignored, so it can no longer dirty the repo.
 
 Report what you exercised and name what you could not reach. "Live-verified"
 with no list is not a result.
