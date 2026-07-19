@@ -109,7 +109,18 @@ this design forbids. The doctrine that contains them:
    nothing missing. Having authored a spec is not a sign-off; fixing one
    defect is not a sign-off. The compiler prints the burn-down
    (`chef-audited: N/M`) at every build, and release notes cite it.
-7. **The audit is tiered.** A first-pass worker (a smaller model, per the
+7. **Recipes are authored by a chef tier, and merged through a gate.** The
+   audit finds defects; most of them are missing or misread mechanics that
+   only a per-entry recipe fixes. Chefs (a capable model, instructions with
+   the local authoring docs) read an entry, decide what it means, and write
+   the recipe — structure and locators only, never a value off the page.
+   They propose; they never touch the register and never set `audited`.
+   `tools/merge-recipes.mjs` re-executes every proposed recipe against the
+   reference PDFs with the shipping executor and REJECTS any that does not
+   materialize what it claims. A chef saying its locators work is not
+   evidence; the gate re-derives it. Merging makes an entry correct —
+   signing it off remains a separate act after reading the result.
+8. **The audit is tiered.** A first-pass worker (a smaller model, per the
    established authoring split) compares each entry's full materialized
    output against the printed page under a fixed checklist
    (`tools/audit-dump.mjs` builds the per-entry package; the checklist lives
@@ -121,7 +132,7 @@ this design forbids. The doctrine that contains them:
    reviewer may relax one, one written rule at a time. Worker-confirmed
    entries record `auditor: "first-pass"` in the register beside `audited`;
    senior sign-offs record none.
-8. **End state.** Per-entry recipes displace scan output entry by entry; the
+9. **End state.** Per-entry recipes displace scan output entry by entry; the
    scans remain a first-draft aid whose output is always flagged. When every
    shipped entry is audited, the scans demote to authoring-side tooling and
    principle 1 holds in full again.
