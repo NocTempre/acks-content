@@ -1,5 +1,9 @@
 {
   "ACKS-CONTENT.Title": "ACKS II — Content Streamer (PoC)",
+  "ACKS-CONTENT.tables.gmOnly": "Only a GM can import rules tables into the world.",
+  "ACKS-CONTENT.tables.noProvider": "No table host is active. Enable acks-location (it stores imported tables) and reload.",
+  "ACKS-CONTENT.tables.imported": "acks-content: imported {tables} rules table(s) from your books into this world ({docs}). Market and hiring automation now uses your book values.",
+  "ACKS-CONTENT.tables.missingBooks": "acks-content: some tables need books not connected on this seat ({books}). Connect them and re-run the import to fill the rest.",
   "ACKS-CONTENT.ui.connectTitle": "Connect a book (this browser only)",
   "ACKS-CONTENT.ui.connectBook": "Book",
   "ACKS-CONTENT.ui.connectOpen": "open this session",

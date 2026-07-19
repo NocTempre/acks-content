@@ -26,6 +26,7 @@ import { openBook, pageItems, extractRecipe, extractDisplay, extractRunin, extra
 import { extractStatPairs } from "./stats.mjs";
 import { mapPairs } from "./stats-map.mjs";
 import { createDocFor } from "./poc.mjs";
+import { importTables } from "./tables-binding.mjs";
 import {
   initCookbook, loadCookbook, cookbookImport, cookbookImportMonsters, cookbookImportAbilities, cookbookImportAbilitiesDialog, cookbookUpdateAbilities,
   cookbookFillCompanions, cookbookPruneAbilities, registerAbilityDirectoryButtons, importAbility, cookbookDebug, cookbookStub,
@@ -145,6 +146,46 @@ async function ingestBook(bookId, buffer, { silent = false } = {}) {
   else ui.notifications.info(message);
   if (redrawn) console.log(`${MODULE_ID} | re-rendered ${redrawn} open sheet(s) so their page references resolve.`);
   return hits;
+}
+
+/**
+ * Import ACKS rules TABLES (availability, wages, rarity, …) from the connected
+ * books into the world, via the acks-lib ruledata-import contract. GM-only
+ * (it writes world data). Sibling modules (acks-henchmen) read the result from
+ * acksLib.tables; markets, wages and hiring light up as coverage grows.
+ */
+async function cookbookImportTables() {
+  if (!game.user.isGM) {
+    ui.notifications.warn(game.i18n.localize(`${LANG_PREFIX}.tables.gmOnly`));
+    return null;
+  }
+  if (!globalThis.acksLib?.services?.get?.("ruledata-import")) {
+    ui.notifications.error(game.i18n.localize(`${LANG_PREFIX}.tables.noProvider`));
+    return null;
+  }
+  let report;
+  try {
+    report = await importTables(sessionDocs);
+  } catch (err) {
+    ui.notifications.error(`acks-content | ${err.message}`);
+    return null;
+  }
+  const nTables = report.imported.reduce((s, d) => s + d.tables.length, 0);
+  if (nTables) {
+    ui.notifications.info(
+      game.i18n.format(`${LANG_PREFIX}.tables.imported`, {
+        tables: nTables,
+        docs: report.imported.map((d) => d.docId).join(", "),
+      }),
+    );
+  }
+  if (report.missingBooks.length) {
+    ui.notifications.warn(
+      game.i18n.format(`${LANG_PREFIX}.tables.missingBooks`, { books: report.missingBooks.join(", ") }),
+    );
+  }
+  console.log(`${MODULE_ID} | table import`, report);
+  return report;
 }
 
 const fsaAvailable = () => typeof window.showOpenFilePicker === "function";
@@ -708,6 +749,7 @@ Hooks.once("ready", async () => {
     connectBook, browseAndLoad, applyStats, bookStatus, forgetBooks,
     proseFor, cookbookImport, cookbookImportMonsters, cookbookImportAbilities, cookbookImportAbilitiesDialog, cookbookUpdateAbilities, cookbookFillCompanions, cookbookPruneAbilities,
     importAbility, cookbookDebug, cookbookProse, cookbookCount,
+    cookbookImportTables,
     RECIPES, BOOKS,
   };
   globalThis.acksContent = api;
