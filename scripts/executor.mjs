@@ -352,6 +352,10 @@ const LOCATABLE_FIELDS = {
   casterLevelDelta: "integer",
   choose: "integer",
   times: "integer",
+  // The total at which a rider fires — Mystic Aura's "if this bonus results in
+  // a total of 12 or more, the subjects act as if bewitched". The threshold is
+  // the page's number like any other, so it is located, not shipped.
+  kickerAt: "integer",
 };
 
 /**

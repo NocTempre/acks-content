@@ -1678,6 +1678,7 @@
         "general": true,
         "repeatable": true
       },
+      "audited": true,
       "icon": "icons/svg/coins.svg",
       "iconNiche": "modules/game-icons-net/blacktransparent/trade.svg",
       "fields": {
@@ -1717,6 +1718,21 @@
                   10
                 ]
               }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifier",
+              "target": "reaction",
+              "mode": "add",
+              "condition": "negotiating with another bargainer",
+              "from": {
+                "pattern": "([+-]?\\d+)\\s+bonus\\s+on\\s+his\\s+reaction\\s+roll\\s+when\\s+negotiating"
+              },
+              "note": "Per selection; the proficiency is repeatable."
             }
           ]
         }
@@ -1785,6 +1801,7 @@
         "category": "proficiency",
         "general": false
       },
+      "audited": true,
       "icon": "icons/svg/pawprint.svg",
       "iconNiche": "modules/game-icons-net/blacktransparent/wolf-head.svg",
       "fields": {
@@ -1831,6 +1848,23 @@
                   16
                 ]
               }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifier",
+              "target": "reaction",
+              "mode": "add",
+              "vsKinds": [
+                "animal"
+              ],
+              "from": {
+                "pattern": "([+-]?\\d+)\\s+to\\s+all\\s+reaction\\s+rolls\\s+when\\s+encountering\\s+normal\\s+animals"
+              },
+              "note": "Normal animals only. Friend of Bird and Beasts does not increase this bonus."
             }
           ]
         },
@@ -2105,6 +2139,7 @@
         "category": "proficiency",
         "general": false
       },
+      "audited": true,
       "icon": "icons/svg/coins.svg",
       "iconNiche": "modules/game-icons-net/blacktransparent/coins-pile.svg",
       "fields": {
@@ -2150,9 +2185,19 @@
               "type": "modifier",
               "target": "reaction",
               "mode": "add",
+              "condition": "bribe worth a day's pay",
+              "from": {
+                "pattern": "([+-]?\\d+)\\s+bonus\\s+to\\s+reaction\\s+rolls\\s+if\\s+he\\s+offers\\s+one\\s+day"
+              },
+              "note": "One tier applies, by the size of the bribe offered."
+            },
+            {
+              "type": "modifier",
+              "target": "reaction",
+              "mode": "add",
               "condition": "bribe worth a week's pay",
               "from": {
-                "pattern": "a ([+-]?\\d+) bonus for a week"
+                "pattern": "a\\s+([+-]?\\d+)\\s+bonus\\s+for\\s+a\\s+week"
               },
               "note": "One tier applies, by the size of the bribe offered."
             },
@@ -2162,7 +2207,7 @@
               "mode": "add",
               "condition": "bribe worth a month's pay",
               "from": {
-                "pattern": "a ([+-]?\\d+) bonus for a month"
+                "pattern": "a\\s+([+-]?\\d+)\\s+bonus\\s+for\\s+a\\s+month"
               },
               "note": "One tier applies, by the size of the bribe offered."
             }
@@ -2866,6 +2911,27 @@
                   2
                 ]
               }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifier",
+              "target": "reaction",
+              "mode": "add",
+              "tones": [
+                "diplomacy"
+              ],
+              "notStacksWith": [
+                "def.prof.intimidation",
+                "def.prof.seduction"
+              ],
+              "from": {
+                "pattern": "([+-]?\\d+)\\s+bonus\\s+on\\s+all\\s+reaction\\s+rolls\\s+when\\s+he\\s+attempts"
+              },
+              "note": "Parleying only. Stacks with Mystic Aura, but not with the other two tone proficiencies."
             }
           ]
         }
@@ -3932,6 +3998,7 @@
         "general": true,
         "repeatable": true
       },
+      "audited": true,
       "icon": "icons/svg/village.svg",
       "iconNiche": "modules/game-icons-net/blacktransparent/conversation.svg",
       "fields": {
@@ -4006,6 +4073,21 @@
                 "y0": 293,
                 "y1": 299
               }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifier",
+              "target": "reaction",
+              "mode": "add",
+              "condition": "0th-level characters, in a settlement the character knows",
+              "from": {
+                "pattern": "([+-]?\\d+)\\s+bonus\\s+to\\s+reaction\\s+rolls\\s+with\\s+0th\\s+level"
+              },
+              "note": "Which settlements the character knows is not tracked; the Judge confirms it applies."
             }
           ]
         }
@@ -4451,6 +4533,28 @@
                   4
                 ]
               }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifier",
+              "target": "reaction",
+              "mode": "add",
+              "tones": [
+                "intimidation"
+              ],
+              "notStacksWith": [
+                "def.prof.diplomacy",
+                "def.prof.seduction"
+              ],
+              "condition": "targets under 5 HD, or outnumbered/outranked",
+              "from": {
+                "pattern": "([+-]?\\d+)\\s+bonus\\s+on\\s+all\\s+reaction\\s+rolls\\s+when\\s+implicitly"
+              },
+              "note": "Target-strength requirement is a Judge's call, not automated."
             }
           ]
         }
@@ -5943,6 +6047,7 @@
         "category": "proficiency",
         "general": false
       },
+      "audited": true,
       "icon": "icons/svg/aura.svg",
       "iconNiche": "modules/game-icons-net/blacktransparent/beams-aura.svg",
       "fields": {
@@ -6003,6 +6108,26 @@
                   8
                 ]
               }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifier",
+              "target": "reaction",
+              "mode": "add",
+              "from": [
+                {
+                  "pattern": "([+-]?\\d+)\\s+bonus\\s+to\\s+reaction\\s+rolls\\s+to\\s+impress"
+                },
+                {
+                  "pattern": "a\\s+total\\s+of\\s+(\\d+)\\s+or\\s+more",
+                  "into": "kickerAt"
+                }
+              ],
+              "note": "Stacks with any one of the three tone proficiencies."
             }
           ]
         }
@@ -7149,6 +7274,27 @@
                 "drop": [
                   0
                 ]
+              }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifier",
+              "target": "reaction",
+              "mode": "add",
+              "tones": [
+                "seduction"
+              ],
+              "notStacksWith": [
+                "def.prof.diplomacy",
+                "def.prof.intimidation"
+              ],
+              "condition": "the subject is potentially attracted to the character",
+              "from": {
+                "pattern": "([+-]?\\d+)\\s+bonus\\s+on\\s+reaction\\s+rolls\\s+when\\s+interacting"
               }
             }
           ]
