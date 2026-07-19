@@ -12,7 +12,8 @@
     ],
     "meta": {
       "category": "skill"
-    }
+    },
+    "icon": "icons/svg/thrust.svg"
   },
   {
     "id": "def.skill.climbing",
@@ -46,7 +47,8 @@
           "pattern": "full combat speed[^.]{0,24}?(-\\d+)"
         }
       }
-    ]
+    ],
+    "icon": "icons/tools/hand/claws-climbing.webp"
   },
   {
     "id": "def.skill.hiding",
@@ -68,7 +70,8 @@
         "column": "Hiding",
         "page": 33
       }
-    }
+    },
+    "icon": "icons/magic/perception/silhouette-stealth-shadow.webp"
   },
   {
     "id": "def.skill.listening",
@@ -91,7 +94,8 @@
         "page": 33
       },
       "descStopY": 700
-    }
+    },
+    "icon": "icons/svg/sound.svg"
   },
   {
     "id": "def.skill.lockpicking",
@@ -124,7 +128,8 @@
           "pattern": "methodically pick a lock[\\s\\S]{0,120}?with a \\+(\\d+) bonus"
         }
       }
-    ]
+    ],
+    "icon": "icons/skills/trades/security-lockpicking-chest-blue.webp"
   },
   {
     "id": "def.skill.pickpocketing",
@@ -146,7 +151,8 @@
         "column": "Pickpocketing",
         "page": 33
       }
-    }
+    },
+    "icon": "icons/commodities/currency/coins-plain-pouch-gold.webp"
   },
   {
     "id": "def.skill.searching",
@@ -179,7 +185,8 @@
           "pattern": "methodically search requires[\\s\\S]{0,110}?with a \\+(\\d+) bonus"
         }
       }
-    ]
+    ],
+    "icon": "icons/tools/scribal/magnifying-glass.webp"
   },
   {
     "id": "def.skill.shadowySenses",
@@ -194,7 +201,8 @@
     ],
     "meta": {
       "category": "skill"
-    }
+    },
+    "icon": "icons/svg/eye.svg"
   },
   {
     "id": "def.skill.sneaking",
@@ -227,7 +235,8 @@
           "pattern": "If he runs, he takes a (-\\d+) penalty"
         }
       }
-    ]
+    ],
+    "icon": "icons/svg/cowled.svg"
   },
   {
     "id": "def.skill.streetwise",
@@ -253,7 +262,8 @@
         "formula": "1d20",
         "condition": "an urban settlement other than his home settlement"
       }
-    ]
+    ],
+    "icon": "icons/svg/city.svg"
   },
   {
     "id": "def.skill.trapbreaking",
@@ -288,7 +298,8 @@
         },
         "note": "Applies only to the slow method; a hasty attempt uses the unmodified throw."
       }
-    ]
+    ],
+    "icon": "icons/svg/trap.svg"
   },
   {
     "id": "def.skill.deciphering",
@@ -308,7 +319,8 @@
       "expectTop": 2
     },
     "audited": "2026-07-18",
-    "auditor": "first-pass"
+    "auditor": "first-pass",
+    "icon": "icons/skills/trades/academics-book-study-runes.webp"
   },
   {
     "id": "def.skill.hideout",
@@ -331,6 +343,7 @@
       ],
       "descStopY": 315,
       "expectTop": 2
-    }
+    },
+    "icon": "icons/svg/house.svg"
   }
 ]

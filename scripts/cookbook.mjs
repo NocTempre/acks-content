@@ -549,7 +549,7 @@ export function bindMonster(node) {
     //    than a bare namesake.
     const shared = id ? cookbookEntry(id) : null;
     if (shared) {
-      items.push(withTarget({ img: "icons/svg/book.svg", ...bindAbility(shared.entry, null, id, renamed) }));
+      items.push(withTarget(bindAbility(shared.entry, null, id, renamed)));
       continue;
     }
 
@@ -856,6 +856,9 @@ export function bindAbility(entry, node, id, opts = {}) {
   return {
     name: entry.name,
     type: "ability",
+    // Falls back to the generic book, so an entry nobody has picked an icon for
+    // looks exactly as it did before rather than breaking.
+    img: entry.icon || "icons/svg/book.svg",
     system: {
       description: `<p>@PdfText[${id}]{${cite}}</p>`,
       proficiencytype: meta.general ? "general" : "class",

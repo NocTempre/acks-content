@@ -1105,6 +1105,12 @@ async function compileDefinition(doc, entry, kindRow) {
     // generic prose scans locate candidates but cannot judge what a number
     // MEANS in its sentence — and the binding marks them as such.
     ...(entry.audited ? { audited: true } : {}),
+    // Authored per entry, like every other judgment in the register. An icon is
+    // PRESENTATION: it says nothing about what the book states, so unlike a
+    // mechanic a wrong one is a cosmetic bug rather than a wrong ruling — but
+    // it is still authored data, reviewable in a diff and correctable in one
+    // line, not computed from the name at load time.
+    ...(entry.icon ? { icon: entry.icon } : {}),
     // A "See X." entry is a CROSS-REFERENCE, not an ability of its own. The
     // raw target is resolved to a real id in a post-pass (once every id is
     // known) so we never ship a dangling pointer. The conclusion ships; the
