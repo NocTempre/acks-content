@@ -2,6 +2,8 @@
   "ACKS-CONTENT.Title": "ACKS II — Content Streamer (PoC)",
   "ACKS-CONTENT.ui.connectTitle": "Connect a book (this browser only)",
   "ACKS-CONTENT.ui.connectBook": "Book",
+  "ACKS-CONTENT.ui.connectOpen": "open this session",
+  "ACKS-CONTENT.ui.connectRemembered": "location remembered, not open",
   "ACKS-CONTENT.ui.connectFile": "Your PDF copy",
   "ACKS-CONTENT.ui.connectNote": "This browser can't remember file locations (no File System Access API) — you'll re-pick the file each session. It is read locally only; nothing uploads or persists.",
   "ACKS-CONTENT.ui.connectNoteFsa": "You'll pick the PDF next. Its LOCATION is remembered on this device (the text itself is never stored) — each session re-reads the actual file, so keeping the book is required.",

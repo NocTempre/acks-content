@@ -101,6 +101,31 @@ function proseFor(recipeId) {
 /*  Connect / restore books                     */
 /* -------------------------------------------- */
 
+/**
+ * Re-render open sheets that show a @PdfText tag.
+ *
+ * The enricher decides AT RENDER TIME whether this seat can reveal the text, so
+ * a sheet drawn before the book was connected keeps its "connect your PDF on
+ * this seat" stub — and no reveal link — for as long as it stays open. The
+ * message then tells the reader to do the thing they have just done. Only apps
+ * actually showing a tag are touched; this fires on connect, not per frame.
+ */
+function rerenderPdfTextApps() {
+  const open = [...(foundry.applications?.instances?.values?.() ?? []), ...Object.values(ui.windows ?? {})];
+  let n = 0;
+  for (const app of open) {
+    const el = app?.element instanceof HTMLElement ? app.element : app?.element?.[0];
+    if (!el?.querySelector?.(".acks-content-pdftext")) continue;
+    try {
+      app.render();
+      n++;
+    } catch (err) {
+      console.warn(`${MODULE_ID} | could not re-render ${app?.constructor?.name ?? "an open sheet"}`, err);
+    }
+  }
+  return n;
+}
+
 async function ingestBook(bookId, buffer, { silent = false } = {}) {
   const { doc, numPages, title } = await openBook(buffer);
   const warning = fingerprintWarning(bookId, numPages, title);
@@ -114,17 +139,31 @@ async function ingestBook(bookId, buffer, { silent = false } = {}) {
   }
   proseMem.set(bookId, entries);
   const hits = Object.keys(entries).length;
+  // Anything already on screen still says "connect your book" until it is drawn
+  // again — the tag resolves per render, not per document.
+  const redrawn = rerenderPdfTextApps();
   const message = `acks-content | ${BOOKS[bookId].label}: open — ${hits}/${recipes.length} descriptions readable this session (in memory only; never stored).`;
   if (silent) console.log(message);
   else ui.notifications.info(message);
+  if (redrawn) console.log(`${MODULE_ID} | re-rendered ${redrawn} open sheet(s) so their page references resolve.`);
   return hits;
 }
 
 const fsaAvailable = () => typeof window.showOpenFilePicker === "function";
 
 async function connectBook() {
+  // Say which books this seat already has, and which it merely remembers the
+  // location of. Without this the list is identical before and after connecting
+  // and the only way to find out is to connect again and see what happens.
+  const remembered = new Set((await handleKeys().catch(() => [])) ?? []);
+  const mark = (id) =>
+    sessionDocs.has(id)
+      ? ` — ${game.i18n.localize(`${LANG_PREFIX}.ui.connectOpen`)}`
+      : remembered.has(id)
+        ? ` — ${game.i18n.localize(`${LANG_PREFIX}.ui.connectRemembered`)}`
+        : "";
   const options = Object.entries(BOOKS)
-    .map(([id, b]) => `<option value="${id}">${b.label}</option>`)
+    .map(([id, b]) => `<option value="${id}">${b.label}${mark(id)}</option>`)
     .join("");
   const fsa = fsaAvailable();
   const fileRow = fsa
@@ -171,16 +210,49 @@ async function connectBook() {
  * unlock dialog — clicking it IS the user gesture the browser requires.
  */
 async function restoreBooks({ interactive = false } = {}) {
-  if (!fsaAvailable()) return [];
+  if (!fsaAvailable()) {
+    console.log(`${MODULE_ID} | this browser has no File System Access API — books must be re-picked each session.`);
+    return [];
+  }
+  // Every step below used to swallow its failure, so "it didn't reconnect" and
+  // "there was nothing to reconnect" looked identical from the outside. They
+  // are different problems and now say so.
+  let keys;
+  try {
+    keys = (await handleKeys()) ?? [];
+  } catch (err) {
+    console.warn(`${MODULE_ID} | could not read remembered book locations (IndexedDB)`, err);
+    return [];
+  }
+  if (!keys.length) {
+    console.log(`${MODULE_ID} | no book locations remembered on this seat yet — connect one to have it offered next session.`);
+    return [];
+  }
   const pending = [];
-  for (const bookId of (await handleKeys().catch(() => [])) ?? []) {
+  for (const bookId of keys) {
     if (sessionDocs.has(bookId)) continue;
-    const handle = await handleGet(bookId).catch(() => null);
-    if (!handle?.queryPermission) continue;
+    let handle = null;
+    try {
+      handle = await handleGet(bookId);
+    } catch (err) {
+      console.warn(`${MODULE_ID} | remembered ${BOOKS[bookId]?.label ?? bookId}: handle unreadable`, err);
+    }
+    if (!handle?.queryPermission) {
+      console.warn(`${MODULE_ID} | remembered ${BOOKS[bookId]?.label ?? bookId}: no usable file handle — reconnect it.`);
+      pending.push(bookId);
+      continue;
+    }
     try {
       let perm = await handle.queryPermission({ mode: "read" });
+      // Expected on every reload: browsers drop file permission when the page
+      // goes away, so a remembered book is "prompt" until a user gesture
+      // re-grants it. That gesture is the unlock dialog — this is the normal
+      // path, not a failure, and saying so stops it reading like one.
       if (perm === "prompt" && interactive) perm = await handle.requestPermission({ mode: "read" });
       if (perm !== "granted") {
+        console.log(
+          `${MODULE_ID} | remembered ${BOOKS[bookId]?.label ?? bookId}: permission "${perm}" — needs the unlock gesture this session.`,
+        );
         pending.push(bookId);
         continue;
       }
@@ -212,18 +284,33 @@ async function offerUnlock(pending) {
   });
 }
 
+/**
+ * Which books this seat can read, and how much of each.
+ *
+ * The count used to be `allRecipes()` — the handful of hand-written PoC
+ * recipes — against `proseMem`, the prose extracted eagerly on connect. Both
+ * predate the cookbook, so a seat holding the whole MM was told about a
+ * denominator of a dozen and a numerator that starts at zero and stays there,
+ * because cookbook prose is extracted lazily per reveal and never lands in
+ * proseMem. The number was not wrong so much as measuring something nobody
+ * asked about. What a reader wants to know is how many SHIPPED entries this
+ * book's connection unlocks.
+ */
 function bookStatus() {
   const lines = [];
   handleKeys()
     .catch(() => [])
     .then(async (keys) => {
       for (const [id, book] of Object.entries(BOOKS)) {
-        const want = allRecipes().filter((r) => r.book === id).length;
-        const have = Object.keys(proseMem.get(id) ?? {}).length;
+        const entries = cookbookCount(id);
+        const recipes = allRecipes().filter((r) => r.book === id).length;
+        const scope = [entries ? `${entries} cookbook entr${entries === 1 ? "y" : "ies"}` : "", recipes ? `${recipes} recipe(s)` : ""]
+          .filter(Boolean)
+          .join(" + ");
         let state;
-        if (sessionDocs.has(id)) state = `OPEN this session — ${have}/${want} descriptions readable`;
-        else if ((keys ?? []).includes(id)) state = "location remembered — locked until unlocked this session";
-        else state = book.fake ? "fake book (never connectable — stub demo)" : "not connected on this seat";
+        if (sessionDocs.has(id)) state = `OPEN this session — ${scope || "nothing shipped for it yet"} readable`;
+        else if ((keys ?? []).includes(id)) state = `location remembered — unlock this session to read ${scope || "it"}`;
+        else state = `not connected on this seat${scope ? ` — would unlock ${scope}` : ""}`;
         lines.push(`${book.label}: ${state}`);
       }
       ui.notifications.info(

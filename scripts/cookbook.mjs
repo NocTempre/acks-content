@@ -99,7 +99,21 @@ export const cookbookEntry = (fullId) => {
  * content-type cookbooks span books, so the entry names its own.
  */
 const bookOf = (found) => found?.cb?.book?.id ?? found?.entry?.book ?? null;
-export const cookbookCount = (bookId) => Object.keys(data.books.get(bookId)?.entries ?? {}).length;
+/**
+ * How many shipped entries this book unlocks.
+ *
+ * Both shapes count. Per-book cookbooks (monsters) are keyed by the book;
+ * content-type cookbooks span books and name it per entry, so counting only
+ * the first reported 0 for the Revised Rulebook while 120 proficiencies sat in
+ * proficiencies.json waiting on exactly that book.
+ */
+export const cookbookCount = (bookId) => {
+  let n = Object.keys(data.books.get(bookId)?.entries ?? {}).length;
+  for (const cb of data.content.values()) {
+    for (const e of Object.values(cb.entries)) if (e.book === bookId) n++;
+  }
+  return n;
+};
 
 /* -------------------------------------------- */
 /*  Lazy prose (session memory, per seat)       */
@@ -359,6 +373,31 @@ export function buildExtras(node) {
   return extras;
 }
 
+/**
+ * Size key -> prototype token footprint in grid squares.
+ *
+ * The book gives each size class a FRONTAGE in 5' squares, and acks-monsters
+ * already publishes the whole size table (scripts/config.mjs SIZES) — so this
+ * is the same posture as SAVES_LUT in stats.mjs: derived game math already
+ * published by a sibling, not new disclosure. Kept local rather than imported
+ * because a seat may not have acks-monsters installed.
+ *
+ * Two deliberate readings, because frontage and footprint are not the same
+ * question. "1 sq or less" and "2/3 sq" both describe how many creatures fit
+ * in a line, not a sub-square token, so Small and Man-Sized are both 1×1 — a
+ * half-square token would be a presentation choice the book never asked for.
+ * `largeHugeGigantic` is absent on purpose: that register key exists because
+ * the page gives a RANGE, and picking one for the GM would be inventing.
+ */
+const TOKEN_SIZE = {
+  small: { width: 1, height: 1 },
+  man: { width: 1, height: 1 },
+  large: { width: 2, height: 1 },
+  huge: { width: 2, height: 2 },
+  gigantic: { width: 4, height: 3 },
+  colossal: { width: 8, height: 6 },
+};
+
 /** Map one executed node to acks actor data + embedded items. */
 export function bindMonster(node) {
   const f = node.fields;
@@ -535,7 +574,17 @@ export function bindMonster(node) {
     });
   }
 
-  return { system, items, flags: moraleNA ? { [MODULE_ID]: { moraleNA: true } } : {} };
+  // A Gigantic monster on a 1×1 token is wrong before anyone reads a stat, and
+  // the size is right there in the block. Only set what the table actually
+  // says: an unrecognised or ranged size leaves Foundry's default alone.
+  const token = TOKEN_SIZE[s.size?.key];
+
+  return {
+    system,
+    items,
+    ...(token ? { prototypeToken: token } : {}),
+    flags: moraleNA ? { [MODULE_ID]: { moraleNA: true } } : {},
+  };
 }
 
 /* -------------------------------------------- */
@@ -595,7 +644,7 @@ async function importOne(bookId, id, folderId) {
     ui.notifications.warn(`acks-content | ${found.entry.name}: page did not match the cookbook (different printing?) — skipped.`);
     return null;
   }
-  const { system, items, flags } = bindMonster(node);
+  const { system, items, flags, prototypeToken } = bindMonster(node);
 
   // Prose stays lazy: the actor carries only tags; description reproduces per
   // seat. Cache this GM's extraction in session memory for instant reveal.
@@ -605,7 +654,14 @@ async function importOne(bookId, id, folderId) {
   const fmsActive = game.modules.get("acks-monsters")?.active;
   if (!fmsActive) system.details = { ...(system.details ?? {}), biography: tag(null) };
 
-  const actor = await Actor.create({ name: found.entry.name, type: "monster", folder: folderId, system, ...(Object.keys(flags ?? {}).length ? { flags } : {}) });
+  const actor = await Actor.create({
+    name: found.entry.name,
+    type: "monster",
+    folder: folderId,
+    system,
+    ...(prototypeToken ? { prototypeToken } : {}),
+    ...(Object.keys(flags ?? {}).length ? { flags } : {}),
+  });
   // Foundry REPORTS a schema-validation failure and returns undefined rather
   // than throwing, so without this the next line dereferences nothing and the
   // real error — already in the console — is buried under a TypeError from
