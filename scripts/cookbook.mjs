@@ -610,6 +610,12 @@ export function bindAbility(entry, node, id, opts = {}) {
     // capability resolves no matter which of the same-capability entries the
     // character actually holds.
     ...(meta.provides?.length ? { provides: meta.provides } : {}),
+    // No chef has read this entry's full output against the printed page yet.
+    // The scan-classified mechanics still bind — an inert ability helps nobody
+    // — but they present as the machine draft they are: a wrong sign or a
+    // missed bonus must read as unverified, never as the book's ruling. The
+    // flag clears only when the register entry gains its `audited` sign-off.
+    ...(entry.audited ? {} : { unaudited: true }),
     // Set when this reference arrived under an older/foreign name: the reader's
     // source calls it `conversionFrom`, ACKS II calls it `entry.name`.
     ...(opts.conversionStatus ? { conversionStatus: opts.conversionStatus } : {}),

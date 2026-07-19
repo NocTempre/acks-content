@@ -47,6 +47,44 @@ RUNTIME   values AND prose/art materialize from the seat's own PDF exactly as
    each book is a batch, editions are revision rows, and a **resolver agent**
    supplies the judgment pure rules can't.
 
+## The audit gate — scans locate, recipes interpret
+
+The ability pipeline carries two seat-side prose scans (`effectScan`,
+`rollScan` in `scripts/executor.mjs`) that classify mechanics out of the
+reader's own extracted text. They exist to draft classifications while the
+register matures, and they are in open tension with principle 1:
+classification is inference, and inference in the runtime is exactly what
+this design forbids. The doctrine that contains them:
+
+1. **Scans locate; recipes interpret.** A generic scan may propose candidate
+   structure — a throw target, a modifier digit, a rank ladder. What a number
+   *means* — sign, direction, replace-vs-add, whose penalty it is, how many
+   rolls an entry offers — is a judgment, and judgments are chef work, baked
+   per-entry into the register (`effects` specs with `from.pattern` locators,
+   roll recipes, `assists`). Blind Fighting is the canonical case: the page
+   prints a −2 that is a net *bonus*, because it replaces a −4. No scan knows
+   that; the recipe does.
+2. **Never invent a rule.** If the book does not state it as mechanics, it
+   ships as explainer text or not at all: no inferred stacking relations, no
+   paraphrased labels, no guessed conditions presented as fact. (Structural
+   conclusions the pipeline itself defines — an alias is one capability under
+   two names, so it does not stack with its target — are ours to ship.)
+3. **Draft output presents as draft.** Every compiled entry is `unaudited`
+   until its register row carries an `audited: "<date>"` sign-off. The
+   compiler ships the flag, the binding stamps it on the item, and the sheet
+   shows it on the Mechanics and Rolls tabs. Wrong-but-plausible mechanics
+   must be impossible to mistake for the book's ruling.
+4. **Audit is tracked state, not vibes.** `audited` means a chef read the
+   entry's *full materialized output* against the printed page — description
+   bounds, every effect, every roll, every limitation, nothing extra and
+   nothing missing. Having authored a spec is not a sign-off; fixing one
+   defect is not a sign-off. The compiler prints the burn-down
+   (`chef-audited: N/M`) at every build, and release notes cite it.
+5. **End state.** Per-entry recipes displace scan output entry by entry; the
+   scans remain a first-draft aid whose output is always flagged. When every
+   shipped entry is audited, the scans demote to authoring-side tooling and
+   principle 1 holds in full again.
+
 ## The node model
 
 Every line of every page belongs to a **node**. Roles:

@@ -1068,6 +1068,12 @@ async function compileDefinition(doc, entry, kindRow) {
     // merged with ones the page states outright (build cost, retirement). Both
     // ship as CONCLUSIONS — a flag and a number, never the sentence.
     meta: { ...(entry.meta ?? {}), ...derivedMeta(bodyText) },
+    // A chef read this entry's FULL materialized output against the printed
+    // page and signed it off (the register records the date; only the fact
+    // ships). Until then the entry's mechanics are a machine draft — the
+    // generic prose scans locate candidates but cannot judge what a number
+    // MEANS in its sentence — and the binding marks them as such.
+    ...(entry.audited ? { audited: true } : {}),
     // A "See X." entry is a CROSS-REFERENCE, not an ability of its own. The
     // raw target is resolved to a real id in a post-pass (once every id is
     // known) so we never ship a dangling pointer. The conclusion ships; the
@@ -1394,7 +1400,12 @@ async function main() {
   for (const [content, data] of Object.entries(contentOut)) {
     const outPath = path.join(COOKBOOK, `${content}.json`);
     fs.writeFileSync(outPath, JSON.stringify(data, null, 2) + "\n");
-    console.error(`wrote ${Object.keys(data.entries).length} entr(ies) -> ${outPath}`);
+    // The audit burn-down, stated at every build so nobody mistakes scan
+    // coverage for verified correctness. An entry counts only when a chef has
+    // read its full output against the page and set `audited` in the register.
+    const all = Object.values(data.entries);
+    const done = all.filter((e) => e.audited).length;
+    console.error(`wrote ${all.length} entr(ies) -> ${outPath} (chef-audited: ${done}/${all.length})`);
   }
 
   // An index of what actually exists, so the runtime loads by name instead of

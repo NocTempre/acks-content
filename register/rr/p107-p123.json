@@ -256,6 +256,7 @@
     "kind": "kind.proficiency",
     "book": "rr",
     "name": "Blind Fighting",
+    "audited": "2026-07-18",
     "anchor": {
       "display": "Blind Fighting"
     },

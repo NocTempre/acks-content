@@ -1719,6 +1719,7 @@
         "category": "proficiency",
         "general": false
       },
+      "audited": true,
       "fields": {
         "name": {
           "op": "expect",
@@ -4373,10 +4374,7 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": false,
-        "provides": [
-          "kw:layingonhands"
-        ]
+        "general": false
       },
       "fields": {
         "name": {
