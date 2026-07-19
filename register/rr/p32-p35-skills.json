@@ -202,7 +202,8 @@
     "meta": {
       "category": "skill"
     },
-    "icon": "icons/svg/eye.svg"
+    "icon": "icons/svg/eye.svg",
+    "iconNiche": "modules/game-icons-net/blacktransparent/all-seeing-eye.svg"
   },
   {
     "id": "def.skill.sneaking",

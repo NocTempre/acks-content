@@ -774,6 +774,34 @@ const capabilityLabel = (token) => {
   return slug;
 };
 
+/** The optional icon pack whose niche art beats core for several abilities. */
+const NICHE_ICON_MODULE = "game-icons-net";
+
+/**
+ * Which picture this ability gets.
+ *
+ * Foundry's own 7,100 icons cover most of the corpus, but not the ACKS-shaped
+ * corners of it: Acrobatics, Blind Fighting, Caving and Mapping have no core
+ * icon worth the name, and game-icons.net has all four. So an entry may name
+ * both — `icon` from core, which every seat has, and `iconNiche` from the
+ * optional pack. The niche one wins where the pack is installed and is simply
+ * ignored where it is not, which is the same bring-your-own posture the rest
+ * of this module takes with books.
+ *
+ * Referencing those paths carries no licensing weight for us: the art ships in
+ * THAT module under its own CC BY terms and attribution, and we only point at
+ * it. Nothing is copied here.
+ *
+ * NOTE an item stores its img at creation. Installing the pack later does not
+ * repaint abilities already imported — "Update Abilities" does that.
+ */
+export function abilityIcon(entry) {
+  if (entry?.iconNiche && game.modules?.get?.(NICHE_ICON_MODULE)?.active) return entry.iconNiche;
+  // Falls back to the generic book, so an entry nobody has picked an icon for
+  // looks exactly as it did before rather than breaking.
+  return entry?.icon || "icons/svg/book.svg";
+}
+
 export function bindAbility(entry, node, id, opts = {}) {
   const meta = entry.meta ?? {};
   const cite = entry.cite ?? "";
@@ -856,9 +884,7 @@ export function bindAbility(entry, node, id, opts = {}) {
   return {
     name: entry.name,
     type: "ability",
-    // Falls back to the generic book, so an entry nobody has picked an icon for
-    // looks exactly as it did before rather than breaking.
-    img: entry.icon || "icons/svg/book.svg",
+    img: abilityIcon(entry),
     system: {
       description: `<p>@PdfText[${id}]{${cite}}</p>`,
       proficiencytype: meta.general ? "general" : "class",

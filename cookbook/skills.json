@@ -737,6 +737,7 @@
         "category": "skill"
       },
       "icon": "icons/svg/eye.svg",
+      "iconNiche": "modules/game-icons-net/blacktransparent/all-seeing-eye.svg",
       "fields": {
         "name": {
           "op": "expect",

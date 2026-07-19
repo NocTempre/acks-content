@@ -1111,6 +1111,9 @@ async function compileDefinition(doc, entry, kindRow) {
     // it is still authored data, reviewable in a diff and correctable in one
     // line, not computed from the name at load time.
     ...(entry.icon ? { icon: entry.icon } : {}),
+    // Optional upgrade from the game-icons.net pack, used only where that
+    // module is installed. `icon` above stays the floor every seat gets.
+    ...(entry.iconNiche ? { iconNiche: entry.iconNiche } : {}),
     // A "See X." entry is a CROSS-REFERENCE, not an ability of its own. The
     // raw target is resolved to a real id in a post-pass (once every id is
     // known) so we never ship a dangling pointer. The conclusion ships; the

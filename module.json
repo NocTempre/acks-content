@@ -3,7 +3,11 @@
   "title": "ACKS II — Content Streamer (PoC)",
   "description": "Streams book prose from the user's own ACKS II PDFs into Foundry at render time — per-client, bring-your-own-book. PoC.",
   "version": "0.15.0",
-  "authors": [{ "name": "NocTempre" }],
+  "authors": [
+    {
+      "name": "NocTempre"
+    }
+  ],
   "license": "LICENSE",
   "compatibility": {
     "minimum": "14",
@@ -18,6 +22,13 @@
           "minimum": "14"
         }
       }
+    ],
+    "recommends": [
+      {
+        "id": "game-icons-net",
+        "type": "module",
+        "reason": "Niche ability icons for the ACKS-shaped corners of the corpus (Acrobatics, Blind Fighting, Caving, Mapping). Optional: without it every ability falls back to a core Foundry icon."
+      }
     ]
   },
   "manifest": "https://github.com/NocTempre/acks-content/releases/latest/download/module.json",
@@ -27,8 +38,12 @@
       "idPrefix": "acksc"
     }
   },
-  "esmodules": ["scripts/module.mjs"],
-  "styles": ["styles/module.css"],
+  "esmodules": [
+    "scripts/module.mjs"
+  ],
+  "styles": [
+    "styles/module.css"
+  ],
   "languages": [
     {
       "lang": "en",

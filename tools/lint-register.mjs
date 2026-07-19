@@ -130,6 +130,16 @@ for (const dirent of fs.existsSync(REGISTER) ? fs.readdirSync(REGISTER, { withFi
           err(`${id}: icon must be a core path like "icons/svg/eye.svg" (got ${JSON.stringify(e.icon)})`);
         }
       }
+      // The niche path points into an OPTIONAL module, so it must be a module
+      // path (never a core one) and must be paired with a core `icon` — that
+      // pairing is what keeps a seat without the pack from seeing nothing.
+      if (e.iconNiche !== undefined) {
+        if (typeof e.iconNiche !== "string" || !/^modules\/[\w-]+\/[\w./-]+\.(webp|svg|png|jpg)$/.test(e.iconNiche)) {
+          err(`${id}: iconNiche must be a module path like "modules/game-icons-net/blacktransparent/x.svg" (got ${JSON.stringify(e.iconNiche)})`);
+        } else if (!e.icon) {
+          err(`${id}: iconNiche needs a core "icon" beside it — a seat without that module would get nothing`);
+        }
+      }
       capStrings(e, id);
     }
   }
