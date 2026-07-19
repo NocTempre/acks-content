@@ -31,18 +31,49 @@ build/release plumbing.
   `packs/_source` actually changed.
 - Foundry dev install (junction, not copy):
   `New-Item -ItemType Junction -Path "$env:LOCALAPPDATA\FoundryVTT\Data\modules\acks-content" -Target "C:\Proj\acks-content"`
-- Live testing: if `C:\Proj\acks-rules\TEST_ENVIRONMENT.md` exists it defines
-  this machine's local Foundry test server — use it. If absent, skip live
-  testing (validate/build only). LOCAL-ONLY and machine-specific; never
-  commit its contents to any repo.
+## Live testing
+
+`C:\Proj\acks-rules\TEST_ENVIRONMENT.md` defines this machine's local Foundry
+test server (URL, world, users, and the API calls that drive it). Read it
+before live-testing. It is LOCAL-ONLY and machine-specific — **never commit
+its contents, or any port / world id / user name / password, to any repo.**
+If the file is absent, this machine has no test server: skip live testing and
+say so, rather than improvising one.
+
+`validate` and `npm test` run against **mocked** Foundry globals — they check
+your assumptions, not Foundry's behaviour. Every module-breaking bug in this
+family got through a green offline suite and was caught only live. So before
+release, and whenever you change a runtime surface:
+
+1. Confirm the dev install is a junction to this working tree (above), so what
+   you test is what you ship.
+2. **Shut down any running world before pack work** — a running world holds
+   LevelDB locks on `packs/`, and `build:packs` / `git restore` / `git clean`
+   will fail on the LOG files. Order: shut down → build packs → launch → test.
+3. Enable the module in the test world and check: it reaches `ready` with **no
+   console errors** (check `init`, `setup`, and `ready` — a throw in one leaves
+   the rest silently dead); every registered setting appears AND gates
+   something; every shipped macro runs; each declared compendium opens; and
+   **the feature you changed, exercised end-to-end through the UI**. For Active
+   Effects, sheets, and drag-and-drop, verify the write landed on the target
+   field — not merely that the code ran.
+4. Shut the world down before committing: it releases the pack locks, and
+   runtime LOG/MANIFEST churn must never be committed.
+
+Report what you exercised and name what you could not reach. "Live-verified"
+with no list is not a result.
 
 ## Release
 
 1. Bump `module.json` version; update changelog if present.
-2. Build + validate + test; commit.
-3. `git tag v<version>` (must equal module.json version) and push branch + tag.
-4. Watch the Release workflow (`gh run watch`), then verify
-   `https://github.com/NocTempre/acks-content/releases/latest/download/module.json`
+2. Build + validate + test.
+3. **Live-verify (above). This is a go-live gate** — skip only if this machine
+   defines no test environment, and state that in the release report.
+4. Commit, `git tag v<version>` (must equal module.json version), push branch
+   + tag.
+5. Confirm publication with BOUNDED polls — **never `gh run watch`, it hangs**:
+   `gh release view v<version> --json assets` ~30s apart, capped ~5 min. Then
+   verify `https://github.com/NocTempre/acks-content/releases/latest/download/module.json`
    shows the new version. The `/acks-release` skill walks all of this.
 
 ## Conventions
