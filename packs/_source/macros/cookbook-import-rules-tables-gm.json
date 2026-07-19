@@ -1,0 +1,20 @@
+{
+  "_id": "ackscMacTables00",
+  "_key": "!macros!ackscMacTables00",
+  "name": "Cookbook — Import Rules Tables (GM)",
+  "type": "script",
+  "img": "icons/svg/coins.svg",
+  "scope": "global",
+  "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\nif (!api.cookbookImportTables) return ui.notifications.warn(\"acks-content | table import needs a newer module build.\");\napi.cookbookImportTables();",
+  "folder": null,
+  "sort": 190,
+  "ownership": {
+    "default": 2
+  },
+  "flags": {},
+  "_stats": {
+    "coreVersion": "14",
+    "createdTime": 1784332800000,
+    "modifiedTime": 1784332800000
+  }
+}

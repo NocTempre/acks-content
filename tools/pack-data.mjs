@@ -45,6 +45,15 @@ function buildMacros() {
     macro("ackscMacClear000", "Forget Books (this seat)", "icons/svg/blind.svg", GUARD + `api.forgetBooks();`, 120),
 
     /* --- 200s: import from the cookbook. --- */
+    macro(
+      "ackscMacTables00",
+      "Cookbook — Import Rules Tables (GM)",
+      "icons/svg/coins.svg",
+      GUARD +
+        `if (!api.cookbookImportTables) return ui.notifications.warn("acks-content | table import needs a newer module build.");
+api.cookbookImportTables();`,
+      190,
+    ),
     macro("ackscMacCookbook", "Cookbook — Import Monsters (GM)", "icons/svg/mystery-man.svg", GUARD + `api.cookbookImport();`, 200),
     macro(
       "ackscMacMonsAll0",
