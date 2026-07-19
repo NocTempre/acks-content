@@ -80,7 +80,19 @@ this design forbids. The doctrine that contains them:
    nothing missing. Having authored a spec is not a sign-off; fixing one
    defect is not a sign-off. The compiler prints the burn-down
    (`chef-audited: N/M`) at every build, and release notes cite it.
-5. **End state.** Per-entry recipes displace scan output entry by entry; the
+5. **The audit is tiered.** A first-pass worker (a smaller model, per the
+   established authoring split) compares each entry's full materialized
+   output against the printed page under a fixed checklist
+   (`tools/audit-dump.mjs` builds the per-entry package; the checklist lives
+   with the local authoring docs). The worker may confirm only clean
+   mechanical matches — anything involving interpretation (replace/set
+   modes, conditionals, multi-roll entries, tables, progressions, aliases,
+   or any discrepancy or doubt) escalates to senior review, which also
+   samples the worker's passes. Escalation triggers ratchet: only the senior
+   reviewer may relax one, one written rule at a time. Worker-confirmed
+   entries record `auditor: "first-pass"` in the register beside `audited`;
+   senior sign-offs record none.
+6. **End state.** Per-entry recipes displace scan output entry by entry; the
    scans remain a first-draft aid whose output is always flagged. When every
    shipped entry is audited, the scans demote to authoring-side tooling and
    principle 1 holds in full again.

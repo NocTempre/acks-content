@@ -355,6 +355,8 @@
     "kind": "kind.proficiency",
     "book": "rr",
     "name": "Caving",
+    "audited": "2026-07-18",
+    "auditor": "first-pass",
     "anchor": {
       "display": "Caving (G)"
     },
@@ -515,6 +517,7 @@
     "kind": "kind.proficiency",
     "book": "rr",
     "name": "Diplomacy",
+    "audited": "2026-07-18",
     "anchor": {
       "display": "Diplomacy (G)"
     },
@@ -611,6 +614,7 @@
     "kind": "kind.proficiency",
     "book": "rr",
     "name": "Dwarven Brewing",
+    "audited": "2026-07-18",
     "anchor": {
       "display": "Dwarven Brewing"
     },

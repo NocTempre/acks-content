@@ -1117,6 +1117,9 @@ function derivedMeta(bodyText) {
   // The raw compile-time join omits some inter-run spaces ("removed fromACKS
   // II"), so every boundary here is \s* rather than a literal space.
   if (/removed\s*from\s*ACKS\s*II/i.test(bodyText)) out.deprecated = true;
+  // "This proficiency can be selected multiple times." — a stated FLAG, found
+  // missing on Caving by the first audit-pilot sample review.
+  if (/selected\s*(?:multiple|several)\s*times|selected\s*more\s*than\s*once/i.test(bodyText)) out.repeatable = true;
   return out;
 }
 

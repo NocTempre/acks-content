@@ -1963,8 +1963,10 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": true
+        "general": true,
+        "repeatable": true
       },
+      "audited": true,
       "fields": {
         "name": {
           "op": "expect",
@@ -2482,6 +2484,7 @@
         "category": "proficiency",
         "general": true
       },
+      "audited": true,
       "fields": {
         "name": {
           "op": "expect",
@@ -2528,7 +2531,8 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": true
+        "general": true,
+        "repeatable": true
       },
       "fields": {
         "name": {
@@ -2867,6 +2871,7 @@
         "category": "proficiency",
         "general": false
       },
+      "audited": true,
       "fields": {
         "name": {
           "op": "expect",
@@ -3136,7 +3141,8 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": true
+        "general": true,
+        "repeatable": true
       },
       "fields": {
         "name": {
@@ -3541,7 +3547,8 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": true
+        "general": true,
+        "repeatable": true
       },
       "fields": {
         "name": {
@@ -4322,7 +4329,8 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": true
+        "general": true,
+        "repeatable": true
       },
       "fields": {
         "name": {
@@ -4662,7 +4670,8 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": false
+        "general": false,
+        "repeatable": true
       },
       "fields": {
         "name": {
@@ -4719,7 +4728,8 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": false
+        "general": false,
+        "repeatable": true
       },
       "fields": {
         "name": {
@@ -5021,7 +5031,8 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": true
+        "general": true,
+        "repeatable": true
       },
       "fields": {
         "name": {
@@ -5265,7 +5276,8 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": true
+        "general": true,
+        "repeatable": true
       },
       "fields": {
         "name": {
@@ -5317,7 +5329,8 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": true
+        "general": true,
+        "repeatable": true
       },
       "fields": {
         "name": {
@@ -7466,7 +7479,8 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": true
+        "general": true,
+        "repeatable": true
       },
       "fields": {
         "name": {
@@ -7545,7 +7559,8 @@
       ],
       "meta": {
         "category": "proficiency",
-        "general": true
+        "general": true,
+        "repeatable": true
       },
       "fields": {
         "name": {
