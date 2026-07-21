@@ -22,6 +22,12 @@ export const BOOKS = {
     pages: 489,
     titleRe: /Judges Journal/i,
   },
+  js: {
+    label: "ACKS II Judges Screen Inserts",
+    short: "JS",
+    pages: 24,
+    titleRe: /Judges Screen/i,
+  },
   mm: {
     label: "ACKS II Monstrous Manual",
     short: "MM",

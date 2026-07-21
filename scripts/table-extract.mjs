@@ -52,6 +52,17 @@ export function applyCellPattern(text, pattern = "raw") {
       const m = t.match(/[+-]?\d[\d,]*/);
       return m ? parseInt(m[0].replace(/,/g, ""), 10) : null;
     }
+    case "wagePeriod": {
+      const m = t.match(/day|week|month|year/i);
+      return m ? m[0].toLowerCase() : null;
+    }
+    case "gpPerUnit": {
+      // "250gp/month" | "2sp/page" | "1gp/day/patient" -> {wage, wageUnit}
+      const m = t.match(/([\d,.]+)\s*(gp|sp)\s*\/\s*(.+)/i);
+      if (!m) return null;
+      const wage = Number(m[1].replace(/,/g, "")) * (m[2].toLowerCase() === "sp" ? 0.1 : 1);
+      return { wage, wageUnit: m[3].trim().replace(/\s+/g, "") };
+    }
     case "diceFormula": {
       // "1d6+15gp" amid prose -> "1d6+15"; "1d3gp" -> "1d3"
       const m = t.match(/\d+d\d+(?:\s*[+x×]\s*\d+)?/);
@@ -95,6 +106,8 @@ export async function findPage(recipe, numPages, readPage) {
  * matches, scanning downward from the previous claim.
  */
 export function extractGridRows(items, recipe) {
+  const { xMin = 0, xMax = Infinity } = recipe.column ?? {};
+  items = items.filter((it) => it.x >= xMin && it.x <= xMax);
   const rows = rowsByY(items, recipe.rowTol ?? 3);
   const out = {};
   let cursor = 0;
@@ -160,7 +173,9 @@ export function extractGridRows(items, recipe) {
       row = { [recipe.cellsKey ?? "byMarketClass"]: market };
       (recipe.trailing ?? []).forEach((tspec, i) => {
         const raw = cells[marketN + i];
-        row[tspec.key] = raw == null ? null : applyCellPattern(raw, tspec.pattern ?? "raw");
+        const v = raw == null ? null : applyCellPattern(raw, tspec.pattern ?? "raw");
+        if (tspec.expand && v && typeof v === "object") Object.assign(row, v);
+        else row[tspec.key] = v;
       });
     }
     if (spec.set) Object.assign(row, spec.set);
