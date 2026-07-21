@@ -47,6 +47,16 @@ export function applyCellPattern(text, pattern = "raw") {
     }
     case "dashNull":
       return t === "-" || t === "—" || t === "" ? null : t;
+    case "intDash": {
+      if (t === "-" || t === "—" || t === "") return null;
+      const m = t.match(/[+-]?\d[\d,]*/);
+      return m ? parseInt(m[0].replace(/,/g, ""), 10) : null;
+    }
+    case "diceFormula": {
+      // "1d6+15gp" amid prose -> "1d6+15"; "1d3gp" -> "1d3"
+      const m = t.match(/\d+d\d+(?:\s*[+x×]\s*\d+)?/);
+      return m ? m[0].replace(/\s+/g, "") : null;
+    }
     default:
       return t;
   }
@@ -108,11 +118,41 @@ export function extractGridRows(items, recipe) {
     const cellRuns = matched.items.filter((it) => it.x >= recipe.labelMaxX && !/^[*†‡]+$/.test(it.str.trim()));
     const cells = cellRuns.map((r) => r.str.trim());
     let row;
-    if (recipe.cellKeys) {
-      // Named cells → an object under cellsKey (e.g. classPercentages weights).
+    if (recipe.cellColumns) {
+      // X-anchored columns: sparse rows may omit their dash cells entirely
+      // (RR cataphract row), so positions lie — bind each run to the nearest
+      // declared column x instead. `row: true` entries land on the row.
       const obj = {};
-      recipe.cellKeys.forEach((k, i) => { obj[k] = applyCellPattern(cells[i] ?? "", recipe.cellPattern ?? "int"); });
+      row = recipe.cellsKey ? { [recipe.cellsKey]: obj } : (row = {});
+      const tol = recipe.columnTol ?? 14;
+      for (const run of cellRuns) {
+        let best = null;
+        for (const col of recipe.cellColumns) {
+          const d = Math.abs(run.x - col.x);
+          if (d <= tol && (!best || d < best.d)) best = { col, d };
+        }
+        if (!best) continue;
+        const v = applyCellPattern(run.str, best.col.pattern ?? recipe.cellPattern ?? "intDash");
+        if (v == null && recipe.omitNullCells && !best.col.row) continue;
+        if (best.col.row) row[best.col.key] = v;
+        else obj[best.col.key] = v;
+      }
+      if (recipe.cellsKey) row[recipe.cellsKey] = obj;
+    } else if (recipe.cellKeys) {
+      // Named cells → an object under cellsKey (classPercentages weights,
+      // mercenary per-race wages). omitNullCells drops dash cells so sparse
+      // race columns emit only the races the book prices.
+      const obj = {};
+      recipe.cellKeys.forEach((k, i) => {
+        const v = applyCellPattern(cells[i] ?? "", recipe.cellPattern ?? "int");
+        if (v == null && recipe.omitNullCells) return;
+        obj[k] = v;
+      });
       row = recipe.cellsKey ? { [recipe.cellsKey]: obj } : obj;
+      (recipe.trailing ?? []).forEach((tspec, i) => {
+        const raw = cells[recipe.cellKeys.length + i];
+        row[tspec.key] = raw == null ? null : applyCellPattern(raw, tspec.pattern ?? "raw");
+      });
     } else {
       // Positional cells → an array (market-class grids), plus trailing cols.
       const marketN = recipe.marketCells ?? cells.length - (recipe.trailing?.length ?? 0);
@@ -135,7 +175,16 @@ export function extractGridRows(items, recipe) {
  * to its right.
  */
 export function extractPairs(items, recipe) {
-  const rows = rowsByY(items, recipe.rowTol ?? 3);
+  // `parts`: independent column bands (side-by-side ladder halves) merged
+  // into one keyed object; each part carries its own column + rows.
+  if (recipe.parts) {
+    const out = {};
+    for (const part of recipe.parts) Object.assign(out, extractPairs(items, { ...recipe, ...part, parts: null }));
+    return out;
+  }
+  const { xMin = 0, xMax = Infinity } = recipe.column ?? {};
+  const inCol = items.filter((it) => it.x >= xMin && it.x <= xMax);
+  const rows = rowsByY(inCol, recipe.rowTol ?? 3);
   const out = {};
   let cursor = 0;
   for (const spec of recipe.rows) {

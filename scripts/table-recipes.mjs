@@ -46,7 +46,71 @@ const CLASS_PCT_ROWS = Array.from({ length: 15 }, (_, L) => ({
   set: { minLevel: L, maxLevel: L },
 }));
 
+// Mercenary Troop Type (RR): label + five race wage columns (dash = the book
+// prices no such troops) + morale. Reference keys mirror the availability
+// grid's troop ids; wolf/boar riders are beastman entries priced per race.
+const MERC_WAGE_ROWS = [
+  { key: "peasant", labelRe: "^peasant" },
+  { key: "lightInfantry", labelRe: "^light infantry" },
+  { key: "heavyInfantry", labelRe: "^heavy infantry" },
+  { key: "slinger", labelRe: "^slinger" },
+  { key: "bowman", labelRe: "^bowmen|^bowman" },
+  { key: "compositeBowman", labelRe: "^composite" },
+  { key: "crossbowman", labelRe: "^crossbow" },
+  { key: "longbowman", labelRe: "^longbow" },
+  { key: "lightCavalry", labelRe: "^light\s*cavalry" },
+  { key: "mountedCrossbowman", labelRe: "^mounted\s*crossbow" },
+  { key: "horseArcher", labelRe: "^horse archer" },
+  { key: "mediumCavalry", labelRe: "^medium\s*cavalry" },
+  { key: "heavyCavalry", labelRe: "^heavy\s*cavalry" },
+  { key: "cataphractCavalry", labelRe: "^cataphract" },
+  { key: "camelArcher", labelRe: "^camel archer" },
+  { key: "camelLancer", labelRe: "^camel lancer" },
+  { key: "warElephant", labelRe: "^war elephant" },
+  { key: "wolfRider", labelRe: "^wolf\s*rider" },
+  { key: "boarRider", labelRe: "^boar\s*rider" },
+];
+
 export const TABLE_RECIPES = {
+  wages: {
+    source: { book: "ACKS II Revised Rulebook", pages: "166-171" },
+    tables: {
+      henchmanWageByLevel: {
+        shape: "pairs",
+        book: "rr",
+        printedPage: 168,
+        locate: "Henchmen Monthly Wage",
+        cellPattern: "int",
+        // Two side-by-side ladder halves; the facing column's prose sits
+        // right of x~300 and is excluded by the part bounds.
+        parts: [
+          { column: { xMin: 50, xMax: 168 }, labelMaxX: 100, rows: [0,1,2,3,4,5,6,7].map((L) => ({ key: String(L), labelRe: `^${L}$` })) },
+          { column: { xMin: 170, xMax: 300 }, labelMaxX: 215, rows: [8,9,10,11,12,13,14].map((L) => ({ key: String(L), labelRe: `^${L}$` })) },
+        ],
+        emit: { wrap: "byLevel" },
+      },
+      mercenaryWages: {
+        shape: "gridRows",
+        book: "rr",
+        printedPage: 169,
+        locate: "Gp Wage per Month",
+        labelMaxX: 385,
+        cellColumns: [
+          { key: "man", x: 393 },
+          { key: "dwarf", x: 422 },
+          { key: "elf", x: 450 },
+          { key: "goblin", x: 480 },
+          { key: "orc", x: 510 },
+          { key: "morale", x: 542, row: true },
+        ],
+        cellsKey: "wages",
+        cellPattern: "intDash",
+        omitNullCells: true,
+        rows: MERC_WAGE_ROWS,
+        emit: { container: "rows", keyField: "type" },
+      },
+    },
+  },
   people: {
     source: { book: "ACKS II Judges Journal", pages: "245-257" },
     tables: {
@@ -83,6 +147,24 @@ export const TABLE_RECIPES = {
   availability: {
     source: { book: "ACKS II Revised Rulebook", pages: "162-165, 172" },
     tables: {
+      searchFees: {
+        shape: "pairs",
+        book: "rr",
+        printedPage: 162,
+        locate: "1d6+15gp",
+        column: { xMin: 50, xMax: 290 },
+        labelMaxX: 95,
+        cellPattern: "diceFormula",
+        rows: [
+          { key: "1", labelRe: "^I$" },
+          { key: "2", labelRe: "^II$" },
+          { key: "3", labelRe: "^III$" },
+          { key: "4", labelRe: "^IV$" },
+          { key: "5", labelRe: "^V$" },
+          { key: "6", labelRe: "^VI$" },
+        ],
+        emit: { wrap: "byMarketClass" },
+      },
       henchmanAvailability: {
         shape: "gridRows",
         book: "rr",
