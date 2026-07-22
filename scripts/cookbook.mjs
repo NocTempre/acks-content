@@ -1629,8 +1629,11 @@ export async function resolveAbilities(tokens) {
     const token = String(raw).trim();
     if (!token) continue;
     const m = token.match(/^(.*?)\s*\(([^)]+)\)\s*\d*$/);
-    const base = (m ? m[1] : token.replace(/\s*\d+$/, "")).trim();
+    let base = (m ? m[1] : token.replace(/\s*\d+$/, "")).trim();
     const specialty = m?.[2] ?? null;
+    // The 2nd printing merges Art and Craft into one proficiency; the JJ
+    // occupation packages still print "Craft (X)" / "Art (X)".
+    if (/^(art|craft)$/i.test(base)) base = "Art/Craft";
     const guess = idForName(nameIndex, base, present);
     const id = guess?.id ?? null;
     let item = id ? loadedById.get(id) : null;

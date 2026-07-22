@@ -295,6 +295,71 @@ export const TABLE_RECIPES = {
         rows: CLASS_PCT_ROWS,
         emit: { container: "rows" },
       },
+      // The RAW occupant system (JJ ~229): WHICH occupant a d100 finds, per
+      // building type, with routing to the occupation sub-tables — bands and
+      // routing text all read from the page.
+      occupationTypes: {
+        shape: "gridRows",
+        book: "jj",
+        printedPage: 229,
+        locate: "01-48",
+        labelMaxX: 160,
+        cellPattern: "rollBand",
+        omitNullCells: true,
+        cellColumns: [
+          { key: "smallCot", x: 168, pattern: "rollBand" },
+          { key: "mediumCot", x: 205, pattern: "rollBand" },
+          { key: "mediumTownhouse", x: 251, pattern: "rollBand" },
+          { key: "largeTownhouse", x: 304, pattern: "rollBand" },
+          { key: "generalStreet", x: 352, pattern: "rollBand" },
+          { key: "resolve", x: 382, w: 110, pattern: "raw", row: true },
+          { key: "special", x: 495, w: 90, pattern: "dashNull", row: true },
+        ],
+        cellsKey: "bands",
+        rows: [
+          { key: "laborer", labelRe: "^laborer$" },
+          { key: "apprenticeCrafter", labelRe: "^apprentice\\s*crafter" },
+          { key: "journeymanCrafter", labelRe: "^journeyman" },
+          { key: "masterCrafter", labelRe: "^master\\s*crafter" },
+          { key: "apprenticeMerchant", labelRe: "^apprentice\\s*merchant" },
+          { key: "licensedMerchant", labelRe: "^licensed" },
+          { key: "masterMerchant", labelRe: "^master\\s*merchant" },
+          { key: "specialist", labelRe: "^specialist" },
+          { key: "hosteller", labelRe: "^hosteller" },
+          { key: "entertainer", labelRe: "^entertainer" },
+          { key: "thief", labelRe: "^thief" },
+          { key: "legionary", labelRe: "^legionary" },
+          { key: "mercenary", labelRe: "^mercenary" },
+          { key: "fighter", labelRe: "^fighter$" },
+          { key: "minorEcclesiastic", labelRe: "^minor\\s*ecclesiastic" },
+          { key: "crusader", labelRe: "^crusader" },
+          { key: "minorMagician", labelRe: "^minor\\s*magician" },
+        ],
+        emit: { container: "rows", keyField: "type" },
+      },
+      // Per-category occupation sub-tables (d100 band → occupation, with the
+      // book's own special notes like "25% are mages"). Self-locating like
+      // culture blocks; each stitches reading order for long lists (artisan).
+      // Every window below is page geometry read off the printings: the JJ
+      // mixes half-page pairs (p~229), four quarter tables, and full-width
+      // tables whose Mercantile Interest notes wrap (merchant, artisan).
+      occupationSubTables: {
+        shape: "bandList",
+        book: "jj",
+        subTables: [
+          { id: "laborer", printedPage: 229, anchor: "Laborer Occupation", window: [60, 300], bandWindow: [75, 115], occWindow: [115, 232], specialWindow: [232, 300] },
+          { id: "specialist", printedPage: 229, locate: "animal trainer (Wild)", anchor: "Specialist Occupation", window: [300, 585], bandWindow: [330, 365], occWindow: [365, 460], specialWindow: [460, 585] },
+          { id: "mercenary", printedPage: 230, locate: "Bowman/slinger", anchor: "Mercenary Occupation", window: [30, 156], bandWindow: [40, 80], occWindow: [80, 156], specialWindow: [156, 157] },
+          { id: "entertainer", printedPage: 230, locate: "actor (Journeyman)", anchor: "Entertainer Occupation", window: [156, 289], bandWindow: [163, 204], occWindow: [204, 289], specialWindow: [289, 290] },
+          { id: "ecclesiastic", printedPage: 230, locate: "Almsgiver", anchor: "Ecclesiastic Occupation", window: [289, 425], bandWindow: [296, 337], occWindow: [337, 425], specialWindow: [425, 426] },
+          { id: "magician", printedPage: 230, anchor: "Magician Occupation", window: [425, 565], bandWindow: [432, 473], occWindow: [473, 565], specialWindow: [565, 566] },
+          { id: "merchant", printedPage: 230, locate: "Mercantile Interest", anchor: "Merchant Occupation", window: [40, 585], bandWindow: [50, 97], occWindow: [97, 196], specialWindow: [196, 585] },
+          { id: "artisan", printedPage: 231, locate: "Wheelwright", anchor: "Artisan Occupation", window: [40, 585], bandWindow: [75, 122], occWindow: [122, 224], specialWindow: [224, 585] },
+          // No hosteller d100 sub-table exists in the printing — hosteller
+          // occupants resolve by establishment ("inns are always owned by
+          // innkeepers"); street draws reroll them like class-routed rows.
+        ],
+      },
       // 0th-level occupation → proficiency packages (JJ "Occupations and
       // Proficiencies", four consecutive pages). Row keys are page content
       // (occupation names, lowercased); values are comma token lists like

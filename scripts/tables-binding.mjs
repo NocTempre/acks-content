@@ -22,9 +22,13 @@ async function locatePage(doc, recipe) {
   }
   const seen = new Set(order);
   for (let p = 1; p <= doc.numPages; p++) if (!seen.has(p)) order.push(p);
+  const bare = (s) => String(s).replace(/\s+/g, "").toLowerCase();
   for (const p of order) {
     const { items } = await pageItems(doc, p);
-    if (items.map((i) => i.str).join(" ").includes(recipe.locate)) {
+    const hit = recipe.locateBare
+      ? bare(items.map((i) => i.str).join("")).includes(bare(recipe.locate))
+      : items.map((i) => i.str).join(" ").includes(recipe.locate);
+    if (hit) {
       if (!recipe.pageSpan) return items;
       // Multi-page tables (the JJ occupation packages) merge the span.
       const span = [items];
@@ -72,12 +76,32 @@ export async function importTables(sessionDocs, { priority } = {}) {
     return { list };
   };
 
+  // Occupation sub-tables: window geometry is explicit per table (the JJ
+  // mixes half-page pairs, quarter tables, and full-width layouts).
+  const runSubTables = async (recipe) => {
+    const categories = {};
+    const session = sessionDocs.get(recipe.book);
+    if (!session?.doc) { report.missingBooks.add(recipe.book); return null; }
+    for (const st of recipe.subTables) {
+      const items = await locatePage(session.doc, { printedPage: st.printedPage, locate: st.locate ?? st.anchor, locateBare: true });
+      if (!items) { report.missingTables.push(`occupationSubTables.${st.id} (page not found)`); continue; }
+      const windowed = items.filter((it) => it.x >= st.window[0] && it.x < st.window[1]);
+      categories[st.id] = extractTable(windowed, { ...recipe, subTables: null, startAfter: st.anchor, bandWindow: st.bandWindow, occWindow: st.occWindow, specialWindow: st.specialWindow });
+    }
+    return { categories };
+  };
+
   for (const [docId, docRec] of Object.entries(TABLE_RECIPES)) {
     const fresh = {};
     for (const [tableId, recipe] of Object.entries(docRec.tables)) {
       if (recipe.blocks) {
         const out = await runBlocks(recipe);
         if (Object.keys(out.list).length) fresh[tableId] = out;
+        continue;
+      }
+      if (recipe.subTables) {
+        const out = await runSubTables(recipe);
+        if (out && Object.keys(out.categories).length) fresh[tableId] = out;
         continue;
       }
       const session = sessionDocs.get(recipe.book);

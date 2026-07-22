@@ -163,17 +163,35 @@ export function extractGridRows(items, recipe) {
       const obj = {};
       row = recipe.cellsKey ? { [recipe.cellsKey]: obj } : (row = {});
       const tol = recipe.columnTol ?? 14;
+      const windowed = {};
       for (const run of cellRuns) {
         let best = null;
         for (const col of recipe.cellColumns) {
+          // Windowed columns (`w`) JOIN every run in [x, x+w] — for cells
+          // whose text spans several drop-cap runs; point columns bind the
+          // nearest single run.
+          if (col.w != null) {
+            if (run.x >= col.x - 2 && run.x < col.x + col.w) best = { col, d: 0 };
+            continue;
+          }
           const d = Math.abs(run.x - col.x);
           if (d <= tol && (!best || d < best.d)) best = { col, d };
         }
         if (!best) continue;
+        if (best.col.w != null) {
+          (windowed[best.col.key] ??= { col: best.col, runs: [] }).runs.push(run);
+          continue;
+        }
         const v = applyCellPattern(run.str, best.col.pattern ?? recipe.cellPattern ?? "intDash");
         if (v == null && recipe.omitNullCells && !best.col.row) continue;
         if (best.col.row) row[best.col.key] = v;
         else obj[best.col.key] = v;
+      }
+      for (const { col, runs } of Object.values(windowed)) {
+        const joined = runs.sort((a, b) => a.x - b.x).map((r) => r.str).join("").replace(/\s+/g, " ").trim();
+        const v = applyCellPattern(joined, col.pattern ?? "raw");
+        if (col.row) row[col.key] = v;
+        else obj[col.key] = v;
       }
       if (recipe.cellsKey) row[recipe.cellsKey] = obj;
     } else if (recipe.cellKeys) {
@@ -414,7 +432,11 @@ export function extractHarvestPairs(items, recipe) {
     const label = joinRuns(labelRuns);
     const value = valueRuns.map((r) => r.str).join("").replace(/\s+/g, " ").trim();
     if (label && value) {
-      openKey = label.toLowerCase();
+      // Keys normalize to lowercase alphanumerics: drop-cap gluing makes raw
+      // labels unstable ("Bath a ttendant/Masseuse"), and consumers look up
+      // with the same normalization.
+      openKey = label.toLowerCase().replace(/[^a-z0-9]/g, "");
+      out[`__label:${openKey}`] = label.replace(/\s+/g, " ").trim();
       push(openKey, value);
     } else if (!label && value && openKey) {
       push(openKey, value); // wrapped continuation of the open entry
@@ -423,6 +445,7 @@ export function extractHarvestPairs(items, recipe) {
     }
   }
   const packs = {};
+  const labels = {};
   for (const [key, text] of Object.entries(out)) {
     // Junk guards: a real occupation label is short and sentence-free —
     // prose pages interleave the table and must not mint entries.
@@ -441,12 +464,77 @@ export function extractHarvestPairs(items, recipe) {
     if (buf.trim()) tokens.push(buf.trim());
     const clean = tokens.filter(Boolean);
     if (clean.some((t) => t.split(/\s+/).length > 7 || /\./.test(t))) continue; // prose, not a token list
-    if (clean.length >= (recipe.minTokens ?? 1)) packs[key] = clean;
+    if (clean.length >= (recipe.minTokens ?? 1)) {
+      packs[key] = clean;
+      labels[key] = out[`__label:${key}`] ?? key;
+    }
   }
+  if (Object.keys(labels).length) packs._labels = labels;
   return packs;
 }
 
-const SHAPES = { gridRows: extractGridRows, pairs: extractPairs, nameList: extractNameList, bandGrid: extractBandGrid, harvestPairs: extractHarvestPairs };
+/**
+ * `bandList`: one occupation sub-table (JJ) — a header row ("Laborer
+ * Occupation") then rows of d100-band | occupation | optional special note.
+ * The caller supplies items already stitched into a single virtual left
+ * column (reading order, R halves shifted); extraction starts below
+ * `startAfter` (the header), harvests every banded row, and stops at the
+ * first row that neither parses a band nor continues an open name — so the
+ * next sub-table's header or prose ends it.
+ */
+export function extractBandList(items, recipe) {
+  const rows = rowsByY(items, recipe.rowTol ?? 3);
+  const rowStr = (r) => r.items.map((it) => it.str).join("").replace(/\s+/g, " ").trim();
+  let from = 0;
+  if (recipe.startAfter) {
+    const bare = recipe.startAfter.replace(/\s+/g, "").toLowerCase();
+    // Prefer the real table header (it shares its row with "1d100") — the
+    // type table repeats sub-table names in its routing column on the same
+    // page and must not anchor us. Compares are case-blind: drop-caps print
+    // leading letters lowercase.
+    const bareRow = (r) => rowStr(r).replace(/\s+/g, "").toLowerCase();
+    let idx = rows.findIndex((r) => bareRow(r).includes(bare) && bareRow(r).includes("1d100"));
+    if (idx < 0) idx = rows.findIndex((r) => bareRow(r).includes(bare));
+    if (idx >= 0) from = idx + 1;
+  }
+  const bandW = recipe.bandWindow ?? [60, 115];
+  const occW = recipe.occWindow ?? [115, 232];
+  const spW = recipe.specialWindow ?? [232, 320];
+  const out = [];
+  let started = false;
+  for (let ri = from; ri < rows.length; ri++) {
+    const bandTxt = rows[ri].items.filter((it) => it.x >= bandW[0] && it.x < bandW[1]).map((it) => it.str).join("");
+    const band = applyCellPattern(bandTxt, "rollBand");
+    if (!band || band.min == null) {
+      // Non-band rows: skip this table's own continuation headers ("1d100…"
+      // or a repeat of our anchor); STOP at another sub-table's header or at
+      // prose once rows have started.
+      const txt = rowStr(rows[ri]);
+      if (!txt) continue;
+      // A row living entirely in the note window is the previous entry's
+      // WRAPPED trade note (Mercantile Interest columns) — append and go on.
+      if (started && rows[ri].items.every((it) => it.x >= spW[0])) {
+        if (out.length) out[out.length - 1].special = ((out[out.length - 1].special ?? "") + " " + txt).trim();
+        continue;
+      }
+      const bareTxt = txt.replace(/\s+/g, "").toLowerCase();
+      const bareAnchor = (recipe.startAfter ?? "").replace(/\s+/g, "").toLowerCase();
+      if (bareTxt.includes("1d100") || (bareAnchor && bareTxt.includes(bareAnchor))) continue;
+      if (started) break;
+      continue;
+    }
+    started = true;
+    const occ = rows[ri].items.filter((it) => it.x >= occW[0] && it.x < occW[1]).sort((a, b) => a.x - b.x).map((it) => it.str).join("").replace(/\s+/g, " ").trim();
+    const special = rows[ri].items.filter((it) => it.x >= spW[0] && it.x < spW[1]).sort((a, b) => a.x - b.x).map((it) => it.str).join("").replace(/\s+/g, " ").trim();
+    if (!occ) continue;
+    const row = { ...band, occupation: occ };
+    if (special && special !== "-") row.special = special;
+    out.push(row);
+  }
+  return { rows: out };
+}
+
+const SHAPES = { gridRows: extractGridRows, pairs: extractPairs, nameList: extractNameList, bandGrid: extractBandGrid, harvestPairs: extractHarvestPairs, bandList: extractBandList };
 
 /**
  * Shape the raw keyed extraction into the ruledata table's JSON, per
