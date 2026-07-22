@@ -129,7 +129,104 @@ const SPECIALIST_ROWS = [
   ["writerRank4", `^writer${D}rank\\s*4`],
 ].map(([key, labelRe]) => ({ key, labelRe }));
 
+const RARITY_TIER_ROWS = [
+  { key: "ubiquitous", labelRe: "^ubiquitous" },
+  { key: "common", labelRe: "^common$" },
+  { key: "uncommon", labelRe: "^uncommon" },
+  { key: "rare", labelRe: "^rare$" },
+  { key: "veryRare", labelRe: "^very\\s*rare" },
+  { key: "extremelyRare", labelRe: "^extremely\\s*rare" },
+  { key: "legendary", labelRe: "^legendary" },
+];
+
+// Short print names on the screen grid → registry class keys.
+const CLASS_MAP = {
+  Spellsword: "elven spellsword",
+  Nightblade: "elven nightblade",
+  Craftpriest: "dwarven craftpriest",
+  Vaultguard: "dwarven vaultguard",
+  Ruinguard: "zaharan ruinguard",
+  Wonderworker: "nobiran wonderworker",
+};
+
 export const TABLE_RECIPES = {
+  rarity: {
+    source: { book: "ACKS II Judges Journal 118-119 + Judges Screen" },
+    tables: {
+      classRarityTables: {
+        shape: "pairs",
+        book: "js",
+        printedPage: 18,
+        locate: "Ubiquitous",
+        column: { xMin: 0, xMax: 300 },
+        startAfter: "Classes",
+        labelMaxX: 84,
+        cellPattern: "refListLower",
+        rows: RARITY_TIER_ROWS,
+        emit: {
+          path: ["variants", "default", "tiers"],
+          merge: { variants: { default: { label: "ACKS-HENCHMEN.rarityTable.default" } } },
+        },
+      },
+      rarityAvailability: {
+        shape: "gridRows",
+        book: "jj",
+        printedPage: 118,
+        locate: "2d8",
+        labelMaxX: 135,
+        minCells: 4,
+        marketCells: 6,
+        cellPattern: "raw",
+        rows: RARITY_TIER_ROWS,
+        emit: { container: "rows", keyField: "rarity" },
+      },
+      randomHenchmanLevel: {
+        shape: "pairs",
+        book: "js",
+        printedPage: 18,
+        locate: "Random Henchman Level",
+        column: { xMin: 460, xMax: 620 },
+        labelMaxX: 550,
+        cellPattern: "int",
+        valueKey: "level",
+        rows: [
+          { key: 0, labelRe: "lower", labelPattern: "rollBand" },
+          { key: 1, labelRe: "^11", labelPattern: "rollBand" },
+          { key: 2, labelRe: "^17", labelPattern: "rollBand" },
+          { key: 3, labelRe: "^19", labelPattern: "rollBand" },
+        ],
+        emit: { container: "rows", merge: { formula: "1d20" } },
+      },
+      classDistribution: {
+        shape: "bandGrid",
+        book: "js",
+        printedPage: 18,
+        locate: "1d100",
+        column: { xMin: 0, xMax: 460 },
+        labelMaxX: 78,
+        headerMark: "1d100",
+        cellColumns: [
+          { key: "arcane", x: 97 },
+          { key: "thief", x: 171 },
+          { key: "divine", x: 240 },
+          { key: "fighter", x: 312 },
+          { key: "explorer", x: 368 },
+          { key: "venturer", x: 413 },
+        ],
+        classMap: CLASS_MAP,
+        rows: [
+          { key: 0, labelRe: "^1\\s*[-–]\\s*40" },
+          { key: 1, labelRe: "^41" },
+          { key: 2, labelRe: "^61" },
+          { key: 3, labelRe: "^81" },
+          { key: 4, labelRe: "^91\\s*[-–]\\s*94" },
+          { key: 5, labelRe: "^95" },
+          { key: 6, labelRe: "^97" },
+          { key: 7, labelRe: "^99" },
+        ],
+      },
+    },
+  },
   wages: {
     source: { book: "ACKS II Revised Rulebook", pages: "166-171" },
     tables: {

@@ -52,6 +52,25 @@ export function applyCellPattern(text, pattern = "raw") {
       const m = t.match(/[+-]?\d[\d,]*/);
       return m ? parseInt(m[0].replace(/,/g, ""), 10) : null;
     }
+    case "refListLower": {
+      // "Crusader, Mage, Thief, Venturer" -> ["crusader","mage",...]
+      return t.split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
+    }
+    case "rollBand": {
+      // "11-16" | "10 or lower" | "19–20" -> {min?, max?}
+      const range = t.match(/(\d+)\s*[-–]\s*(\d+)/);
+      if (range) {
+        let min = +range[1], max = +range[2];
+        if (max < min) max += 100; // d100 bands print "91–00" for 91–100
+        return { min, max };
+      }
+      const lower = t.match(/(\d+)\s*or lower/i);
+      if (lower) return { max: +lower[1] };
+      const higher = t.match(/(\d+)\s*(?:\+|or higher)/i);
+      if (higher) return { min: +higher[1] };
+      const single = t.match(/^(\d+)$/);
+      return single ? { min: +single[1], max: +single[1] } : null;
+    }
     case "wagePeriod": {
       const m = t.match(/day|week|month|year/i);
       return m ? m[0].toLowerCase() : null;
@@ -117,6 +136,12 @@ export function extractGridRows(items, recipe) {
     for (let i = cursor; i < rows.length; i++) {
       const label = joinRuns(rows[i].items.filter((it) => it.x < recipe.labelMaxX));
       if (label && re.test(label)) {
+        // minCells: a prose line can echo a row label (JJ repeats tier names
+        // in running text) — a real grid row must actually carry its cells.
+        if (recipe.minCells) {
+          const n = rows[i].items.filter((it) => it.x >= recipe.labelMaxX && !/^[*†‡]+$/.test(it.str.trim())).length;
+          if (n < recipe.minCells) continue;
+        }
         matched = rows[i];
         cursor = i + 1;
         break;
@@ -201,14 +226,25 @@ export function extractPairs(items, recipe) {
   const inCol = items.filter((it) => it.x >= xMin && it.x <= xMax);
   const rows = rowsByY(inCol, recipe.rowTol ?? 3);
   const out = {};
+  // startAfter: skip everything above the marker row (a page may stack an
+  // identically-labeled table above this one — the JS screen does).
   let cursor = 0;
+  if (recipe.startAfter) {
+    const idx = rows.findIndex((r) => r.items.some((it) => it.str.includes(recipe.startAfter)));
+    if (idx >= 0) cursor = idx + 1;
+  }
   for (const spec of recipe.rows) {
     const re = new RegExp(spec.labelRe, "i");
     for (let i = cursor; i < rows.length; i++) {
       const label = joinRuns(rows[i].items.filter((it) => it.x < recipe.labelMaxX));
       if (label && re.test(label)) {
         const valRuns = rows[i].items.filter((it) => it.x >= recipe.labelMaxX);
-        out[spec.key] = applyCellPattern(joinRuns(valRuns), recipe.cellPattern ?? "int");
+        const value = applyCellPattern(joinRuns(valRuns), recipe.cellPattern ?? "int");
+        // labelPattern: the label itself carries data (a roll band); the
+        // value lands under valueKey beside it.
+        out[spec.key] = spec.labelPattern
+          ? { ...applyCellPattern(label, spec.labelPattern), [recipe.valueKey ?? "value"]: value }
+          : value;
         cursor = i + 1;
         break;
       }
@@ -261,7 +297,68 @@ export function extractNameList(items, recipe) {
   return out;
 }
 
-const SHAPES = { gridRows: extractGridRows, pairs: extractPairs, nameList: extractNameList };
+/**
+ * `bandGrid`: the JS-screen double-d100 class grid — a header row of bucket
+ * d100 bands over columns, and body rows whose LABEL is the second-d100 band.
+ * Both band sets and every class token are read from the page; `classMap` is
+ * a token→key assist table (short print names → registry class keys).
+ * Emits the reference `classDistribution` shape: buckets[{id,min,max,rows}].
+ */
+export function extractBandGrid(items, recipe) {
+  const { xMin = 0, xMax = Infinity } = recipe.column ?? {};
+  const inCol = items.filter((it) => it.x >= xMin && it.x <= xMax);
+  const rows = rowsByY(inCol, recipe.rowTol ?? 4);
+  const tol = recipe.columnTol ?? 20;
+  const colOfRun = (run) => {
+    let best = null;
+    for (const col of recipe.cellColumns) {
+      const d = Math.abs(run.x - col.x);
+      if (d <= tol && (!best || d < best.d)) best = { col, d };
+    }
+    return best?.col ?? null;
+  };
+  // header row: the bucket bands, one per column
+  const headIdx = rows.findIndex((r) => r.items.some((it) => it.str.includes(recipe.headerMark)));
+  const bands = {};
+  if (headIdx >= 0) {
+    const byCol = {};
+    for (const run of rows[headIdx].items) {
+      const col = colOfRun(run);
+      if (col) (byCol[col.key] ||= []).push(run);
+    }
+    for (const [key, runs] of Object.entries(byCol)) {
+      bands[key] = applyCellPattern(runs.map((r) => r.str).join(""), "rollBand");
+    }
+  }
+  // body rows: band label + one class token per column
+  const buckets = recipe.cellColumns.map((c) => ({ id: c.key, ...(bands[c.key] ?? {}), rows: [] }));
+  let cursor = headIdx + 1;
+  for (const spec of recipe.rows) {
+    const re = new RegExp(spec.labelRe, "i");
+    for (let i = cursor; i < rows.length; i++) {
+      const label = joinRuns(rows[i].items.filter((it) => it.x < recipe.labelMaxX));
+      if (label && re.test(label)) {
+        const range = applyCellPattern(label, "rollBand") ?? {};
+        const byCol = {};
+        for (const run of rows[i].items.filter((it) => it.x >= recipe.labelMaxX)) {
+          const col = colOfRun(run);
+          if (col) byCol[col.key] = (byCol[col.key] ?? "") + run.str;
+        }
+        for (const bucket of buckets) {
+          const token = (byCol[bucket.id] ?? "").trim();
+          if (!token) continue;
+          const key = recipe.classMap?.[token] ?? token.toLowerCase();
+          bucket.rows.push({ ...range, class: key });
+        }
+        cursor = i + 1;
+        break;
+      }
+    }
+  }
+  return { buckets };
+}
+
+const SHAPES = { gridRows: extractGridRows, pairs: extractPairs, nameList: extractNameList, bandGrid: extractBandGrid };
 
 /**
  * Shape the raw keyed extraction into the ruledata table's JSON, per
@@ -278,6 +375,17 @@ export function extractTable(items, recipe) {
     return { [recipe.emit.container]: recipe.rows.map((s) => (kf ? { [kf]: s.key, ...raw[s.key] } : raw[s.key])) };
   }
   if (recipe.emit?.wrap) return { [recipe.emit.wrap]: raw };
+  if (recipe.emit?.path) {
+    // Nest the keyed result at a path, deep-merging any static structure
+    // (module labels etc. — structure, never book values).
+    let out = raw;
+    for (const key of [...recipe.emit.path].reverse()) out = { [key]: out };
+    const merge = (a, b) => {
+      for (const [k, v] of Object.entries(b)) a[k] = v && typeof v === "object" && !Array.isArray(v) ? merge(a[k] ?? {}, v) : v;
+      return a;
+    };
+    return recipe.emit.merge ? merge(out, recipe.emit.merge) : out;
+  }
   if (recipe.emit?.wrapCulture) {
     const { cultureId, ...meta } = recipe.emit.wrapCulture;
     return { list: { [cultureId]: { ...meta, ...raw } } };
