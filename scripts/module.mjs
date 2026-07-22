@@ -30,7 +30,7 @@ import { importTables } from "./tables-binding.mjs";
 import {
   initCookbook, loadCookbook, cookbookImport, cookbookImportMonsters, cookbookImportAbilities, cookbookImportAbilitiesDialog, cookbookUpdateAbilities,
   cookbookFillCompanions, cookbookPruneAbilities, registerAbilityDirectoryButtons, importAbility, cookbookDebug, cookbookStub,
-  cookbookCanReveal, cookbookProse, cookbookCount, refillMonster,
+  cookbookCanReveal, cookbookProse, cookbookCount, refillMonster, resolveAbilities,
 } from "./cookbook.mjs";
 
 const SETTING_DYNAMIC = "dynamicRecipes";
@@ -753,6 +753,13 @@ Hooks.once("ready", async () => {
     RECIPES, BOOKS,
   };
   globalThis.acksContent = api;
+
+  // Provide the ability-resolution contract (acks-lib docs/API.md): sibling
+  // modules embed proficiency packages on hired actors through this, without
+  // naming this module.
+  if (globalThis.acksLib?.services) {
+    globalThis.acksLib.services.register("ability-provider", { resolve: resolveAbilities });
+  }
   const module = game.modules.get(MODULE_ID);
   if (module) module.api = api;
   console.log(

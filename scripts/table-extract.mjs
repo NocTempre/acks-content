@@ -358,7 +358,64 @@ export function extractBandGrid(items, recipe) {
   return { buckets };
 }
 
-const SHAPES = { gridRows: extractGridRows, pairs: extractPairs, nameList: extractNameList, bandGrid: extractBandGrid };
+/**
+ * `harvestPairs`: label→text rows harvested structurally rather than by an
+ * enumerated spec — used where the row KEYS are themselves page content (the
+ * JJ occupation→proficiency packages, ~100 rows over four pages). A row with
+ * a label starts an entry; a row with only value-band runs continues the
+ * previous entry's wrapped list; a label-only row (section heading) closes
+ * the entry. Values split on commas into tokens, keeping parentheticals
+ * ("Craft (scribe)").
+ */
+export function extractHarvestPairs(items, recipe) {
+  const { xMin = 0, xMax = Infinity } = recipe.column ?? {};
+  const inCol = items.filter((it) => it.x >= xMin && it.x <= xMax);
+  const rows = rowsByY(inCol, recipe.rowTol ?? 3);
+  const out = {};
+  let openKey = null;
+  const push = (key, text) => {
+    if (!key) return;
+    out[key] = ((out[key] ?? "") + " " + text).trim();
+  };
+  for (const row of rows) {
+    const labelRuns = row.items.filter((it) => it.x < recipe.labelMaxX);
+    const valueRuns = row.items.filter((it) => it.x >= recipe.labelMaxX);
+    const label = joinRuns(labelRuns);
+    const value = valueRuns.map((r) => r.str).join("").replace(/\s+/g, " ").trim();
+    if (label && value) {
+      openKey = label.toLowerCase();
+      push(openKey, value);
+    } else if (!label && value && openKey) {
+      push(openKey, value); // wrapped continuation of the open entry
+    } else {
+      openKey = null; // heading or blank: close the entry
+    }
+  }
+  const packs = {};
+  for (const [key, text] of Object.entries(out)) {
+    // Junk guards: a real occupation label is short and sentence-free —
+    // prose pages interleave the table and must not mint entries.
+    if (key.split(/\s+/).length > (recipe.maxKeyWords ?? 3)) continue;
+    if (/[.:;!?]/.test(key)) continue;
+    // Split on commas OUTSIDE parentheses: "Weapon Proficiency (axes,
+    // bludgeons)" is one token.
+    const tokens = [];
+    let depth = 0, buf = "";
+    for (const ch of text) {
+      if (ch === "(") depth++;
+      else if (ch === ")") depth = Math.max(0, depth - 1);
+      if (ch === "," && depth === 0) { tokens.push(buf.trim()); buf = ""; }
+      else buf += ch;
+    }
+    if (buf.trim()) tokens.push(buf.trim());
+    const clean = tokens.filter(Boolean);
+    if (clean.some((t) => t.split(/\s+/).length > 7 || /\./.test(t))) continue; // prose, not a token list
+    if (clean.length >= (recipe.minTokens ?? 1)) packs[key] = clean;
+  }
+  return packs;
+}
+
+const SHAPES = { gridRows: extractGridRows, pairs: extractPairs, nameList: extractNameList, bandGrid: extractBandGrid, harvestPairs: extractHarvestPairs };
 
 /**
  * Shape the raw keyed extraction into the ruledata table's JSON, per

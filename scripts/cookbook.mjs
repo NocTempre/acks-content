@@ -1610,3 +1610,39 @@ export async function cookbookImportMonsters() {
   reportImport(done, ids.length, ids.length - todo.length);
   return { done, skipped: ids.length - todo.length };
 }
+
+/**
+ * `ability-provider` (acks-lib service contract v1): resolve proficiency name
+ * tokens into embeddable ability ItemData. Tier 1 reuses the world's own
+ * imported items (the same name index the monster import uses, including its
+ * proficiency-vs-class-power disambiguation); tier 2 imports the definition
+ * from the cookbook; an unresolvable token is reported, never fatal. A
+ * "(specialty)" suffix survives onto the embedded copy's name only.
+ */
+export async function resolveAbilities(tokens) {
+  const items = [];
+  const missing = [];
+  const nameIndex = abilityNameIndex();
+  const loadedById = loadedAbilityIndex();
+  const present = new Set(loadedById.keys());
+  for (const raw of tokens ?? []) {
+    const token = String(raw).trim();
+    if (!token) continue;
+    const m = token.match(/^(.*?)\s*\(([^)]+)\)\s*\d*$/);
+    const base = (m ? m[1] : token.replace(/\s*\d+$/, "")).trim();
+    const specialty = m?.[2] ?? null;
+    const guess = idForName(nameIndex, base, present);
+    const id = guess?.id ?? null;
+    let item = id ? loadedById.get(id) : null;
+    if (!item && id) item = await importAbility(id).catch(() => null);
+    if (!item) {
+      missing.push(token);
+      continue;
+    }
+    const data = item.toObject();
+    delete data._id;
+    if (specialty) data.name = `${data.name} (${specialty})`;
+    items.push(data);
+  }
+  return { items, missing };
+}

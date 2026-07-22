@@ -295,6 +295,20 @@ export const TABLE_RECIPES = {
         rows: CLASS_PCT_ROWS,
         emit: { container: "rows" },
       },
+      // 0th-level occupation → proficiency packages (JJ "Occupations and
+      // Proficiencies", four consecutive pages). Row keys are page content
+      // (occupation names, lowercased); values are comma token lists like
+      // "Profession (merchant), Craft (scribe), Bargaining, Folkways".
+      occupationPackages: {
+        shape: "harvestPairs",
+        book: "jj",
+        printedPage: 254,
+        locate: "Blacksmith",
+        pageSpan: 5,
+        column: { xMin: 40, xMax: 545 },
+        labelMaxX: 130,
+        minTokens: 2,
+      },
       // Auran (Tirenean) name lists — the empire's default culture. Names are
       // DATA (persist); the appearance PROSE stays book-gated. Located on the
       // unique Auran surname so the two-column page can't confuse cultures.

@@ -24,7 +24,13 @@ async function locatePage(doc, recipe) {
   for (let p = 1; p <= doc.numPages; p++) if (!seen.has(p)) order.push(p);
   for (const p of order) {
     const { items } = await pageItems(doc, p);
-    if (items.map((i) => i.str).join(" ").includes(recipe.locate)) return items;
+    if (items.map((i) => i.str).join(" ").includes(recipe.locate)) {
+      if (!recipe.pageSpan) return items;
+      // Multi-page tables (the JJ occupation packages) merge the span.
+      const span = [items];
+      for (let k = 1; k < recipe.pageSpan && p + k <= doc.numPages; k++) span.push((await pageItems(doc, p + k)).items);
+      return span;
+    }
   }
   return null;
 }
@@ -56,7 +62,9 @@ export async function importTables(sessionDocs, { priority } = {}) {
           report.missingTables.push(`${docId}.${tableId} (page not found)`);
           continue;
         }
-        fresh[tableId] = extractTable(items, recipe);
+        fresh[tableId] = recipe.pageSpan
+          ? Object.assign({}, ...items.map((pg) => extractTable(pg, recipe)))
+          : extractTable(items, recipe);
       } catch (err) {
         report.missingTables.push(`${docId}.${tableId} (${err.message})`);
       }
