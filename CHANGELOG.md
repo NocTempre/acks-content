@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.24.0
+
+Six new oracle-verified table recipes (23/23 green): NPC age-by-class,
+0th-level hit dice, proficiency count by race/age, BTA dwarven castes, and
+the optional slavery doc (common-slave economics, the 17×11 slave-troop
+grid, soldier upkeep/indoctrination). New `proseValues` extraction shape
+reads values the book states in running prose — anchor phrases never carry
+values. Point-column binding is nearest-run-wins so footnote glyphs cannot
+displace real cells.
+
 ## 0.16.0
 
 The release where a live import found what offline checks could not.
