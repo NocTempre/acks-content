@@ -407,6 +407,201 @@ export const TABLE_RECIPES = {
           { cultureId: "thrassian", printedPage: 502, anchor: "Akalamdug", meta: { label: "Thrassian", race: "thrassian" } },
         ],
       },
+      // NPC minimum age by class group (JJ ~248): level rows × six labeled
+      // trajectory columns. "44+" caps a column; "-" means the trajectory
+      // never reaches that level. Which class keys map to which column is
+      // consumer interpretation (henchmen), not page data.
+      ageByClass: {
+        shape: "gridRows",
+        book: "jj",
+        printedPage: 248,
+        locate: "(carouser)",
+        locateBare: true,
+        labelMaxX: 90,
+        minCells: 4,
+        cellColumns: [
+          { key: "noble", x: 117, pattern: "agePlus" , row: true },
+          { key: "magistrate", x: 193, pattern: "agePlus" , row: true },
+          { key: "commoner", x: 270, pattern: "agePlus" , row: true },
+          { key: "crusader", x: 345, pattern: "agePlus" , row: true },
+          { key: "mage", x: 421, pattern: "agePlus" , row: true },
+          { key: "thief", x: 498, pattern: "agePlus" , row: true },
+        ],
+        rows: Array.from({ length: 15 }, (_, i) => ({ key: String(i), labelRe: `^${i}$`, set: { level: i } })),
+        emit: { container: "rows", keyField: "level" },
+      },
+      // 0th-level general proficiency count by race and age band (JJ ~253).
+      proficienciesByAge: {
+        shape: "gridRows",
+        book: "jj",
+        printedPage: 253,
+        locate: "121+",
+        locateBare: true,
+        column: { xMin: 40, xMax: 570 }, // page-margin tab letters live at ~x597
+        labelMaxX: 125,
+        minCells: 4,
+        cellColumns: [
+          { key: "human", x: 189, pattern: "ageBand" , row: true },
+          { key: "dwarf", x: 270, pattern: "ageBand" , row: true },
+          { key: "elf", x: 352, pattern: "ageBand" , row: true },
+          { key: "nobiran", x: 434, pattern: "ageBand" , row: true },
+          { key: "zaharan", x: 517, pattern: "ageBand" , row: true },
+        ],
+        rows: Array.from({ length: 8 }, (_, i) => ({ key: String(i + 1), labelRe: `^${i + 1}$`, set: { count: i + 1 } })),
+        emit: { container: "rows", keyField: "count" },
+      },
+      // 0th-level NPC hit dice by race × station (JJ ~252).
+      hd0: {
+        shape: "gridRows",
+        book: "jj",
+        printedPage: 252,
+        locate: "(1 hp)",
+        locateBare: true,
+        labelMaxX: 140,
+        minCells: 3,
+        cellColumns: [
+          { key: "noncombatant", x: 140, w: 100, pattern: "hdCell" , row: true },
+          { key: "commoner", x: 240, w: 90, pattern: "hdCell" , row: true },
+          { key: "militia", x: 330, w: 115, pattern: "hdCell" , row: true },
+          { key: "fighter1", x: 445, w: 115, pattern: "hdCell" , row: true },
+        ],
+        rows: [
+          { key: "dwarf", labelRe: "^dwarf$" },
+          { key: "elf", labelRe: "^elf$" },
+          { key: "human", labelRe: "^human$" },
+        ],
+        emit: { container: "rows", keyField: "race" },
+      },
+      // BTA dwarven castes — the book states the caste split in prose, not a
+      // grid. Anchors carry no values; percentages are read from the page.
+      // The Oathsworn share is the book's own remainder (no printed figure).
+      dwarvenCastes: {
+        shape: "proseValues",
+        book: "bta",
+        printedPage: 21,
+        locate: "of dwarves are Craftborn",
+        locateBare: true,
+        values: [
+          { key: "highbornPct", find: "making up about", take: "pct" },
+          { key: "craftbornPct", find: "of dwarves are craftborn", before: true, take: "pct", span: 30 },
+          { key: "workbornPct", find: "largest caste", take: "pct" },
+        ],
+        emit: {
+          path: [],
+          merge: {
+            oathswornPct: null, // remainder of 100 — computed by consumers, never printed
+            order: ["highborn", "craftborn", "workborn", "oathsworn"],
+            labels: { highborn: "Highborn", craftborn: "Craftborn", workborn: "Workborn", oathsworn: "Oathsworn" },
+          },
+        },
+      },
+    },
+  },
+  // Slavery (JJ ~409-410) — RAW values behind the henchmen `enableSlavery`
+  // toggle. Import always materializes the doc; consumers gate USE by the
+  // world setting. Common-slave economics are prose; troop prices are a grid.
+  slavery: {
+    source: { book: "ACKS II Judges Journal", pages: "409-410" },
+    gatedBy: "enableSlavery",
+    tables: {
+      commonSlaves: {
+        shape: "proseValues",
+        book: "jj",
+        printedPage: 409,
+        locate: "laborers can be bought in markets",
+        locateBare: true,
+        values: [
+          { key: "laborerCost", find: "slave laborers can be bought in markets at a cost of", take: "gp" },
+          { key: "laborerUpkeep", find: "tasks. they cost", take: "gp" },
+          { key: "laborerLoyalty", find: "base loyalty scores of", occurrence: 1, take: "signedInt" },
+          { key: "laborerConstructionSp", find: "construction rate of", take: "sp" },
+          { key: "laborersPerFamily", find: "treat every", take: "int" },
+          { key: "domainMoralePct1", find: "population consists of", occurrence: 1, take: "pct" },
+          { key: "domainMoralePenalty1", find: "morale is decreased by", occurrence: 1, take: "int" },
+          { key: "domainMoralePct2", find: "population consists of", occurrence: 2, take: "pct" },
+          { key: "domainMoralePenalty2", find: "morale is decreased by", occurrence: 2, take: "int" },
+          { key: "domainMoralePct3", find: "if the domain is", take: "pct" },
+          { key: "domainMoralePenalty3", find: "morale is decreased by", occurrence: 3, take: "int" },
+          { key: "householdCost", find: "household slaves can be bought in markets at a cost of", take: "gp" },
+          { key: "householdUpkeep", find: "each, and cost", take: "gp" },
+          { key: "householdLoyalty", find: "base loyalty scores of", occurrence: 2, take: "signedInt" },
+          { key: "pleasureCost", find: "pleasure slaves can be bought in markets at a cost of", take: "gpRange" },
+          { key: "pleasureUpkeep", find: "pleasure slaves cost", take: "gp" },
+          { key: "pleasureMorale", find: "base morale scores of", take: "signedInt" },
+          { key: "professionalWageMult", find: "cost of a professional slave is equal to", take: "int" },
+          { key: "professionalLess", find: "wages per month, less", take: "gp" },
+          { key: "professionalUpkeep", find: "all professional slaves cost", take: "gp" },
+          { key: "professionalLoyalty", find: "base loyalty scores of", occurrence: 3, take: "signedInt" },
+          { key: "hirelingDisplacement", find: "slaves will replace", occurrence: 1, take: "pct2" },
+        ],
+      },
+      // Slave troop purchase prices by race (JJ ~410) — sparse grid, dashes
+      // where a race fields no such troops.
+      slaveTroopCosts: {
+        shape: "gridRows",
+        book: "jj",
+        printedPage: 410,
+        locate: "19,750",
+        locateBare: true,
+        labelMaxX: 140,
+        minCells: 6,
+        cellPattern: "intDash",
+        omitNullCells: true,
+        cellsKey: "costs",
+        cellColumns: [
+          { key: "man", x: 152 },
+          { key: "dwarf", x: 185 },
+          { key: "elf", x: 217 },
+          { key: "kobold", x: 253 },
+          { key: "goblin", x: 287 },
+          { key: "orc", x: 318 },
+          { key: "hobgoblin", x: 356 },
+          { key: "gnoll", x: 397 },
+          { key: "lizardman", x: 438 },
+          { key: "bugbear", x: 481 },
+          { key: "ogre", x: 518 },
+        ],
+        rows: [
+          { key: "militia", labelRe: "^militia$" },
+          { key: "lightInfantry", labelRe: "^light\\s*infantry$" },
+          { key: "heavyInfantry", labelRe: "^heavy\\s*infantry$" },
+          { key: "slinger", labelRe: "^slinger$" },
+          { key: "bowman", labelRe: "^bowman$" },
+          { key: "crossbowman", labelRe: "^crossbowman$" },
+          { key: "compositeLongbowman", labelRe: "^composite/?\\s*longbowman$" },
+          { key: "lightCavalry", labelRe: "^light\\s*cavalry$" },
+          { key: "horseArcher", labelRe: "^horse\\s*archers?$" },
+          { key: "mediumCavalry", labelRe: "^medium\\s*cavalry$" },
+          { key: "heavyCavalry", labelRe: "^heavy\\s*cavalry$" },
+          { key: "cataphractCavalry", labelRe: "^cataphract\\s*cavalry$" },
+          { key: "camelArcher", labelRe: "^camel\\s*archers?$" },
+          { key: "camelLancer", labelRe: "^camel\\s*lancers?$" },
+          { key: "warElephant", labelRe: "^war\\s*elephants?$" },
+          { key: "mountedCrossbowman", labelRe: "^mounted\\s*crossbowman$" },
+          { key: "beastRider", labelRe: "^beast\\s*riders?$" },
+        ],
+        emit: { container: "rows", keyField: "type" },
+      },
+      // Slave-soldier upkeep and indoctrination costs (JJ ~410 prose).
+      // Acquisition pipelines (own-realm levies, war captives) are realm play
+      // and stay book-gated prose.
+      soldierRules: {
+        shape: "proseValues",
+        book: "jj",
+        printedPage: 409,
+        locate: "Availability of Slave Soldiers",
+        locateBare: true,
+        pageSpan: 2, // displacement is stated beside common slaves; upkeep/indoctrination overleaf
+        values: [
+          { key: "upkeep", find: "slave soldiers cost", take: "gp" },
+          { key: "ogreUpkeep", find: "(ogres cost", take: "gp" },
+          { key: "mercenaryDisplacement", find: "slave soldiers will replace", take: "pct2" },
+          { key: "indoctrinationYears", find: "require a", take: "wordInt" },
+          { key: "indoctrinationUpkeep", find: "in upkeep per candidate", before: true, take: "gp" },
+          { key: "marshalWage", find: "one marshal (", take: "gp" },
+          { key: "marshalPer", find: "is required per", take: "int" },
+        ],
+      },
     },
   },
   availability: {

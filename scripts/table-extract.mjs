@@ -87,6 +87,25 @@ export function applyCellPattern(text, pattern = "raw") {
       const m = t.match(/\d+d\d+(?:\s*[+x×]\s*\d+)?/);
       return m ? m[0].replace(/\s+/g, "") : null;
     }
+    case "agePlus": {
+      // Age-ladder cell: "44" | "44+" (column cap) | "-" (class caps earlier).
+      // Stray superscript footnote glyphs y-merge in — letters are never data.
+      const s = t.replace(/[^\d+\-]/g, "");
+      if (!s || s === "-") return null;
+      const m = s.match(/^(\d+)\+?$/);
+      return m ? Number(m[1]) : null;
+    }
+    case "ageBand": {
+      // "9-12" -> [9,12]; "88+" -> [88,999] (open-ended top band)
+      const range = t.match(/(\d+)\s*[-–]\s*(\d+)/);
+      if (range) return [Number(range[1]), Number(range[2])];
+      const open = t.match(/(\d+)\s*\+/);
+      return open ? [Number(open[1]), 999] : null;
+    }
+    case "hdCell": {
+      // "1/4 H|d|(1 hp)" drop-cap runs -> "1/4 HD (1 hp)"
+      return t.replace(/\s*h\s*d\s*/i, " HD ").replace(/\s*\(/, " (").replace(/\s+/g, " ").trim() || null;
+    }
     default:
       return t;
   }
@@ -164,6 +183,7 @@ export function extractGridRows(items, recipe) {
       row = recipe.cellsKey ? { [recipe.cellsKey]: obj } : (row = {});
       const tol = recipe.columnTol ?? 14;
       const windowed = {};
+      const pointCands = {};
       for (const run of cellRuns) {
         let best = null;
         for (const col of recipe.cellColumns) {
@@ -182,10 +202,16 @@ export function extractGridRows(items, recipe) {
           (windowed[best.col.key] ??= { col: best.col, runs: [] }).runs.push(run);
           continue;
         }
-        const v = applyCellPattern(run.str, best.col.pattern ?? recipe.cellPattern ?? "intDash");
-        if (v == null && recipe.omitNullCells && !best.col.row) continue;
-        if (best.col.row) row[best.col.key] = v;
-        else obj[best.col.key] = v;
+        // Nearest run wins the column: a footnote glyph y-merged into the row
+        // sits off-grid and must not displace the real cell beside it.
+        const prev = pointCands[best.col.key];
+        if (!prev || best.d < prev.d) pointCands[best.col.key] = { col: best.col, d: best.d, run };
+      }
+      for (const { col, run } of Object.values(pointCands)) {
+        const v = applyCellPattern(run.str, col.pattern ?? recipe.cellPattern ?? "intDash");
+        if (v == null && recipe.omitNullCells && !col.row) continue;
+        if (col.row) row[col.key] = v;
+        else obj[col.key] = v;
       }
       for (const { col, runs } of Object.values(windowed)) {
         const joined = runs.sort((a, b) => a.x - b.x).map((r) => r.str).join("").replace(/\s+/g, " ").trim();
@@ -534,7 +560,91 @@ export function extractBandList(items, recipe) {
   return { rows: out };
 }
 
-const SHAPES = { gridRows: extractGridRows, pairs: extractPairs, nameList: extractNameList, bandGrid: extractBandGrid, harvestPairs: extractHarvestPairs, bandList: extractBandList };
+/**
+ * `proseValues`: values the book states in running prose rather than a grid
+ * (BTA caste percentages, JJ slavery costs). Each capture is an ANCHOR PHRASE
+ * (never containing the value) plus a `take` micro-pattern applied to the
+ * text window after it (or before, with `before: true`). Repeated phrasings
+ * disambiguate by `occurrence` in reading order. The page is flattened
+ * two-column reading order (L then R at `colSplit`), lowercased, whitespace
+ * collapsed — the same normalization drop-caps and line wraps need anyway.
+ */
+const WORD_INTS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
+
+function takeProse(window, take) {
+  const num = (s) => Number(s.replace(/,/g, ""));
+  switch (take) {
+    case "int": {
+      const m = window.match(/-?\d[\d,]*/);
+      return m ? num(m[0]) : undefined;
+    }
+    case "gp": {
+      const m = window.match(/(-?[\d,]+)\s*gp/);
+      return m ? num(m[1]) : undefined;
+    }
+    case "sp": {
+      const m = window.match(/(-?[\d,]+)\s*sp/);
+      return m ? num(m[1]) : undefined;
+    }
+    case "pct": {
+      const m = window.match(/(\d+)\s*%/);
+      return m ? num(m[1]) : undefined;
+    }
+    case "pct2": {
+      const m = window.match(/(\d+)\s*%[^%]*?(\d+)\s*%/);
+      return m ? [num(m[1]), num(m[2])] : undefined;
+    }
+    case "gpRange": {
+      const m = window.match(/([\d,]+)\s*gp\s*to\s*([\d,]+)\s*gp/);
+      return m ? { min: num(m[1]), max: num(m[2]) } : undefined;
+    }
+    case "signedInt": {
+      const m = window.match(/-\s?\d+|\+\s?\d+|\d+/);
+      return m ? num(m[0].replace(/\s/g, "")) : undefined;
+    }
+    case "wordInt": {
+      const m = window.match(/\b(one|two|three|four|five|six|seven|eight|nine|ten)\b/);
+      return m ? WORD_INTS[m[1]] : undefined;
+    }
+    default:
+      return undefined;
+  }
+}
+
+export function extractProseValues(items, recipe) {
+  const split = recipe.colSplit ?? 300;
+  const { xMin = 20, xMax = 600 } = recipe.column ?? {};
+  const its = items
+    .filter((i) => i.x >= xMin && i.x < xMax && i.y >= (recipe.yMin ?? 55) && i.y <= (recipe.yMax ?? 765))
+    .sort((a, b) => ((a.x < split ? 0 : 1) - (b.x < split ? 0 : 1)) || (a.y - b.y) || (a.x - b.x));
+  const text = its.map((i) => i.str).join(" ").replace(/\s+/g, " ").toLowerCase();
+  const out = {};
+  for (const v of recipe.values) {
+    const find = v.find.toLowerCase();
+    let idx = -1;
+    for (let n = v.occurrence ?? 1; n > 0; n--) {
+      idx = text.indexOf(find, idx + 1);
+      if (idx < 0) break;
+    }
+    if (idx < 0) continue; // absent, not undefined: page-span merges keep earlier pages' captures
+    const span = v.span ?? 90;
+    const window = v.before ? text.slice(Math.max(0, idx - span), idx) : text.slice(idx + find.length, idx + find.length + span);
+    let val = takeProse(window, v.take ?? "int");
+    if (v.before && val !== undefined) {
+      // before-windows want the LAST match, not the first
+      let last;
+      const re = { pct: /(\d+)\s*%/g, gp: /(-?[\d,]+)\s*gp/g, int: /-?\d[\d,]*/g }[v.take ?? "int"];
+      if (re) {
+        for (const m of window.matchAll(re)) last = m[1] ?? m[0];
+        if (last !== undefined) val = Number(String(last).replace(/,/g, ""));
+      }
+    }
+    if (val !== undefined) out[v.key] = val;
+  }
+  return out;
+}
+
+const SHAPES = { gridRows: extractGridRows, pairs: extractPairs, nameList: extractNameList, bandGrid: extractBandGrid, harvestPairs: extractHarvestPairs, bandList: extractBandList, proseValues: extractProseValues };
 
 /**
  * Shape the raw keyed extraction into the ruledata table's JSON, per
