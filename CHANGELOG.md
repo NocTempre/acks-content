@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.24.1
+
+- Add the `url` field to the manifest (GitHub repo link), matching the rest of
+  the family.
+
 ## 0.24.0
 
 Six new oracle-verified table recipes (23/23 green): NPC age-by-class,
