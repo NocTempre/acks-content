@@ -309,21 +309,38 @@ export const TABLE_RECIPES = {
         labelMaxX: 130,
         minTokens: 2,
       },
-      // Auran (Tirenean) name lists — the empire's default culture. Names are
-      // DATA (persist); the appearance PROSE stays book-gated. Located on the
-      // unique Auran surname so the two-column page can't confuse cultures.
+      // Culture name lists (RR "People of Aurëpos" + BTA for dwarves). Each
+      // block is SELF-LOCATING: its anchor (the list's first male name — a
+      // short-label page anchor) finds the page, the print column, and the
+      // start row, so stacked two-column culture blocks never cross-match.
+      // NAMES are extracted data; label/patronym-template/race are
+      // structural assists; appearance PROSE is never touched.
       cultures: {
         shape: "nameList",
         book: "rr",
-        printedPage: 504,
-        locate: "Amadorus",
-        column: { xMin: 300, xMax: 545 },
         fields: [
           { key: "male", label: "Male Names:" },
           { key: "female", label: "Female Names:" },
           { key: "surnames", label: "Surnames:" },
         ],
-        emit: { wrapCulture: { cultureId: "auran", label: "Tirenean (Auran)", surnameStyle: "hereditary" } },
+        blocks: [
+          { cultureId: "auran", printedPage: 502, anchor: "Aurëus", meta: { label: "Tirenean (Auran)", surnameStyle: "hereditary" } },
+          { cultureId: "celdorean", printedPage: 496, anchor: "Ardumanish", meta: { label: "Celdorean", patronym: { male: "{parent}apur", female: "{parent}adar" } } },
+          { cultureId: "dwarven", book: "bta", printedPage: 21, anchor: "Arsic", meta: { label: "Dwarven (Meniri/Jutting)", surnameStyle: "hereditary", race: "dwarf" } },
+          { cultureId: "elven", printedPage: 496, anchor: "Aodan", meta: { label: "Elven (Argollëan)", patronym: { male: "Mag {parent}", female: "Ni {parent}" }, race: "elf" } },
+          { cultureId: "jutlandic", printedPage: 497, anchor: "Asmund", meta: { label: "Jutlandic", patronym: { male: "{parent}sson", female: "{parent}dottir" } } },
+          { cultureId: "kemeshi", printedPage: 498, anchor: "Ankhopten", meta: { label: "Kemeshi" } },
+          { cultureId: "krysean", printedPage: 498, anchor: "Aibekeres", meta: { label: "Krysean", patronym: { male: "{parent}", female: "{parent}" } } },
+          { cultureId: "kushtu", printedPage: 498, anchor: "Abimbola", meta: { label: "Kushtu" } },
+          { cultureId: "nicean", printedPage: 499, anchor: "Apollonis", meta: { label: "Nicean", patronym: { male: "{parent}ides", female: "{parent}ides" } } },
+          { cultureId: "opelenean", printedPage: 499, anchor: "Abedsh", meta: { label: "Opelenean", patronym: { male: "Bar {parent}", female: "Bat {parent}" } } },
+          { cultureId: "rornish", printedPage: 500, anchor: "Aeron", meta: { label: "Rornish", patronym: { male: "{parent}", female: "{parent}" } } },
+          { cultureId: "shebatean", printedPage: 500, anchor: "Abaddon", meta: { label: "Shebatean", patronym: { male: "Ibn {parent}", female: "Bint {parent}" } } },
+          { cultureId: "skysos", printedPage: 501, anchor: "Attila", meta: { label: "Skysos" } },
+          { cultureId: "somirean", printedPage: 501, anchor: "Artashumara", meta: { label: "Somirean" } },
+          { cultureId: "zaharan", printedPage: 503, anchor: "Ashurdan", meta: { label: "Zaharan", patronym: { male: "Bet-{parent}", female: "Bet-{parent}" }, race: "zaharan" } },
+          { cultureId: "thrassian", printedPage: 502, anchor: "Akalamdug", meta: { label: "Thrassian", race: "thrassian" } },
+        ],
       },
     },
   },

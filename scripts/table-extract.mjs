@@ -261,36 +261,67 @@ export function extractPairs(items, recipe) {
  * looking like names). Names are DATA and persist; the surrounding appearance
  * PROSE is never touched. A valid name is one capitalized token (accents ok).
  */
-const NAME_RE = /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’-]*$/;
+// Full Unicode letters: the books print Buǧra, Mătine, Tϋlay — extraction
+// keeps them as printed (the seat's book is authoritative over any
+// hand-typed transliteration).
+const NAME_RE = /^[\p{L}][\p{L}'’-]*$/u;
 
 export function extractNameList(items, recipe) {
   const { xMin = 0, xMax = Infinity } = recipe.column ?? {};
   const inCol = items.filter((it) => it.x >= xMin && it.x <= xMax);
   const rows = rowsByY(inCol, recipe.rowTol ?? 3);
-  const fields = recipe.fields.map((f) => ({
-    ...f,
-    rowIdx: rows.findIndex((r) => r.items.some((it) => it.str.trim().startsWith(f.label))),
-  }));
+  // Labels match on the ROW's joined text (drop-caps split "M ale Names:"
+  // across runs; joining repairs it), searching below an optional anchor so
+  // stacked culture blocks in one column pick the right one.
+  const rowText = (r) => r.items.map((it) => it.str).join("").replace(/\s+/g, " ").trim();
+  let from = 0;
+  if (recipe.startAfter) {
+    const idx = rows.findIndex((r) => rowText(r).includes(recipe.startAfter));
+    if (idx >= 0) from = idx;
+  }
+  const fields = recipe.fields.map((f) => {
+    const labelBare = f.label.replace(/\s+/g, "");
+    const rowIdx = rows.findIndex((r, i) => i >= from && rowText(r).replace(/\s+/g, "").startsWith(labelBare));
+    return { ...f, rowIdx };
+  });
   const out = {};
   fields.forEach((f, fi) => {
     if (f.rowIdx < 0) { out[f.key] = []; return; }
     const nextIdx = fields.slice(fi + 1).map((n) => n.rowIdx).find((i) => i > f.rowIdx);
     const endIdx = nextIdx ?? rows.length;
-    let text = "";
-    for (let ri = f.rowIdx; ri < endIdx; ri++) {
-      let runs = rows[ri].items;
-      if (ri === f.rowIdx) {
-        const li = runs.findIndex((it) => it.str.trim().startsWith(f.label));
-        runs = runs.slice(li);
-        runs = runs.map((it, i2) => (i2 === 0 ? { ...it, str: it.str.replace(f.label, "") } : it));
-      }
-      text += " " + runs.map((r) => r.str).join("");
-    }
-    const tokens = text.split(",").map((s) => s.trim()).filter(Boolean);
+    // Tokenize PER ROW: the list's last line and the following prose join
+    // without a comma, so a text-level split would glue the final name into
+    // a prose token and lose it. A row contributes its valid name prefix;
+    // the first invalid token ends the whole list.
     const names = [];
-    for (const t of tokens) {
-      if (NAME_RE.test(t)) names.push(t);
-      else break; // hit prose (a lowercase or multi-word run) → list ended
+    let done = false;
+    let openComma = false;
+    for (let ri = f.rowIdx; ri < endIdx && !done; ri++) {
+      // A display-size row is the next culture's heading — the list is over
+      // (a lone capitalized heading would otherwise pass as a name).
+      if (ri > f.rowIdx && rows[ri].items.some((it) => it.h >= 11)) break;
+      // Cross into a stitched continuation page only when the previous line
+      // ended mid-list (trailing comma) — else the list was complete and the
+      // next page's margin furniture must not append.
+      if (rows[ri].items.some((it) => it._p2) && !openComma) break;
+      let line = rowText(rows[ri]);
+      openComma = line.trim().endsWith(",");
+      if (ri === f.rowIdx) {
+        let li = 0, bi = 0;
+        const bare = f.label.replace(/\s+/g, "");
+        while (li < line.length && bi < bare.length) {
+          if (line[li] !== " ") bi++;
+          li++;
+        }
+        line = line.slice(li);
+      }
+      for (const raw of line.split(",").map((s) => s.trim()).filter(Boolean)) {
+        // Drop-cap repair: a line-initial name splits as "U nnhild" — fuse
+        // the lone letter back on (uppercased; the glyph extracts lowercase).
+        const t = /^[\p{L}]\s[\p{Ll}'’-]/u.test(raw) ? raw[0].toUpperCase() + raw.slice(2) : raw;
+        if (NAME_RE.test(t)) names.push(t);
+        else { done = true; break; }
+      }
     }
     out[f.key] = names;
   });

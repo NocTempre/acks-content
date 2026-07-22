@@ -48,9 +48,38 @@ export async function importTables(sessionDocs, { priority } = {}) {
   const P = priority ?? lib.tables.PRIORITY.WORLD;
   const report = { imported: [], missingBooks: new Set(), missingTables: [] };
 
+  // Self-locating culture blocks: the anchor (a list's first name) finds the
+  // page and print column; two-column reading order is stitched into one
+  // virtual column so a list can wrap column→column→page.
+  const runBlocks = async (recipe) => {
+    const list = {};
+    for (const block of recipe.blocks) {
+      const bk = block.book ?? recipe.book;
+      const session = sessionDocs.get(bk);
+      if (!session?.doc) { report.missingBooks.add(bk); continue; }
+      const span = await locatePage(session.doc, { printedPage: block.printedPage, locate: block.anchor, pageSpan: 2 });
+      if (!span) { report.missingTables.push(`cultures.${block.cultureId} (page not found)`); continue; }
+      const seg = (pg, side) => (pg ?? []).filter((it) => (side === "L" ? it.x >= 25 && it.x < 295 : it.x >= 295 && it.x < 585));
+      const run = span[0].find((it) => it.str.includes(block.anchor));
+      const startSide = run && run.x >= 295 ? 1 : 0;
+      const flow = [[span[0], "L"], [span[0], "R"], [span[1], "L"], [span[1], "R"]].slice(startSide);
+      const stitched = flow.flatMap(([pg, side], si) =>
+        seg(pg, side).map((it) => ({ ...it, x: side === "R" ? it.x - 268 : it.x, y: it.y + si * 2000, _p2: si > 0 }))
+      );
+      const names = extractTable(stitched, { ...recipe, blocks: null, column: { xMin: 25, xMax: 320 }, startAfter: block.anchor });
+      list[block.cultureId] = { ...block.meta, ...names };
+    }
+    return { list };
+  };
+
   for (const [docId, docRec] of Object.entries(TABLE_RECIPES)) {
     const fresh = {};
     for (const [tableId, recipe] of Object.entries(docRec.tables)) {
+      if (recipe.blocks) {
+        const out = await runBlocks(recipe);
+        if (Object.keys(out.list).length) fresh[tableId] = out;
+        continue;
+      }
       const session = sessionDocs.get(recipe.book);
       if (!session?.doc) {
         report.missingBooks.add(recipe.book);

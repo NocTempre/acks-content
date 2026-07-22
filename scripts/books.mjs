@@ -22,6 +22,12 @@ export const BOOKS = {
     pages: 489,
     titleRe: /Judges Journal/i,
   },
+  bta: {
+    label: "By This Axe: The Cyclopedia of Dwarven Civilization",
+    short: "BTA",
+    pages: 273,
+    titleRe: /By This Axe/i,
+  },
   js: {
     label: "ACKS II Judges Screen Inserts",
     short: "JS",
