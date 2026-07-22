@@ -130,12 +130,25 @@ export function scanPaths(root, relPaths) {
   return { errors: [...errors], warnings: [...warnings] };
 }
 
+/*
+ * Exit codes are a contract the release workflow depends on:
+ *   0 — clean
+ *   1 — a leak was found (a content verdict; CI quarantines the repo)
+ *   2 — the scanner itself crashed (a tooling verdict; CI fails loud but must
+ *       NOT quarantine — a Node quirk or missing file is not grounds to take a
+ *       public repo private). Never let a crash masquerade as exit 1.
+ */
 if (CLI) {
-  const tracked = trackedFiles(ROOT);
-  if (tracked) {
-    for (const relPath of tracked) inspect(path.join(ROOT, relPath), relPath);
-  } else {
-    walk(ROOT);
+  try {
+    const tracked = trackedFiles(ROOT);
+    if (tracked) {
+      for (const relPath of tracked) inspect(path.join(ROOT, relPath), relPath);
+    } else {
+      walk(ROOT);
+    }
+  } catch (err) {
+    console.error(`::error::ip-scan: tooling error, not a leak verdict — ${err?.stack || err}`);
+    process.exit(2);
   }
 
   for (const w of warnings) console.warn(`  warn  ${w}`);
