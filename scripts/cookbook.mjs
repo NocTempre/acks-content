@@ -737,7 +737,13 @@ async function importOne(bookId, id, folderId) {
     return null;
   }
   if (node.fields.art && ctx.importArtForPage) {
-    await ctx.importArtForPage(actor, session.doc, { id, page: found.entry.pages[0] });
+    const artInstr = found.entry.fields?.art ?? {};
+    await ctx.importArtForPage(actor, session.doc, {
+      id,
+      page: artInstr.page ?? found.entry.pages[0],
+      name: artInstr.name ?? node.fields.art.name ?? null,
+      box: artInstr.box ?? null,
+    });
   }
   return actor;
 }
@@ -907,6 +913,7 @@ async function importAdventureActor(bookId, id, folderId) {
   const bound = kind === "kind.npc" ? bindNpc(node) : bindLegacyMonster(node);
   const paras = node.fields.description ?? [];
   cookbookCacheParas(bookId, id, paras);
+  const artInstr = found.entry.fields?.art ?? null;
   const sl = bound.statline;
   const classLine = sl?.class ? `<p><em>${sl.class.name} ${sl.class.level}${sl.class.note ? ` (${sl.class.note})` : ""}</em></p>` : "";
   bound.system.details = {
@@ -919,7 +926,7 @@ async function importAdventureActor(bookId, id, folderId) {
     bound.items = [...(bound.items ?? []), ...profItems];
     if (missing.length) console.log(`${MODULE_ID} | ${id}: unresolved proficiencies ${missing.join(", ")}`);
   }
-  return Actor.create({
+  const actor = await Actor.create({
     name: found.entry.name,
     type: "monster",
     folder: folderId,
@@ -943,6 +950,20 @@ async function importAdventureActor(bookId, id, folderId) {
       },
     },
   });
+  // Same art path as the MM import: the compiled entry names ITS illustration
+  // (associated by placement inside the entry's claimed region), and the seat
+  // extracts + uploads it. A shipped placement BOX needs no runtime XObject
+  // resolution (the AX books' art never registers on page.objs), so the box
+  // alone is enough to proceed.
+  if (actor && artInstr && (artInstr.box || node.fields.art) && ctx.importArtForPage) {
+    await ctx.importArtForPage(actor, session.doc, {
+      id,
+      page: artInstr.page ?? found.entry.pages[0],
+      name: artInstr.name ?? node.fields.art.name ?? null,
+      box: artInstr.box ?? null,
+    });
+  }
+  return actor;
 }
 
 async function ensureTypedFolder(type) {

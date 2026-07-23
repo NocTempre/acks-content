@@ -22,7 +22,7 @@
 import { MODULE_ID, LANG_PREFIX } from "./constants.mjs";
 import { BOOKS, fingerprintWarning } from "./books.mjs";
 import { RECIPES, recipeById } from "./recipes.mjs";
-import { openBook, pageItems, extractRecipe, extractDisplay, extractRunin, extractSpoils, extractPageArt, listHeadings, setWorker } from "./extract.mjs";
+import { openBook, pageItems, extractRecipe, extractDisplay, extractRunin, extractSpoils, extractPageArt, extractPageArtRegion, listHeadings, setWorker, setWasmUrl } from "./extract.mjs";
 import { extractStatPairs } from "./stats.mjs";
 import { mapPairs } from "./stats-map.mjs";
 import { createDocFor } from "./poc.mjs";
@@ -516,7 +516,12 @@ async function loadHeadings(bookId, page, pageData, picked, kindChoice) {
  *  world asset sourced from the GM's own book, like a scan the GM saved. */
 async function importArt(actor, doc, recipe) {
   try {
-    const art = await extractPageArt(doc, recipe.page);
+    // Name-first: with the wasm decoders shipped, the placed XObject itself
+    // extracts cleanly (the AX books' art is JPEG2000). The placement-box
+    // page-render crop stays as a fallback for a seat whose decoders fail.
+    const art =
+      (await extractPageArt(doc, recipe.page, recipe.name ?? null)) ??
+      (recipe.box ? await extractPageArtRegion(doc, recipe.page, recipe.box) : null);
     if (!art) {
       console.log(`${MODULE_ID} | ${actor.name}: no suitable illustration found on PDF p. ${recipe.page}.`);
       return false;
@@ -742,6 +747,7 @@ async function onRevealClick(event) {
 Hooks.once("init", () => {
   game.settings.register(MODULE_ID, SETTING_DYNAMIC, { scope: "world", config: false, type: Object, default: {} });
   setWorker(`modules/${MODULE_ID}/vendor/pdf.worker.mjs`);
+  setWasmUrl(`modules/${MODULE_ID}/vendor/wasm/`);
   CONFIG.TextEditor.enrichers.push({
     // id may carry a "#section" suffix (cookbook description sections).
     pattern: /@PdfText\[([\w.#-]+)\](?:\{([^}]+)\})?/g,

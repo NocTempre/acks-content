@@ -16,7 +16,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { openBook, pageItems, listHeadings, detectColumns, colOf, glyphColorRuns } from "../scripts/extract.mjs";
+import { openBook, pageItems, listHeadings, detectColumns, colOf, glyphColorRuns, pageArtPlacements } from "../scripts/extract.mjs";
 import { runsIn, joinRuns, attackModel } from "../scripts/executor.mjs";
 import { BOOKS, fingerprintWarning } from "../scripts/books.mjs";
 import { FILES } from "./reference-lib.mjs";
@@ -926,6 +926,75 @@ function axParas(segs, anchorPage, opts = {}) {
   return { paras, statlines };
 }
 
+/**
+ * AUDITED 2026-07-23: the placement heuristic below systematically found the
+ * parchment slabs behind the quick-stat blocks (they are the only images whose
+ * centers land inside claimed text zones; real portraits stand beside the
+ * column). It is therefore only invoked for entries carrying a chef-authored
+ * assists.artName, where it resolves the shipped placement box.
+ *
+ * The illustration printed INSIDE an entry's claimed region, if any. Purely
+ * geometric: candidates come from the operator-list PLACEMENTS (no image
+ * decoding, so it runs offline), must be illustration-sized as placed (>=90pt
+ * each way, aspect < 3.5, not a full-page background), and their center must
+ * fall in the union of the entry's own claimed boxes on that page (padded a
+ * hair — portraits sit flush against the text that wraps them). Several
+ * candidates -> the largest, the same rule the MM pick uses; none -> no art
+ * field, quietly. Ships { op:"art", page, name } — an exact XObject name is
+ * stable per printing, like every other shipped observation.
+ */
+async function axPickArt(doc, fields, extraBoxes = [], assists = {}) {
+  // A chef-audited association outranks the heuristic entirely: the audit
+  // looked at the pixels, the heuristic only at placement.
+  if (assists.artName) {
+    const page = assists.artPage ?? Object.values(fields).find((i) => i.page)?.page;
+    const placements = await pageArtPlacements(doc, page).catch(() => []);
+    const hit = placements.find((p) => p.name === assists.artName);
+    const r = (v) => Math.round(v * 10) / 10;
+    return {
+      op: "art", page, name: assists.artName,
+      ...(hit ? { box: { x: r(hit.x), y: r(hit.y), w: r(hit.w), h: r(hit.h) } } : {}),
+    };
+  }
+  const boxes = new Map();
+  const add = (page, box) => {
+    if (!box || !page) return;
+    if (!boxes.has(page)) boxes.set(page, []);
+    boxes.get(page).push(box);
+  };
+  for (const instr of Object.values(fields)) {
+    if (instr.op === "text") for (const p of instr.paras ?? []) add(p.page ?? instr.page, p.box);
+    else if (instr.box) add(instr.page, instr.box);
+  }
+  for (const e of extraBoxes) add(e.page, e.box);
+  for (const [page, list] of [...boxes.entries()].sort((a, b) => a[0] - b[0])) {
+    const placements = await pageArtPlacements(doc, page).catch(() => []);
+    const cands = placements.filter((a) => {
+      // "g_" names are GLOBAL XObjects shared across pages — recurring
+      // decorations, never an entry's illustration.
+      if (a.name.startsWith("g_")) return false;
+      if (a.w < 90 || a.h < 90) return false;
+      if (a.w / a.h > 3.5 || a.h / a.w > 3.5) return false;
+      if (a.w > 420 && a.h > 600) return false; // full-page background
+      const cx = a.x + a.w / 2;
+      const cy = a.y + a.h / 2;
+      // Center inside a SINGLE claimed box (boxes are column-scoped, so a
+      // description that continues in the next column cannot annex the
+      // neighbouring entry's illustration via a bounding-rect union).
+      return list.some((b) => cx >= b.x0 - 8 && cx <= b.x1 + 8 && cy >= b.y0 - 14 && cy <= b.y1 + 34);
+    });
+    if (cands.length) {
+      const best = cands.sort((a, b) => b.w * b.h - a.w * a.h)[0];
+      const r = (v) => Math.round(v * 10) / 10;
+      // The placement box ships beside the name: the binding crops it from a
+      // page render, which works even when the image never registers as a
+      // retrievable XObject (the AX books paint art inside Form XObjects).
+      return { op: "art", page, name: best.name, box: { x: r(best.x), y: r(best.y), w: r(best.w), h: r(best.h) } };
+    }
+  }
+  return null;
+}
+
 /** Chef-authored extra skips (assists.skips = [{page?, box, reason?}]): the
  * escape hatch for recorded page furniture no heuristic should learn — a
  * table's Average-XP footer row, a decorative divider. */
@@ -1196,6 +1265,10 @@ async function compileNpc(doc, entry, kindRow, bookCtx) {
     if (paras.length) fields.description = { op: "text", page, paras };
   }
 
+  if (assists.artName) {
+    const art = await axPickArt(doc, fields, [], assists);
+    if (art) fields.art = art;
+  }
   const out = {
     kind: entry.kind, name: entry.name, cite: axCite(entry.book, page), pages: entry.pages,
     ...(entry.meta ? { meta: entry.meta } : {}), fields,
@@ -1468,6 +1541,10 @@ async function compileLegacyMonster(doc, entry, kindRow) {
   const { paras } = axParas(segs, page, {});
   if (paras.length) fields.description = { op: "text", page, paras };
 
+  if (assists.artName) {
+    const art = await axPickArt(doc, fields, [], assists);
+    if (art) fields.art = art;
+  }
   const out = {
     kind: entry.kind, name: entry.name, cite: axCite(entry.book, page), pages: entry.pages,
     ...(entry.meta ? { meta: entry.meta } : {}), fields,

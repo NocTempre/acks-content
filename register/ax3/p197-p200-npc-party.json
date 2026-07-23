@@ -16,7 +16,9 @@
     },
     "assists": {
       "statLabel": "Gabriol Eirenikos:",
-      "noDescStop": true
+      "noDescStop": true,
+      "artName": "img_p198_1",
+      "artPage": 199
     }
   },
   {
@@ -36,7 +38,9 @@
     },
     "assists": {
       "statLabel": "Aghilas:",
-      "statlineAt": 201
+      "statlineAt": 201,
+      "artName": "img_p199_1",
+      "artPage": 200
     }
   },
   {

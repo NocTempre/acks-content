@@ -17,8 +17,24 @@ export function setWorker(url) {
   GlobalWorkerOptions.workerSrc = url;
 }
 
+/**
+ * Where the wasm image decoders live (openjpeg/jbig2/qcms). The AX books
+ * embed their illustrations as JPEG2000, which pdf.js can only decode through
+ * these; without them the image objects never resolve and a page render that
+ * needs one hangs. Browser-only (the module sets it at boot); the offline
+ * tools never decode pixels.
+ */
+let WASM_URL = null;
+export function setWasmUrl(url) {
+  WASM_URL = url;
+}
+
 export async function openBook(data) {
-  const doc = await getDocument({ data: new Uint8Array(data), useSystemFonts: true }).promise;
+  const doc = await getDocument({
+    data: new Uint8Array(data),
+    useSystemFonts: true,
+    ...(WASM_URL ? { wasmUrl: WASM_URL } : {}),
+  }).promise;
   const meta = await doc.getMetadata().catch(() => null);
   return { doc, numPages: doc.numPages, title: meta?.info?.Title ?? "" };
 }
@@ -298,6 +314,51 @@ export async function pageArtInfo(doc, pageNo) {
 }
 
 /**
+ * Placed image rectangles from the page's operator list — a PURE operator walk
+ * (no object delivery, so it cannot stall under Node's fake worker; the same
+ * reason glyphColorRuns is safe offline). Top-origin y like pageItems. The
+ * offline compiler uses PLACEMENT to associate an entry with the illustration
+ * printed inside its claimed region; pixel dimensions are irrelevant to that
+ * judgment.
+ */
+export async function pageArtPlacements(doc, pageNo) {
+  const page = await doc.getPage(pageNo);
+  const vp = page.getViewport({ scale: 1 });
+  const ops = await page.getOperatorList();
+  const mul = (m, n) => [
+    m[0] * n[0] + m[2] * n[1], m[1] * n[0] + m[3] * n[1],
+    m[0] * n[2] + m[2] * n[3], m[1] * n[2] + m[3] * n[3],
+    m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5],
+  ];
+  const stack = [];
+  let ctm = [1, 0, 0, 1, 0, 0];
+  const out = [];
+  for (let i = 0; i < ops.fnArray.length; i++) {
+    const fn = ops.fnArray[i];
+    if (fn === OPS.save) stack.push(ctm);
+    else if (fn === OPS.restore) ctm = stack.pop() ?? [1, 0, 0, 1, 0, 0];
+    else if (fn === OPS.transform) ctm = mul(ctm, ops.argsArray[i]);
+    else if (fn === OPS.paintImageXObject) {
+      // The image paints as the unit square through the CTM.
+      const pts = [[0, 0], [1, 0], [0, 1], [1, 1]].map(([x, y]) => [
+        ctm[0] * x + ctm[2] * y + ctm[4],
+        ctm[1] * x + ctm[3] * y + ctm[5],
+      ]);
+      const xs = pts.map((p) => p[0]);
+      const ys = pts.map((p) => p[1]);
+      out.push({
+        name: ops.argsArray[i][0],
+        x: Math.min(...xs),
+        y: vp.height - Math.max(...ys),
+        w: Math.max(...xs) - Math.min(...xs),
+        h: Math.max(...ys) - Math.min(...ys),
+      });
+    }
+  }
+  return out;
+}
+
+/**
  * Pick the page's illustration: exclude page-background rasters (very wide)
  * and ornament strips (extreme aspect), take the largest remainder above a
  * minimum size. Returns the info entry or null.
@@ -315,9 +376,56 @@ export function pickArt(infos) {
  * Extract the page illustration as a PNG blob (browser only — needs canvas).
  * Handles pdf.js bitmap images and raw RGB/RGBA/gray data.
  */
-export async function extractPageArt(doc, pageNo) {
+/**
+ * Extract a REGION of the rendered page as a PNG blob (browser only). Used
+ * when the cookbook ships a placement box: rendering sidesteps XObject
+ * delivery entirely (the AX PDFs paint their illustrations inside Form
+ * XObjects, whose image objects never register on page.objs), and the crop is
+ * exactly what the printed page shows at that spot.
+ */
+export async function extractPageArtRegion(doc, pageNo, box) {
   if (typeof document === "undefined") return null;
-  const chosen = pickArt(await pageArtInfo(doc, pageNo));
+  const page = await doc.getPage(pageNo);
+  const scale = 2;
+  const vp = page.getViewport({ scale });
+  const canvas = document.createElement("canvas");
+  canvas.width = vp.width;
+  canvas.height = vp.height;
+  // Race a hard timeout: a render that waits on an undecodable image (a wasm
+  // decoder missing on this seat) must degrade to "no art", never hang the
+  // import.
+  const task = page.render({ canvasContext: canvas.getContext("2d"), viewport: vp });
+  const done = await Promise.race([
+    task.promise.then(() => true),
+    new Promise((r) => setTimeout(() => r(false), 20000)),
+  ]);
+  if (!done) {
+    try {
+      task.cancel();
+    } catch {
+      /* already settled */
+    }
+    return null;
+  }
+  const sx = Math.max(0, Math.round(box.x * scale));
+  const sy = Math.max(0, Math.round(box.y * scale));
+  const sw = Math.min(canvas.width - sx, Math.round(box.w * scale));
+  const sh = Math.min(canvas.height - sy, Math.round(box.h * scale));
+  if (sw < 8 || sh < 8) return null;
+  const out = document.createElement("canvas");
+  out.width = sw;
+  out.height = sh;
+  out.getContext("2d").drawImage(canvas, sx, sy, sw, sh, 0, 0, sw, sh);
+  const blob = await new Promise((resolve) => out.toBlob(resolve, "image/png"));
+  return blob ? { blob, width: sw, height: sh } : null;
+}
+
+export async function extractPageArt(doc, pageNo, name = null) {
+  if (typeof document === "undefined") return null;
+  const infos = await pageArtInfo(doc, pageNo);
+  // A shipped XObject name is a compile-time ASSOCIATION (this entry's own
+  // illustration on a multi-entry page) and outranks the largest-image rule.
+  const chosen = (name ? infos.find((i) => i.name === name) : null) ?? pickArt(infos);
   if (!chosen) return null;
   const { img, width, height } = chosen;
   const canvas = document.createElement("canvas");

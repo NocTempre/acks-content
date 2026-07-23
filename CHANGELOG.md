@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.31.0
+
+Actor art for the adventure books — chef-audited, not guessed:
+
+- **JPEG2000 decoding**: the AX books embed every image as JPX, which the
+  vendored pdf.js can only decode through wasm; `vendor/wasm/` now ships the
+  openjpeg/jbig2/qcms decoders and the module points the worker at them. This
+  is what makes AX page images extractable at all (and fixes any future
+  feature that touches AX pixels).
+- **Audited associations**: every candidate image on the NPC and monster
+  pages was extracted and visually reviewed. The placement heuristic turned
+  out to structurally select the parchment slabs behind the stat blocks
+  (real portraits stand beside the text), so automatic association is
+  retired; art now ships only on entries whose association a review
+  confirmed — currently Gabriol Eirenikos and Aghilas of the Imperial
+  Vanguard, whose portraits import onto their actors (image + token). The
+  AX2 appendix prints no per-monster illustrations, so its actors correctly
+  ship none. More associations can land one `assists.artName` at a time as
+  pages are reviewed.
+- Art instructions now ship the placement box beside the XObject name, with
+  a page-render crop as fallback for seats whose wasm decoding fails.
+- `connectBookUrl` art path and deferred-import art both honor the shipped
+  association.
+
 ## 0.30.0
 
 The AX2/AX3 NPC and roll-table sweep — location journals stay at the pilot
