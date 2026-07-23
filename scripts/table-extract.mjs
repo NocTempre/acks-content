@@ -106,6 +106,20 @@ export function applyCellPattern(text, pattern = "raw") {
       // "1/4 H|d|(1 hp)" drop-cap runs -> "1/4 HD (1 hp)"
       return t.replace(/\s*h\s*d\s*/i, " HD ").replace(/\s*\(/, " (").replace(/\s+/g, " ").trim() || null;
     }
+    case "romanClass": {
+      // "... c lass VI" (drop-caps) -> 6; takes the LAST roman numeral
+      const m = [...t.matchAll(/lass\s*([IVX]+)/gi)].pop();
+      if (!m) return null;
+      const ROMAN = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6 };
+      return ROMAN[m[1].toUpperCase()] ?? null;
+    }
+    case "familiesBand": {
+      // "Large city (5,000 – 9,999)" -> {min,max}; "(40,000+)" -> open top
+      const range = t.match(/\((\d[\d,]*)\s*[–-]\s*(\d[\d,]*)\)/);
+      if (range) return { min: Number(range[1].replace(/,/g, "")), max: Number(range[2].replace(/,/g, "")) };
+      const open = t.match(/\((\d[\d,]*)\s*\+\)/);
+      return open ? { min: Number(open[1].replace(/,/g, "")), max: null } : null;
+    }
     default:
       return t;
   }

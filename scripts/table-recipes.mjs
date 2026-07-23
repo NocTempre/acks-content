@@ -625,6 +625,42 @@ export const TABLE_RECIPES = {
       },
     },
   },
+  // Settlement market class by urban families (RR "Villages, Towns, and
+  // Cities", ~352): the label carries the families band, the class column
+  // the market class. Monthly-income column is domain revenue — not
+  // extracted here (domain-module scope).
+  settlement: {
+    source: { book: "ACKS II Revised Rulebook", pages: "352" },
+    tables: {
+      marketClassByFamilies: {
+        shape: "pairs",
+        book: "rr",
+        printedPage: 352,
+        locate: "Metropolis (40,000+)",
+        locateBare: true,
+        column: { xMin: 300, xMax: 585 },
+        labelMaxX: 415,
+        cellPattern: "romanClass",
+        valueKey: "marketClass",
+        rows: [
+          { key: "smallVillage", labelRe: "^small\\s*village", labelPattern: "familiesBand" },
+          { key: "village1", labelRe: "^village\\s*\\(100", labelPattern: "familiesBand" },
+          { key: "village2", labelRe: "^village\\s*\\(160", labelPattern: "familiesBand" },
+          { key: "largeVillage", labelRe: "^large\\s*village", labelPattern: "familiesBand" },
+          { key: "smallTown", labelRe: "^small\\s*town", labelPattern: "familiesBand" },
+          { key: "largeTown", labelRe: "^large\\s*town", labelPattern: "familiesBand" },
+          { key: "smallCity", labelRe: "^small\\s*city", labelPattern: "familiesBand" },
+          { key: "city", labelRe: "^city\\s*\\(", labelPattern: "familiesBand" },
+          { key: "largeCity1", labelRe: "^large\\s*city\\s*\\(5,000", labelPattern: "familiesBand" },
+          { key: "largeCity2", labelRe: "^large\\s*city\\s*\\(10,000", labelPattern: "familiesBand" },
+          { key: "largeCity3", labelRe: "^large\\s*city\\s*\\(15,000", labelPattern: "familiesBand" },
+          { key: "metropolis1", labelRe: "^metropolis\\s*\\(20,000", labelPattern: "familiesBand" },
+          { key: "metropolis2", labelRe: "^metropolis\\s*\\(40,000", labelPattern: "familiesBand" },
+        ],
+        emit: { container: "rows", keyField: "label" },
+      },
+    },
+  },
   availability: {
     source: { book: "ACKS II Revised Rulebook", pages: "162-165, 172" },
     tables: {
