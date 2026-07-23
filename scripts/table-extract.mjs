@@ -606,6 +606,20 @@ function takeProse(window, take) {
       const m = window.match(/\b(one|two|three|four|five|six|seven|eight|nine|ten)\b/);
       return m ? WORD_INTS[m[1]] : undefined;
     }
+    case "rarityTier": {
+      // rarity ladder word → camel key ("very rare" → "veryRare")
+      const m = window.match(/\b(ubiquitous|common|uncommon|very rare|extremely rare|rare|legendary)\b/);
+      if (!m) return undefined;
+      return m[1].replace(/ (\w)/g, (_, c) => c.toUpperCase());
+    }
+    case "dice": {
+      const m = window.match(/\d+d\d+/);
+      return m ? m[0] : undefined;
+    }
+    case "band": {
+      const m = window.match(/(\d+)\s*[-–]\s*(\d+)/);
+      return m ? [Number(m[1]), Number(m[2])] : undefined;
+    }
     default:
       return undefined;
   }

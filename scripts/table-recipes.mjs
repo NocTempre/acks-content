@@ -180,6 +180,27 @@ export const TABLE_RECIPES = {
         rows: RARITY_TIER_ROWS,
         emit: { container: "rows", keyField: "rarity" },
       },
+      // Directed-search rarity modifiers (JJ ~119, all prose): the general-
+      // proficiency ranks ladder, its 1d4 level die, the class-proficiency
+      // per-rank rule, and the per-level shift. Anchors carry no values.
+      specificQualificationMods: {
+        shape: "proseValues",
+        book: "jj",
+        printedPage: 119,
+        locate: "a single rank in a specific general proficiency",
+        locateBare: true,
+        values: [
+          { key: "gpRank1", find: "a single rank in a specific general proficiency are", take: "rarityTier" },
+          { key: "gpRank2", find: "with two ranks are", take: "rarityTier" },
+          { key: "gpRank3", find: "with three ranks are", take: "rarityTier" },
+          { key: "gpLevelDie", find: "ranks are uncommon. roll", take: "dice" },
+          { key: "gpZeroBand", find: "for each such henchman; on a", take: "band" },
+          { key: "gpRollLevelOn", find: "level. on a", take: "int" },
+          { key: "gpClassVIPenalty", find: "class vi market, apply a", take: "signedInt" },
+          { key: "cpPerRank", find: "is equal to the base class, plus", take: "wordInt" },
+          { key: "levelPerAbove1", find: "shift the rarity by", take: "wordInt" },
+        ],
+      },
       randomHenchmanLevel: {
         shape: "pairs",
         book: "js",

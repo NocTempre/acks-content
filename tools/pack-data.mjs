@@ -90,6 +90,16 @@ api.cookbookImportTables();`,
       GUARD + `api.cookbookFillCompanions();`,
       240,
     ),
+    macro(
+      "ackscMacTblDocs0",
+      "Cookbook — Create Foundry Tables from Import (GM)",
+      "icons/svg/d20-grey.svg",
+      `const svc = globalThis.acksLib?.services?.get?.("ruledata-import");
+if (!svc?.materializeDocs) return ui.notifications.warn("acks-content | the ruledata provider does not offer materializeDocs — update acks-location.");
+const r = await svc.materializeDocs();
+ui.notifications.info(\`acks-content | \${r.exported} table(s) written as Foundry documents, \${r.placeholders} placeholder(s) for expected-but-missing tables.\`);`,
+      250,
+    ),
 
     /* --- 300s: tools. --- */
     macro("ackscMacBrowse00", "Browse & Load a Page (GM)", "icons/svg/direction.svg", GUARD + `api.browseAndLoad();`, 300),
