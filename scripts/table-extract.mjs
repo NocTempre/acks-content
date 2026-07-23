@@ -634,6 +634,16 @@ function takeProse(window, take) {
       const m = window.match(/(\d+)\s*[-–]\s*(\d+)/);
       return m ? [Number(m[1]), Number(m[2])] : undefined;
     }
+    case "sexWord": {
+      // class-description opening: "…are human women who…" / "…are men…"
+      const m = window.match(/\b(women|woman|female|men|man|male)\b/);
+      if (!m) return undefined;
+      return /wom|female/.test(m[1]) ? "female" : "male";
+    }
+    case "alignmentWord": {
+      const m = window.match(/\b(lawful|neutral|chaotic)\b/);
+      return m ? m[1] : undefined;
+    }
     default:
       return undefined;
   }

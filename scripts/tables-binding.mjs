@@ -91,9 +91,29 @@ export async function importTables(sessionDocs, { priority } = {}) {
     return { categories };
   };
 
+  // Per-entity prose blocks (class restrictions): each block self-locates
+  // its own page and contributes one keyed entry.
+  const runValueBlocks = async (recipe) => {
+    const out = {};
+    const session = sessionDocs.get(recipe.book);
+    if (!session?.doc) { report.missingBooks.add(recipe.book); return null; }
+    for (const block of recipe.valueBlocks) {
+      const items = await locatePage(session.doc, { printedPage: block.printedPage, locate: block.locate, locateBare: true });
+      if (!items) continue; // a printing without that class simply omits it
+      const got = extractTable(items, { ...recipe, valueBlocks: null, emit: null, values: block.values });
+      if (Object.keys(got).length) out[block.id] = got;
+    }
+    return recipe.emit?.path?.length ? { [recipe.emit.path[0]]: out } : out;
+  };
+
   for (const [docId, docRec] of Object.entries(TABLE_RECIPES)) {
     const fresh = {};
     for (const [tableId, recipe] of Object.entries(docRec.tables)) {
+      if (recipe.valueBlocks) {
+        const out = await runValueBlocks(recipe);
+        if (out && Object.keys(out.classes ?? out).length) fresh[tableId] = out;
+        continue;
+      }
       if (recipe.blocks) {
         const out = await runBlocks(recipe);
         if (Object.keys(out.list).length) fresh[tableId] = out;

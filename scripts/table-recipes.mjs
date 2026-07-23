@@ -425,6 +425,26 @@ export const TABLE_RECIPES = {
         labelMaxX: 130,
         minTokens: 2,
       },
+      // Per-class RESTRICTIONS from the class descriptions' opening lines
+      // ("Bladedancers are human women who…"). Each block self-locates its
+      // class page; the capture reads the restriction word, never a list of
+      // classes. bucket/rarity/race are DERIVED by consumers from the
+      // already-imported distribution/rarity tables + class-key adjectives,
+      // so they need no recipe here.
+      classRestrictions: {
+        shape: "proseValues",
+        book: "rr",
+        valueBlocks: [
+          { id: "bladedancer", printedPage: 56, locate: "Bladedancers are", values: [{ key: "sex", find: "bladedancers are human", take: "sexWord" }] },
+          { id: "priestess", printedPage: 64, locate: "Priestesses are", values: [{ key: "sex", find: "priestesses are", take: "sexWord" }] },
+          { id: "witch", printedPage: 76, locate: "witches, however, are", values: [{ key: "sex", find: "witches, however, are", take: "sexWord" }] },
+          // NO warlock alignment: the RR states it CONDITIONALLY ("If
+          // chaotic, the warlock can create necromantic servants") — the
+          // class is not alignment-bound in this printing, so nothing is
+          // extracted and the alignment-openness shift stays inert.
+        ],
+        emit: { path: ["classes"] },
+      },
       // Culture name lists (RR "People of Aurëpos" + BTA for dwarves). Each
       // block is SELF-LOCATING: its anchor (the list's first male name — a
       // short-label page anchor) finds the page, the print column, and the
