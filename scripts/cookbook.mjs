@@ -27,7 +27,7 @@ const FOLDER_NAME = "ACKS Cookbook";
  */
 const data = { registers: null, books: new Map(), content: new Map() };
 /** Content-type cookbooks, named by WHAT they extract, not the source book. */
-const CONTENT_FILES = ["proficiencies", "powers", "skills"];
+const CONTENT_FILES = ["proficiencies", "powers", "skills", "equipment"];
 /** Injected module state (session docs + prose memory) — set by initCookbook. */
 let ctx = null;
 /** Name collisions already reported this session, so a bulk import says each once. */
@@ -969,6 +969,96 @@ export async function importAbility(id, folderId) {
 
 /** Every definition id the shipped content-type cookbooks carry. */
 export const cookbookAbilityIds = () => [...data.content.values()].flatMap((cb) => Object.keys(cb.entries));
+
+/* -------------------------------------------- */
+/*  Equipment                                   */
+/* -------------------------------------------- */
+
+/**
+ * Bind an equipment entry to a core inventory item (type `item`). Mirrors
+ * bindAbility's posture: the cookbook pre-declares NOTHING the page says —
+ * name + citation always; the descriptor text stays lazy behind @PdfText;
+ * cost and weight materialize only when a chef-authored locator lands on the
+ * register row (none ship yet, so they default to core's 0 and the printed
+ * table governs — the entry says so via its unaudited marker).
+ */
+export function bindEquipment(entry, node, id) {
+  const cite = entry.cite ?? "";
+  const meta = entry.meta ?? {};
+  const f = node?.fields ?? {};
+  return {
+    name: entry.name,
+    type: "item",
+    img: abilityIcon(entry),
+    system: {
+      description: `<p>@PdfText[${id}]{${cite}}</p>`,
+      subtype: meta.subtype === "clothing" ? "clothing" : "item",
+      quantity: { value: 1, max: 0 },
+      // Page values — present only when a locator materialized them from the
+      // seat's own book. Absent locators leave core's defaults.
+      ...(Number.isFinite(f.cost) ? { cost: f.cost } : {}),
+      ...(Number.isFinite(f.weight6) ? { weight6: f.weight6 } : {}),
+    },
+    flags: {
+      [MODULE_ID]: {
+        cookbook: { id, cite, ...(entry.audited ? {} : { unaudited: true }) },
+        generated: true,
+      },
+    },
+  };
+}
+
+/**
+ * Import one equipment entry as a world item (shared, deduped by cookbook id).
+ * Bookless seats still get the item — name, icon, citation stub — the same
+ * bring-your-own-book posture as abilities.
+ */
+export async function importEquipment(id, folderId) {
+  const found = cookbookEntry(id);
+  if (!found) return null;
+  const existing = game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id);
+  if (existing) return existing;
+
+  const bookId = bookOf(found);
+  const session = ctx.sessionDocs.get(bookId);
+  let node = null;
+  if (session) {
+    node = await executeEntry(session.doc, found.cb, data.registers, id);
+    if (node?.ok) cookbookCacheParas(bookId, id, node.fields.description ?? []);
+    else node = null;
+  }
+  const folder = folderId ?? (await ensureItemFolder())?.id ?? null;
+  const item = await Item.create({ ...bindEquipment(found.entry, node, id), folder });
+  // acks-equipment owns the RAW annotation layer (container capacities, the
+  // harness, the bowquiver). Its profiles key off the printed name, so a
+  // generated item annotates exactly like a core one. Reuse, never restate.
+  try {
+    await globalThis.acksEquipment?.annotateItem?.(item);
+  } catch (err) {
+    console.warn(`${MODULE_ID} | equipment annotation skipped for ${item?.name}`, err);
+  }
+  return item;
+}
+
+/** All equipment ids in the shipped cookbook (empty when none compiled). */
+export const cookbookEquipmentIds = () =>
+  [...data.content.values()]
+    .flatMap((cb) => Object.entries(cb.entries))
+    .filter(([, e]) => e.kind === "kind.equipment")
+    .map(([id]) => id);
+
+/** Bulk import: every equipment entry, shared folder, dedup via importEquipment. */
+export async function importAllEquipment() {
+  const ids = cookbookEquipmentIds();
+  const folder = (await ensureItemFolder())?.id ?? null;
+  let created = 0;
+  for (const id of ids) {
+    const before = game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id);
+    const item = await importEquipment(id, folder);
+    if (item && !before) created++;
+  }
+  return { total: ids.length, created };
+}
 
 /* -------------------------------------------- */
 /*  Companions                                  */

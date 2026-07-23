@@ -650,7 +650,7 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
 
 /** Content-type cookbook filename for a definition kind (named by WHAT it
  * extracts, not the source book — a content type spans every book). */
-const CONTENT_OF = { "kind.proficiency": "proficiencies", "kind.power": "powers", "kind.skill": "skills", "kind.combatProficiency": "proficiencies" };
+const CONTENT_OF = { "kind.proficiency": "proficiencies", "kind.power": "powers", "kind.skill": "skills", "kind.combatProficiency": "proficiencies", "kind.equipment": "equipment" };
 
 /** Definition id slug — must match the seeder so alias targets resolve. */
 const slugOf = (s) =>

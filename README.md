@@ -75,6 +75,17 @@ Slots` links companion abilities to their creature once the citing book is open.
 
 The same three ability actions also sit at the top of a GM's Items sidebar.
 
+**Equipment.** `Cookbook — Import ALL Equipment` generates the Revised
+Rulebook's equipment-description corpus (adventuring gear, clothing, animals,
+structures, vehicles — 147 entries, RR PDF pp. 144-154) as world items in the
+ACKS Cookbook folder. The same bring-your-own-book posture applies: every seat
+gets the item with name, icon, and citation; the descriptor text reveals from
+your own connected PDF. Costs and weights are page values — they ship as
+nothing and materialize per entry as chef-authored locators land (entries are
+`unaudited` until then; the printed table governs). With ACKS Equipment
+enabled, generated carrying gear (backpacks, sacks, the adventurer's harness,
+the bowquiver) is annotated with its RAW capacities on import.
+
 **Tools.** `Browse & Load a Page`; `Apply Stats from Book` (parses a monster
 stat block from your PDF into the world actor — AC, HD, saves via F-band,
 morale, XP, alignment, movement, appearing, attacks; unmapped labels are stored

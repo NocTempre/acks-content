@@ -56,6 +56,16 @@ api.cookbookImportTables();`,
     ),
     macro("ackscMacCookbook", "Cookbook — Import Monsters (GM)", "icons/svg/mystery-man.svg", GUARD + `api.cookbookImport();`, 200),
     macro(
+      "ackscMacEquipAll",
+      "Cookbook — Import ALL Equipment (GM)",
+      "icons/svg/item-bag.svg",
+      GUARD +
+        `if (!api.importAllEquipment) return ui.notifications.warn("acks-content | equipment import needs a newer module build.");
+const r = await api.importAllEquipment();
+ui.notifications.info(\`acks-content | equipment: \${r.created} created, \${r.total} in the cookbook.\`);`,
+      205,
+    ),
+    macro(
       "ackscMacMonsAll0",
       "Cookbook — Import ALL Monsters (GM)",
       "icons/svg/aura.svg",
