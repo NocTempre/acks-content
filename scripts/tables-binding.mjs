@@ -100,7 +100,7 @@ export async function importTables(sessionDocs, { priority } = {}) {
     for (const block of recipe.valueBlocks) {
       const items = await locatePage(session.doc, { printedPage: block.printedPage, locate: block.locate, locateBare: true });
       if (!items) continue; // a printing without that class simply omits it
-      const got = extractTable(items, { ...recipe, valueBlocks: null, emit: null, values: block.values });
+      const got = extractTable(items, { ...recipe, valueBlocks: null, emit: null, values: block.values, column: block.column ?? recipe.column });
       if (Object.keys(got).length) out[block.id] = got;
     }
     return recipe.emit?.path?.length ? { [recipe.emit.path[0]]: out } : out;

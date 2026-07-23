@@ -149,6 +149,48 @@ const CLASS_MAP = {
   Wonderworker: "nobiran wonderworker",
 };
 
+// Culture appearance blocks: [id, printed page, hair anchor, eyes anchor].
+// An anchor is the sentence's own lead-in; `#N` picks the Nth occurrence in
+// reading order where the book writes "Their …" instead of naming the
+// culture (page structure, not a value).
+const CULTURE_APPEARANCE = [
+  ["auran", 502, "tirenean hair is", "tirenean eyes are"],
+  ["celdorean", 495, "celdorean hair is", "celdorean eyes are"],
+  ["dwarven", 496, "their hair is#1", "their eyes are#1"],
+  ["elven", 496, "their hair is#2", "their eyes are#2"],
+  ["jutlandic", 497, "jutlandic hair is", "their eyes are#1"],
+  ["kemeshi", 497, "", "kemeshi eyes are"], // hair not stated in this printing
+  ["krysean", 498, "krysean hair is", "kryseans eyes are"],
+  ["kushtu", 498, "their hair is#1", "kushtu eyes are"],
+  ["nicean", 499, "nicean hair is", "nicean eyes are"],
+  ["opelenean", 499, "opelenean hair is", "opelenean eyes are"],
+  ["rornish", 500, "rornish hair is", "rornish eyes are"],
+  ["shebatean", 500, "shebatean hair is", "shebatean eyes are"],
+  ["skysos", 501, "hair of the skysos is", ""], // eyes phrasing varies; hair only
+  ["somirean", 501, "somirean hair is", "somirean eyes are"],
+  ["zaharan", 503, "", "zaharan eyes are"], // hair phrasing varies; eyes only
+];
+
+const CULTURE_APPEARANCE_BLOCKS = CULTURE_APPEARANCE.map(([id, page, hair, eyes]) => {
+  const val = (key, anchor) => {
+    const [find, nth] = anchor.split("#");
+    return { key, find, take: "colorList", span: 240, ...(nth ? { occurrence: Number(nth) } : {}) };
+  };
+  const anchors = [["hair", hair], ["eyes", eyes]].filter(([, a]) => a);
+  // Locate on an anchor that NAMES the culture — a "Their …" sentence is
+  // ambiguous on a page carrying several cultures.
+  const locate = (anchors.find(([, a]) => !a.startsWith("their")) ?? anchors[0])[1].split("#")[0];
+  return {
+    id,
+    printedPage: page,
+    // Page-margin chapter tabs (x≈597) interleave into the flattened text
+    // ("kemeshi tt i eyes are…") — bound the print columns.
+    column: { xMin: 25, xMax: 590 },
+    locate,
+    values: anchors.map(([key, a]) => val(key, a)),
+  };
+});
+
 export const TABLE_RECIPES = {
   rarity: {
     source: { book: "ACKS II Judges Journal 118-119 + Judges Screen" },
@@ -424,6 +466,19 @@ export const TABLE_RECIPES = {
         column: { xMin: 40, xMax: 545 },
         labelMaxX: 130,
         minTokens: 2,
+      },
+      // Culture APPEARANCE palettes (RR "People of Aurëpos"): each culture's
+      // description states its hair and eye colours in a formulaic sentence
+      // ("Tirenean hair is straight or wavy, and colored …"). Blocks locate
+      // their own page; the anchor phrase names the culture, so a page
+      // carrying several cultures cannot cross-match. Where the book writes
+      // "Their hair is…", the block disambiguates by reading-order
+      // occurrence — page structure, never a value.
+      cultureAppearance: {
+        shape: "proseValues",
+        book: "rr",
+        valueBlocks: CULTURE_APPEARANCE_BLOCKS,
+        emit: { path: ["cultures"] },
       },
       // Per-class RESTRICTIONS from the class descriptions' opening lines
       // ("Bladedancers are human women who…"). Each block self-locates its

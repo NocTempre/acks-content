@@ -585,6 +585,14 @@ export function extractBandList(items, recipe) {
  */
 const WORD_INTS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
 
+/**
+ * Shape/texture/filler words that share a colour sentence's comma list
+ * ("eyes are large, round, and black"; "hair is straight or wavy, and
+ * colored…"). English descriptor vocabulary — module config, not book data.
+ */
+const NON_COLOUR =
+  /^(?:the|with|of|in|a|an|and|or|either|usually|sometimes|seen|colou?r(?:ed|ation)?|shaped?|set|deep|deep-set|large|small|round|round-shaped|oval|almond|almond-shaped|wide|narrow|open|straight|wavy|curly|tightly curled|curled|ringlets?|ringleted|glossy|thick|fine|very deep set|men|women)$/i;
+
 function takeProse(window, take) {
   const num = (s) => Number(s.replace(/,/g, ""));
   switch (take) {
@@ -633,6 +641,41 @@ function takeProse(window, take) {
     case "band": {
       const m = window.match(/(\d+)\s*[-–]\s*(\d+)/);
       return m ? [Number(m[1]), Number(m[2])] : undefined;
+    }
+    case "colorList": {
+      // "…are deep-set and round, with coloration varying between blue-grey,
+      // grey, …, and dark brown." → the COLOUR clause only. The sentence
+      // opens with shape/texture words ("straight or wavy", "almond-shaped")
+      // — the colour list starts at the LAST colour lead-in
+      // (colored / coloration / colour of / with), so cut there, then split
+      // on commas and the trailing and/or.
+      const sentence = window.split(".")[0];
+      // FIRST lead-in: a trailing "…but sometimes colored a striking green"
+      // must extend the list, not replace it. Sentences with no lead-in at
+      // all ("eyes are large, round, and black") keep the whole predicate —
+      // the shape/texture words drop out in the filter below.
+      const LEAD = /\b(?:colou?red|colou?ration|varying|between|colou?rs?|of|with|either|usually|sometimes|but|occasionally|seen|a|an|striking|to)\b/gi;
+      const lead = sentence.match(/\b(?:colou?red|colou?ration|colou?rs?\s+of|with)\b/i);
+      const body = lead ? sentence.slice(lead.index) : sentence.replace(/^\s*(?:are|is)\b/i, "");
+      // Split on commas and every connective, then strip lead-in vocabulary
+      // from EACH part — a clause can carry its own ("…but sometimes colored
+      // a striking green", "…with coloration of blue").
+      const parts = body
+        .split(/,|\band\b|\bor\b|\bbut\b/)
+        .map((s) =>
+          s
+            .replace(LEAD, " ")
+            .replace(/[^a-z\- ]/gi, " ")
+            .replace(/\s+/g, " ")
+            .replace(/\s+in$/i, "")
+            .trim()
+        )
+        .filter((s) => s && s.length < 24 && !NON_COLOUR.test(s));
+      return parts.length ? [...new Set(parts)] : undefined;
+    }
+    case "phrase": {
+      const s = window.split(".")[0].replace(/\s+/g, " ").trim();
+      return s || undefined;
     }
     case "sexWord": {
       // class-description opening: "…are human women who…" / "…are men…"
