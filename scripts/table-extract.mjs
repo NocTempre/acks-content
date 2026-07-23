@@ -661,10 +661,10 @@ export function extractProseValues(items, recipe) {
     if (v.before && val !== undefined) {
       // before-windows want the LAST match, not the first
       let last;
-      const re = { pct: /(\d+)\s*%/g, gp: /(-?[\d,]+)\s*gp/g, int: /-?\d[\d,]*/g }[v.take ?? "int"];
+      const re = { pct: /(\d+)\s*%/g, gp: /(-?[\d,]+)\s*gp/g, int: /-?\d[\d,]*/g, signedInt: /[-+]\s?\d+/g }[v.take ?? "int"];
       if (re) {
         for (const m of window.matchAll(re)) last = m[1] ?? m[0];
-        if (last !== undefined) val = Number(String(last).replace(/,/g, ""));
+        if (last !== undefined) val = Number(String(last).replace(/[,\s]/g, ""));
       }
     }
     if (val !== undefined) out[v.key] = val;

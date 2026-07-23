@@ -24,7 +24,7 @@ const DEF_ID = /^def\.[a-z]+\.[A-Za-z0-9-]+$/;
 const KIND_ID = /^kind\.[a-z][A-Za-z0-9]*$/;
 const SHAPES = new Set(["open", "descriptor", "keyword", "table"]);
 const OPS = new Set(["expect", "text", "value", "attacks", "art", "effects", "progression", "rolls"]);
-const PATTERNS = new Set(["raw", "statValue", "int", "dice", "refList", "parenSplit", "spoilList"]);
+const PATTERNS = new Set(["raw", "statValue", "int", "dice", "refList", "parenSplit", "spoilList", "statline"]);
 
 const errors = [];
 const err = (s) => errors.push(s);

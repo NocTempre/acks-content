@@ -1,0 +1,12 @@
+[
+  {
+    "id": "ax3.gabriolEirenikos",
+    "kind": "kind.npc",
+    "book": "ax3",
+    "name": "Gabriol Eirenikos",
+    "anchor": { "display": "GABRIOL EIRENIKOS" },
+    "pages": [199, 200],
+    "meta": { "group": "NPC Party — Imperial Vanguard" },
+    "assists": { "statLabel": "Gabriol Eirenikos:" }
+  }
+]

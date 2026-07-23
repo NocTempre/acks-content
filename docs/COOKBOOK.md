@@ -107,7 +107,18 @@ a chef can hand-author one wherever automatic attribution fails.
 **Patterns** (fixed library, part of the frozen set): `raw` (joined, trimmed),
 `int` (first integer), `dice` (first `NdM±k`), `refList` (split on `,`,
 tokens trimmed), `spoilList` (component regex → `{name, weight6, cost,
-effects[]}`), `statValue` (short run up to the next label).
+effects[]}`), `statValue` (short run up to the next label), `statline`
+(additive, 2026-07-22: the AX-line inline quick-stat block — top-level `;`
+segments classified by leading token into class / ability scores /
+Proficiencies / Equipment / Class Abilities / Spells, the core clause read by
+keyword — `MV, AC, HD, hp, #AT (weapon n+), Dmg, Save/SV, ML, AL, XP` —
+tolerating the era's missing commas; unrecognized segments degrade to
+`extra[]`, absent keys are absent, never a throw).
+
+**Value configs** (shipped per instruction, mechanical): `stripRoll` (drop a
+trailing "N+" roll target before lookup), `stripColon` (drop a trailing ":"),
+`stripParen` (drop one trailing parenthetical) — AX quick-stat labels print
+"Skeletons (12):", creature-table keys are clean names.
 
 **Fixes** (text-assembly transformations; never corrected text): 
 `{"joinSpace": [i]}` insert a space between adjacent runs; `{"mergeHyphen": [i]}`

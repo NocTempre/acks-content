@@ -40,6 +40,24 @@ export const BOOKS = {
     pages: 441,
     titleRe: /Monstrous Manual/i,
   },
+  // ACKS I adventures (AX line). Metadata titles are EMPTY in these printings,
+  // so the fingerprint gates on page count alone; titleRe stays for printings
+  // that do carry one. printedOffset: printed folio = PDF page - offset, used
+  // for citations (register pages/instructions always use PDF pages).
+  ax2: {
+    label: "AX2 Secrets of the Nethercity",
+    short: "AX2",
+    pages: 186,
+    titleRe: /Secrets of the Nethercity/i,
+    printedOffset: 2,
+  },
+  ax3: {
+    label: "AX3 Capital of the Borderlands",
+    short: "AX3",
+    pages: 226,
+    titleRe: /Capital of the Borderlands/i,
+    printedOffset: 2,
+  },
 };
 
 

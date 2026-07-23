@@ -883,6 +883,33 @@
         "to": "nergy"
       }
     },
+    "creature": {
+      "Carcass scavenger": {
+        "ref": "mm.carrionHorror",
+        "note": "renamed in ACKS II (conversion registry row)"
+      },
+      "Insect swarm": {
+        "ref": "mm.swarmInsect"
+      },
+      "Insect swarms": {
+        "ref": "mm.swarmInsect"
+      },
+      "Skeletons": {
+        "ref": "mm.skeleton"
+      },
+      "Skeleton": {
+        "ref": "mm.skeleton"
+      },
+      "Tunnel prawn": {
+        "ref": "ax2.tunnelPrawn"
+      },
+      "Tunnel prawns": {
+        "ref": "ax2.tunnelPrawn"
+      },
+      "Fungal creeper": {
+        "ref": "ax2.fungalCreeper"
+      }
+    },
     "creatureType": {
       "Animal": {
         "key": "animal",

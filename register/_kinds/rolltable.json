@@ -1,0 +1,10 @@
+{
+  "id": "kind.rolltable",
+  "role": "table",
+  "note": "Random table routed to an engine roll table. Two printed shapes: grid (die column + result columns; entry claims ONE result column via assists.column, rows y-clustered) and list (numbered prose paragraphs anchored by '<n>:' runs). Row ranges are structure shipped as section labels (r<lo> or r<lo>-<hi>); row text stays lazy per seat. The roll formula materializes via a dice locator box (assists.rollAt).",
+  "fields": {
+    "name": { "locate": "display" },
+    "roll": { "locate": "diceBox", "pattern": "dice" },
+    "rows": { "locate": "tableRows", "type": "blocks" }
+  }
+}

@@ -858,7 +858,13 @@ export function mergeDefenses(a, b) {
 
 /** Fixed pattern library (frozen with the schema). */
 function applyPattern(raw, instr, registers, misses) {
-  const text = clean(raw);
+  let text = clean(raw);
+  // Shipped config (like stripRoll): drop a trailing colon and/or one trailing
+  // parenthetical before lookup — AX quick-stat labels print as
+  // "Skeletons (12):" but the creature table keys clean names. The count and
+  // colon live in the reader's book; the config only says to skip them.
+  if (instr.stripColon) text = text.replace(/\s*:\s*$/, "");
+  if (instr.stripParen) text = text.replace(/\s*\([^)]*\)\s*$/, "");
   switch (instr.pattern ?? "raw") {
     case "raw":
     case "statValue":
@@ -913,9 +919,95 @@ function applyPattern(raw, instr, registers, misses) {
       }
       return spoils;
     }
+    case "statline":
+      return parseStatline(text);
     default:
       return text; // unknown pattern: degrade to raw text, never throw
   }
+}
+
+/**
+ * `statline` pattern: the AX-line inline quick-stat block, e.g.
+ *   "Fighter 3; Str 11, ... Cha 14; AC 5 (leather), MV 120', HD 3, hp 16,
+ *    #AT 1 (sword 6+), Dmg 1d6+2, SV F3, ML +1, AL N, XP 50;
+ *    Proficiencies: ...; Equipment: ..."
+ * Monster lines omit the class/ability segments and sometimes a comma
+ * ("AC 2 HD 3+1"), so the core clause is read by keyword anywhere in it, not
+ * sequentially. Purely mechanical: segments split on top-level ";", classified
+ * by their leading token, unrecognized segments kept verbatim in `extra`.
+ * Which box holds the block (and the name label dropped via dropText) was
+ * decided at compile time. Missing keys are simply absent — never a throw.
+ */
+export function parseStatline(text) {
+  const out = { text };
+  const segments = text.split(/;/).map((s) => s.trim()).filter(Boolean);
+  const rest = [];
+  for (const seg of segments) {
+    const labeled = /^(Proficiencies|Equipment|Class Abilities|Abilities|Spells(?:\s+\w+)?|Arcane Spells|Divine Spells)\s*:\s*(.*)$/i.exec(seg);
+    if (labeled) {
+      const key = labeled[1].toLowerCase();
+      const body = labeled[2].trim();
+      if (key === "proficiencies") out.proficiencies = splitTop(body).map((t) => t.trim());
+      else if (key === "equipment") out.equipment = body;
+      else if (key === "class abilities" || key === "abilities") out.classAbilities = body;
+      else out.spells = ((out.spells ? out.spells + "; " : "") + `${labeled[1]}: ${body}`).trim();
+      continue;
+    }
+    // Ability-score segment: pairs like "Str 13, Int 18, ..." (any subset).
+    if (/^(Str|Int|Wis|Dex|Con|Cha)\b/i.test(seg) && !/\bhp\b|#AT|\bAC\b/i.test(seg)) {
+      for (const m of seg.matchAll(/\b(Str|Int|Wis|Dex|Con|Cha)\s+(\d+)/gi)) {
+        (out.abilities ??= {})[m[1].toLowerCase()] = parseInt(m[2], 10);
+      }
+      continue;
+    }
+    // Core stat clause: identified by hp/#AT/AC keywords, read by key.
+    if (/\bhp\s*\d|#AT|\bAC\s*-?\d/i.test(seg)) {
+      const grab = (re) => re.exec(seg)?.slice(1);
+      const mv = grab(/\bMV\s*([^,;]+?)(?=,|$)/i);
+      if (mv) out.mv = mv[0].trim();
+      const ac = grab(/\bAC\s*(-?\d+)\s*(?:\(([^)]*)\))?/i);
+      if (ac) {
+        out.ac = parseInt(ac[0], 10);
+        if (ac[1]) out.acNote = ac[1].trim();
+      }
+      const hd = grab(/\bHD\s*([\d]+(?:[+-][\d]+)?\**)/i);
+      if (hd) out.hd = hd[0].trim();
+      const hp = grab(/\bhp\s*(\d+)\s*(each)?/i);
+      if (hp) {
+        out.hp = parseInt(hp[0], 10);
+        if (hp[1]) out.hpEach = true;
+      }
+      const at = grab(/#AT\s*([^,;(]+?)\s*(?:\(([^)]*?)\s*(\d+)\+\s*\)|\(([^)]*)\))?(?=,|$)/i);
+      if (at) {
+        out.atk = { count: at[0].trim() };
+        const weapon = at[1] ?? at[3];
+        if (weapon) out.atk.text = weapon.trim();
+        if (at[2]) out.atk.throw = parseInt(at[2], 10);
+      }
+      const dmg = grab(/\bDmg\s*(.+?)(?=,\s*(?:Save|SV)\b|;|$)/i);
+      if (dmg) out.dmg = dmg[0].trim();
+      const sv = grab(/\b(?:Save|SV)\s*([A-Z]+)\s*(\d+)?\s*(?:\(([^)]*)\))?/);
+      if (sv) {
+        out.save = { class: sv[0], ...(sv[1] ? { level: parseInt(sv[1], 10) } : {}), ...(sv[2] ? { note: sv[2].trim() } : {}) };
+      }
+      const ml = grab(/\bML\s*([+-]?\d+|N\s*\/?\s*A)/i);
+      if (ml) out.ml = /\d/.test(ml[0]) ? parseInt(ml[0], 10) : "N/A";
+      const al = grab(/\bAL\s*([A-Z])\b/);
+      if (al) out.al = al[0];
+      const xp = grab(/\bXP\s*([\d,]+)/i);
+      if (xp) out.xp = parseInt(xp[0].replace(/,/g, ""), 10);
+      continue;
+    }
+    // Class segment: "Wizard* 5 (Fellowship)" / "Fighter 3" / "Normal Man".
+    const cls = /^([A-Za-z][A-Za-z' -]*?)\*?\s+(\d+)\s*(?:\(([^)]*)\))?$/.exec(seg);
+    if (cls && !out.class) {
+      out.class = { name: cls[1].trim(), level: parseInt(cls[2], 10), ...(cls[3] ? { note: cls[3].trim() } : {}) };
+      continue;
+    }
+    rest.push(seg);
+  }
+  if (rest.length) out.extra = rest;
+  return out;
 }
 
 /** Page-art selection by shipped criteria (no judgment beyond the config). */
@@ -953,7 +1045,11 @@ async function execInstruction(instr, ctx) {
       // proves we are on the right entry — a wrong page shares no prefix — but
       // does not fail over a stray glyph, and a failed expect would otherwise
       // zero the entry's mechanics.
-      const fold = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      // NFKD first (2026-07-22): the AX PDFs mix precomposed and decomposed
+      // accents (DOPPELGÄNGER prints A+combining diaeresis); folding must land
+      // both forms on the same string. Purely widens tolerance — old cookbooks
+      // keep matching.
+      const fold = (s) => s.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]/g, "");
       const f = fold(found);
       const w = fold(instr.text);
       const ok = !!w && (f.startsWith(w) || (w.length >= 12 && f.startsWith(w.slice(0, 12))));

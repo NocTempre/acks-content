@@ -279,6 +279,36 @@ export const TABLE_RECIPES = {
           { key: "nonProficient", labelRe: "^non[–-]?\\s*proficient" },
         ],
       },
+      // Hireling base morale by role (RR ~166, all prose): specialists
+      // default, the named exception groups, spellcaster minimum, the
+      // first-level permanent bonus, and the crusader/bladedancer follower
+      // score. Which specialist TYPE keys map to which group is consumer
+      // code (type-key glue), not page data.
+      baseMorale: {
+        shape: "proseValues",
+        book: "rr",
+        printedPage: 166,
+        locate: "but rowers and sailors have morale",
+        locateBare: true,
+        values: [
+          { key: "specialistDefault", find: "most specialists have a morale score of", take: "signedInt" },
+          { key: "rowersSailors", find: "rowers and sailors have morale of", take: "signedInt" },
+          { key: "navigatorsCaptainsScouts", find: "captains, and scouts have morale", take: "signedInt" },
+          { key: "marshalsMastersOfficers", find: "mercenary officers have morale", take: "signedInt" },
+          { key: "spellcasterMinimum", find: "their minimum morale score is", take: "signedInt" },
+          { key: "firstLevelBonus", find: "bonus to morale score when a 0", before: true, span: 24, take: "signedInt" },
+          { key: "followerCrusaderBladedancer", find: "followers have a morale score of", take: "signedInt" },
+        ],
+      },
+      // Mercenary-officer base loyalty (RR ~171 prose).
+      baseLoyalty: {
+        shape: "proseValues",
+        book: "rr",
+        printedPage: 171,
+        locate: "inherent disloyalty",
+        locateBare: true,
+        values: [{ key: "mercenaryOfficers", find: "officers have a base loyalty of", take: "signedInt" }],
+      },
       mercenaryWages: {
         shape: "gridRows",
         book: "rr",

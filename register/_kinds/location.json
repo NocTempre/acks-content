@@ -1,0 +1,10 @@
+{
+  "id": "kind.location",
+  "role": "composite",
+  "note": "Adventure keyed area / point of interest (AX line). Prose flows from the entry heading to the next heading (column flow, per-para page for spillover). AX2 tags paragraphs with inline icon runs ([MONSTER], [LORE], ...) which become section labels; inset Note boxes section as note; indented 'Name:' quick-stat clusters section as stats and also emit creature refLists. Binding routes to a journal page; meta.group names the parent complex/district.",
+  "fields": {
+    "name": { "locate": "display" },
+    "description": { "locate": "proseFlow", "type": "blocks", "sections": "iconTags" },
+    "creatures": { "locate": "statlineLabels", "pattern": "refList", "table": "creature" }
+  }
+}

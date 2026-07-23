@@ -1,0 +1,3120 @@
+{
+  "schema": "acks-cookbook/1",
+  "book": {
+    "id": "ax3",
+    "label": "AX3 Capital of the Borderlands",
+    "short": "AX3",
+    "pages": 226,
+    "titleRe": "Capital of the Borderlands"
+  },
+  "entries": {
+    "ax3.pylosAurigeus": {
+      "kind": "kind.location",
+      "name": "1. Pylos Aurigëus (“Patrician Gate”)",
+      "cite": "AX3 p.69",
+      "pages": [
+        71
+      ],
+      "meta": {
+        "group": "Old District — Points of Interest"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 71,
+          "box": {
+            "x0": 51,
+            "x1": 285,
+            "y0": 287.9699,
+            "y1": 320.9699
+          },
+          "text": "1. PYLOS AURIGËUS",
+          "fixes": {
+            "joinSpace": [
+              0
+            ]
+          }
+        },
+        "description": {
+          "op": "text",
+          "page": 71,
+          "paras": [
+            {
+              "box": {
+                "x0": 36,
+                "x1": 285,
+                "y0": 324.9699,
+                "y1": 486.9699
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ax3.cityWatchtowerI": {
+      "kind": "kind.location",
+      "name": "2. City Watchtower I",
+      "cite": "AX3 p.69",
+      "pages": [
+        71
+      ],
+      "meta": {
+        "group": "Old District — Points of Interest"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 71,
+          "box": {
+            "x0": 51,
+            "x1": 285,
+            "y0": 500.1699,
+            "y1": 519.1699
+          },
+          "text": "2. CITY WATCHTOWER I"
+        },
+        "description": {
+          "op": "text",
+          "page": 71,
+          "paras": [
+            {
+              "box": {
+                "x0": 36,
+                "x1": 285,
+                "y0": 523.1699,
+                "y1": 601.1699
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ax3.cityWatchtowerII": {
+      "kind": "kind.location",
+      "name": "3. City Watchtower II",
+      "cite": "AX3 p.69",
+      "pages": [
+        71
+      ],
+      "meta": {
+        "group": "Old District — Points of Interest"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 71,
+          "box": {
+            "x0": 51,
+            "x1": 285,
+            "y0": 614.3699,
+            "y1": 633.3699
+          },
+          "text": "3. CITY WATCHTOWER II"
+        },
+        "description": {
+          "op": "text",
+          "page": 71,
+          "paras": [
+            {
+              "box": {
+                "x0": 36,
+                "x1": 285,
+                "y0": 637.3699,
+                "y1": 739.3699
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ax3.imperialWharf": {
+      "kind": "kind.location",
+      "name": "4. Imperial Wharf",
+      "cite": "AX3 p.69",
+      "pages": [
+        71
+      ],
+      "meta": {
+        "group": "Old District — Points of Interest"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 71,
+          "box": {
+            "x0": 321,
+            "x1": 555,
+            "y0": 67.59990000000005,
+            "y1": 86.59990000000005
+          },
+          "text": "4. IMPERIAL WHARF"
+        },
+        "description": {
+          "op": "text",
+          "page": 71,
+          "paras": [
+            {
+              "box": {
+                "x0": 286,
+                "x1": 555,
+                "y0": 90.59990000000005,
+                "y1": 166.2699
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  3,
+                  4,
+                  5,
+                  7
+                ],
+                "mergeHyphen": [
+                  2,
+                  6
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ax3.cityWatchHeadquarters": {
+      "kind": "kind.location",
+      "name": "5. City Watch Headquarters",
+      "cite": "AX3 p.69",
+      "pages": [
+        71
+      ],
+      "meta": {
+        "group": "Old District — Points of Interest"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 71,
+          "box": {
+            "x0": 321,
+            "x1": 555,
+            "y0": 169.79989999999998,
+            "y1": 188.79989999999998
+          },
+          "text": "5. CITY WATCH HEADQUARTERS"
+        },
+        "description": {
+          "op": "text",
+          "page": 71,
+          "paras": [
+            {
+              "box": {
+                "x0": 286,
+                "x1": 555,
+                "y0": 192.79989999999998,
+                "y1": 342.9699
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ax3.cityWatchtowerIII": {
+      "kind": "kind.location",
+      "name": "6. City Watchtower III",
+      "cite": "AX3 p.69",
+      "pages": [
+        71
+      ],
+      "meta": {
+        "group": "Old District — Points of Interest"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 71,
+          "box": {
+            "x0": 321,
+            "x1": 555,
+            "y0": 343.9998,
+            "y1": 362.9998
+          },
+          "text": "6. CITY WATCHTOWER III"
+        },
+        "description": {
+          "op": "text",
+          "page": 71,
+          "paras": [
+            {
+              "box": {
+                "x0": 286,
+                "x1": 555,
+                "y0": 360.9699,
+                "y1": 468.9998
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  5,
+                  6,
+                  7,
+                  9,
+                  10
+                ],
+                "mergeHyphen": [
+                  4,
+                  8
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ax3.emporium": {
+      "kind": "kind.location",
+      "name": "7. Emporium",
+      "cite": "AX3 p.69",
+      "pages": [
+        71,
+        72
+      ],
+      "meta": {
+        "group": "Old District — Points of Interest"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 71,
+          "box": {
+            "x0": 321,
+            "x1": 555,
+            "y0": 482.1999,
+            "y1": 501.1999
+          },
+          "text": "7. EMPORIUM"
+        },
+        "description": {
+          "op": "text",
+          "page": 71,
+          "paras": [
+            {
+              "box": {
+                "x0": 286,
+                "x1": 555,
+                "y0": 505.1999,
+                "y1": 691.3699
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  3,
+                  5,
+                  6,
+                  7,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16,
+                  17,
+                  18,
+                  19,
+                  20
+                ],
+                "mergeHyphen": [
+                  2,
+                  4,
+                  8
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ax3.merchantGuildhouse": {
+      "kind": "kind.location",
+      "name": "8. Merchant Guildhouse",
+      "cite": "AX3 p.70",
+      "pages": [
+        72,
+        73
+      ],
+      "meta": {
+        "group": "Old District — Points of Interest"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 72,
+          "box": {
+            "x0": 35.52,
+            "x1": 295,
+            "y0": 521.1999000000001,
+            "y1": 540.1999000000001
+          },
+          "text": "8. MERCHANT GUILDHOUSE"
+        },
+        "description": {
+          "op": "text",
+          "page": 72,
+          "paras": [
+            {
+              "box": {
+                "x0": 26,
+                "x1": 295,
+                "y0": 544.1999000000001,
+                "y1": 634.1999000000001
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  5,
+                  6,
+                  7
+                ],
+                "mergeHyphen": [
+                  4
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 26,
+                "x1": 295,
+                "y0": 649.1999000000001,
+                "y1": 715.1999
+              },
+              "fixes": {
+                "joinSpace": [
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "mergeHyphen": [
+                  1
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 296,
+                "x1": 545,
+                "y0": 529.8698999999999,
+                "y1": 595.8699
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 296,
+                "x1": 545,
+                "y0": 610.8699,
+                "y1": 736.8699
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 546,
+                "x1": 572,
+                "y0": 529.8698999999999,
+                "y1": 547.8699
+              },
+              "fixes": {
+                "joinSpace": [
+                  0
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 546,
+                "x1": 572,
+                "y0": 622.8699,
+                "y1": 652.8699
+              },
+              "fixes": {
+                "joinSpace": [
+                  0
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 36,
+                "x1": 305,
+                "y0": 76.2699,
+                "y1": 166.2699
+              },
+              "page": 73,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ax3.thievesQuarter": {
+      "kind": "kind.location",
+      "name": "9. Thieves’ Quarter",
+      "cite": "AX3 p.71",
+      "pages": [
+        73
+      ],
+      "meta": {
+        "group": "Old District — Points of Interest"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 73,
+          "box": {
+            "x0": 51.72,
+            "x1": 305,
+            "y0": 179.46990000000005,
+            "y1": 198.46990000000005
+          },
+          "text": "9. THIEVES’ QUARTER"
+        },
+        "description": {
+          "op": "text",
+          "page": 73,
+          "paras": [
+            {
+              "box": {
+                "x0": 36,
+                "x1": 305,
+                "y0": 202.46990000000005,
+                "y1": 340.4699
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  12
+                ],
+                "mergeHyphen": [
+                  9,
+                  11
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ax3.mercenaryGuildhouse": {
+      "kind": "kind.location",
+      "name": "10. Mercenary Guildhouse",
+      "cite": "AX3 p.71",
+      "pages": [
+        73
+      ],
+      "meta": {
+        "group": "Old District — Points of Interest"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 73,
+          "box": {
+            "x0": 51.72,
+            "x1": 305,
+            "y0": 353.6699,
+            "y1": 372.6699
+          },
+          "text": "10. MERCENARY GUILDHOUSE"
+        },
+        "description": {
+          "op": "text",
+          "page": 73,
+          "paras": [
+            {
+              "box": {
+                "x0": 36,
+                "x1": 305,
+                "y0": 376.6699,
+                "y1": 478.6699
+              },
+              "fixes": {
+                "joinSpace": [
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "mergeHyphen": [
+                  1,
+                  3,
+                  5
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 36,
+                "x1": 305,
+                "y0": 493.6699,
+                "y1": 703.6699
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16
+                ],
+                "mergeHyphen": [
+                  2,
+                  18
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 76.2699,
+                "y1": 274.2699
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16,
+                  17
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ax3.theMinkHideout": {
+      "kind": "kind.location",
+      "name": "11/11U. The Mink / Argollëan Family Hideout",
+      "cite": "AX3 p.71",
+      "pages": [
+        73
+      ],
+      "meta": {
+        "group": "Old District — Points of Interest"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 73,
+          "box": {
+            "x0": 321.72,
+            "x1": 572.1228000000003,
+            "y0": 284.4699,
+            "y1": 317.4699
+          },
+          "text": "11/11U. THE MINK/ARGOLLËAN FAMILY",
+          "fixes": {
+            "joinSpace": [
+              0
+            ]
+          }
+        },
+        "description": {
+          "op": "text",
+          "page": 73,
+          "paras": [
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 321.4699,
+                "y1": 423.4699
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 438.4699,
+                "y1": 540.4699
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ax3.publicLatrine": {
+      "kind": "kind.location",
+      "name": "12. Public Latrine",
+      "cite": "AX3 p.71",
+      "pages": [
+        73,
+        74,
+        75
+      ],
+      "meta": {
+        "group": "Old District — Points of Interest"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 73,
+          "box": {
+            "x0": 321.72,
+            "x1": 572,
+            "y0": 553.6699,
+            "y1": 572.6699
+          },
+          "text": "12. PUBLIC LATRINE"
+        },
+        "description": {
+          "op": "text",
+          "page": 73,
+          "paras": [
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 576.6699,
+                "y1": 690.6699
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ax3.leakingCesspool": {
+      "kind": "kind.location",
+      "name": "12U. Leaking Cesspool",
+      "cite": "AX3 p.73",
+      "pages": [
+        75
+      ],
+      "meta": {
+        "group": "Old District — Points of Interest"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 75,
+          "box": {
+            "x0": 51,
+            "x1": 305,
+            "y0": 67.59990000000005,
+            "y1": 86.59990000000005
+          },
+          "text": "12U. LEAKING CESSPOOL"
+        },
+        "description": {
+          "op": "text",
+          "page": 75,
+          "paras": [
+            {
+              "box": {
+                "x0": 36,
+                "x1": 305,
+                "y0": 90.59990000000005,
+                "y1": 204.59990000000005
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  8,
+                  9
+                ],
+                "mergeHyphen": [
+                  7
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 36,
+                "x1": 305,
+                "y0": 219.59990000000005,
+                "y1": 309.5999
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  6
+                ],
+                "mergeHyphen": [
+                  5,
+                  8
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 36,
+                "x1": 305,
+                "y0": 324.5999,
+                "y1": 378.5999
+              },
+              "fixes": {
+                "joinSpace": [
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "mergeHyphen": [
+                  1,
+                  2
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 36,
+                "x1": 305,
+                "y0": 393.5999,
+                "y1": 447.5999
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  4,
+                  7
+                ],
+                "mergeHyphen": [
+                  3,
+                  6
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 36,
+                "x1": 305,
+                "y0": 462.5999,
+                "y1": 492.5999
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 36,
+                "x1": 305,
+                "y0": 507.5999,
+                "y1": 549.5998999999999
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2
+                ]
+              }
+            }
+          ]
+        },
+        "creatures.0": {
+          "op": "value",
+          "page": 75,
+          "pattern": "raw",
+          "table": "creature",
+          "stripColon": true,
+          "stripParen": true,
+          "box": {
+            "x0": 70,
+            "x1": 151.89999999999998,
+            "y0": 461.5999,
+            "y1": 469.5999
+          }
+        }
+      }
+    },
+    "ax3.shrineOfTheHornedRat": {
+      "kind": "kind.location",
+      "name": "13U. Shrine of the Horned Rat",
+      "cite": "AX3 p.73",
+      "pages": [
+        75
+      ],
+      "meta": {
+        "group": "Old District — Points of Interest"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 75,
+          "box": {
+            "x0": 51,
+            "x1": 305,
+            "y0": 562.7999,
+            "y1": 581.7999
+          },
+          "text": "13U. SHRINE OF THE HORNED RAT"
+        },
+        "description": {
+          "op": "text",
+          "page": 75,
+          "paras": [
+            {
+              "box": {
+                "x0": 36,
+                "x1": 305,
+                "y0": 585.7999,
+                "y1": 723.7999
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  6,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13
+                ],
+                "mergeHyphen": [
+                  5,
+                  8
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ax3.doppelgangerDen": {
+      "kind": "kind.location",
+      "name": "14U. Doppelgänger Den",
+      "cite": "AX3 p.73",
+      "pages": [
+        75
+      ],
+      "meta": {
+        "group": "Old District — Points of Interest"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 75,
+          "box": {
+            "x0": 321,
+            "x1": 572,
+            "y0": 67.59990000000005,
+            "y1": 86.59990000000005
+          },
+          "text": "14U. DOPPELGÄNGER DEN"
+        },
+        "description": {
+          "op": "text",
+          "page": 75,
+          "paras": [
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 90.59990000000005,
+                "y1": 204.59990000000005
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ax3.argolleanFamily": {
+      "kind": "kind.location",
+      "name": "The Argollëan Family",
+      "cite": "AX3 p.73",
+      "pages": [
+        75,
+        76,
+        77,
+        78
+      ],
+      "meta": {
+        "group": "Old District — Notable Residents"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 75,
+          "box": {
+            "x0": 321,
+            "x1": 572,
+            "y0": 242.29989999999998,
+            "y1": 261.2999
+          },
+          "text": "THE ARGOLLËAN FAMILY"
+        },
+        "description": {
+          "op": "text",
+          "page": 75,
+          "paras": [
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 265.2999,
+                "y1": 367.2999
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 382.2999,
+                "y1": 496.2999
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 511.2999,
+                "y1": 637.2999
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 652.2999,
+                "y1": 730.2999
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 26,
+                "x1": 295,
+                "y0": 76.2699,
+                "y1": 94.2699
+              },
+              "page": 76,
+              "fixes": {
+                "joinSpace": [
+                  0
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 26,
+                "x1": 295,
+                "y0": 109.2699,
+                "y1": 187.2699
+              },
+              "page": 76,
+              "fixes": {
+                "joinSpace": [
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "mergeHyphen": [
+                  1
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 26,
+                "x1": 295,
+                "y0": 211.46990000000005,
+                "y1": 289.4699
+              },
+              "page": 76,
+              "fixes": {
+                "joinSpace": [
+                  1,
+                  2,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "mergeHyphen": [
+                  4
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 26,
+                "x1": 295,
+                "y0": 304.4699,
+                "y1": 490.4699
+              },
+              "page": 76,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16,
+                  17,
+                  18
+                ],
+                "mergeHyphen": [
+                  2,
+                  9,
+                  11
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 26,
+                "x1": 295,
+                "y0": 505.4699,
+                "y1": 679.4699
+              },
+              "page": 76,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  7,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15
+                ],
+                "mergeHyphen": [
+                  6,
+                  9
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 296,
+                "x1": 572,
+                "y0": 76.2699,
+                "y1": 214.2699
+              },
+              "page": 76,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  7,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15
+                ],
+                "mergeHyphen": [
+                  4,
+                  6,
+                  9
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 296,
+                "x1": 572,
+                "y0": 229.2699,
+                "y1": 343.2699
+              },
+              "page": 76,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9
+                ],
+                "mergeHyphen": [
+                  4
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 296,
+                "x1": 572,
+                "y0": 358.2699,
+                "y1": 544.2699
+              },
+              "page": 76,
+              "fixes": {
+                "joinSpace": [
+                  1,
+                  2,
+                  4,
+                  5,
+                  6,
+                  9,
+                  10,
+                  11,
+                  12,
+                  14,
+                  15,
+                  17,
+                  19,
+                  21,
+                  25,
+                  26,
+                  28,
+                  32,
+                  34,
+                  35,
+                  36
+                ],
+                "mergeHyphen": [
+                  8,
+                  24,
+                  30
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 296,
+                "x1": 572,
+                "y0": 568.4699,
+                "y1": 706.4699
+              },
+              "page": 76,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  9,
+                  10,
+                  13
+                ],
+                "mergeHyphen": [
+                  8,
+                  12
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 56,
+                "x1": 305,
+                "y0": 76.2699,
+                "y1": 238.2699
+              },
+              "page": 77,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  3,
+                  4,
+                  5,
+                  8,
+                  11,
+                  14,
+                  15,
+                  16,
+                  17,
+                  18,
+                  20,
+                  22,
+                  26,
+                  28,
+                  29,
+                  30,
+                  31,
+                  33,
+                  34,
+                  36,
+                  37
+                ],
+                "mergeHyphen": [
+                  10,
+                  13,
+                  24
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 56,
+                "x1": 305,
+                "y0": 262.46990000000005,
+                "y1": 268.46990000000005
+              },
+              "page": 77,
+              "fixes": {
+                "joinSpace": [
+                  1
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 56,
+                "x1": 305,
+                "y0": 286.4699,
+                "y1": 292.4699
+              },
+              "page": 77
+            },
+            {
+              "box": {
+                "x0": 56,
+                "x1": 305,
+                "y0": 367.4699,
+                "y1": 505.4699
+              },
+              "page": 77,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  3,
+                  5,
+                  6,
+                  7,
+                  8,
+                  11,
+                  12,
+                  14,
+                  15,
+                  16
+                ],
+                "mergeHyphen": [
+                  10
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 56,
+                "x1": 305,
+                "y0": 529.6699,
+                "y1": 535.6699
+              },
+              "page": 77,
+              "fixes": {
+                "joinSpace": [
+                  5
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 56,
+                "x1": 305,
+                "y0": 541.6699,
+                "y1": 547.6699
+              },
+              "page": 77
+            },
+            {
+              "box": {
+                "x0": 56,
+                "x1": 305,
+                "y0": 577.6699,
+                "y1": 583.6699
+              },
+              "page": 77
+            },
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 76.2699,
+                "y1": 214.2699
+              },
+              "page": 77,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  13,
+                  14,
+                  15
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 238.46990000000005,
+                "y1": 304.4699
+              },
+              "page": 77,
+              "fixes": {
+                "joinSpace": [
+                  1,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 322.4698,
+                "y1": 328.4698
+              },
+              "page": 77,
+              "fixes": {
+                "joinSpace": [
+                  2,
+                  5
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 336.4697,
+                "y1": 501.7084
+              },
+              "page": 77,
+              "fixes": {
+                "joinSpace": [
+                  1,
+                  3,
+                  7,
+                  9,
+                  15,
+                  16,
+                  17,
+                  18,
+                  19,
+                  20,
+                  21,
+                  22,
+                  23,
+                  24,
+                  25,
+                  26,
+                  27,
+                  28,
+                  29,
+                  30,
+                  31,
+                  32,
+                  33,
+                  34,
+                  35,
+                  36,
+                  37,
+                  38,
+                  39,
+                  40,
+                  41,
+                  42,
+                  43,
+                  44,
+                  45,
+                  46,
+                  47,
+                  48,
+                  49,
+                  50,
+                  51,
+                  52,
+                  53,
+                  54,
+                  55,
+                  56,
+                  57,
+                  58,
+                  59,
+                  60,
+                  61,
+                  62,
+                  63,
+                  64,
+                  65,
+                  66,
+                  67,
+                  68,
+                  69,
+                  70,
+                  71,
+                  72,
+                  73,
+                  74,
+                  75,
+                  76,
+                  77,
+                  78,
+                  79,
+                  80,
+                  81,
+                  82,
+                  83,
+                  84,
+                  85,
+                  86,
+                  87
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 526.9084,
+                "y1": 676.9084
+              },
+              "page": 77,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 691.9084,
+                "y1": 733.9084
+              },
+              "page": 77,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 26,
+                "x1": 295,
+                "y0": 76.2699,
+                "y1": 142.2699
+              },
+              "page": 78,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  4,
+                  5
+                ],
+                "mergeHyphen": [
+                  3
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 26,
+                "x1": 295,
+                "y0": 157.2699,
+                "y1": 283.2699
+              },
+              "page": 78,
+              "fixes": {
+                "joinSpace": [
+                  2,
+                  7,
+                  8,
+                  9,
+                  12,
+                  13
+                ],
+                "mergeHyphen": [
+                  1,
+                  4,
+                  6,
+                  11
+                ]
+              }
+            }
+          ]
+        },
+        "creatures.0": {
+          "op": "value",
+          "page": 76,
+          "pattern": "raw",
+          "table": "creature",
+          "stripColon": true,
+          "stripParen": true,
+          "box": {
+            "x0": 322,
+            "x1": 384.1300000000001,
+            "y0": 357.2699,
+            "y1": 365.2699
+          }
+        },
+        "creatures.1": {
+          "op": "value",
+          "page": 77,
+          "pattern": "raw",
+          "table": "creature",
+          "stripColon": true,
+          "stripParen": true,
+          "box": {
+            "x0": 70,
+            "x1": 133.27999999999997,
+            "y0": 75.2699,
+            "y1": 83.2699
+          }
+        },
+        "creatures.2": {
+          "op": "value",
+          "page": 77,
+          "pattern": "raw",
+          "table": "creature",
+          "stripColon": true,
+          "stripParen": true,
+          "box": {
+            "x0": 70,
+            "x1": 140.75900000000001,
+            "y0": 366.4699,
+            "y1": 374.4699
+          }
+        },
+        "creatures.3": {
+          "op": "value",
+          "page": 77,
+          "pattern": "raw",
+          "table": "creature",
+          "stripColon": true,
+          "stripParen": true,
+          "box": {
+            "x0": 340,
+            "x1": 398.95899999999995,
+            "y0": 75.2699,
+            "y1": 83.2699
+          }
+        }
+      }
+    },
+    "ax3.cityWatch": {
+      "kind": "kind.location",
+      "name": "City Watch",
+      "cite": "AX3 p.76",
+      "pages": [
+        78
+      ],
+      "meta": {
+        "group": "Old District — Notable Residents"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 78,
+          "box": {
+            "x0": 33,
+            "x1": 295,
+            "y0": 296.4699,
+            "y1": 315.4699
+          },
+          "text": "CITY WATCH"
+        },
+        "description": {
+          "op": "text",
+          "page": 78,
+          "paras": [
+            {
+              "box": {
+                "x0": 26,
+                "x1": 295,
+                "y0": 319.4699,
+                "y1": 469.4699
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  3,
+                  6,
+                  7,
+                  8,
+                  11,
+                  12,
+                  13
+                ],
+                "mergeHyphen": [
+                  2,
+                  5,
+                  10,
+                  15
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ax3.narmirioDrakomir": {
+      "kind": "kind.npc",
+      "name": "Tribune Narmirio Drakomir",
+      "cite": "AX3 p.76",
+      "pages": [
+        78
+      ],
+      "meta": {
+        "group": "Old District — Notable Residents"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 78,
+          "box": {
+            "x0": 33,
+            "x1": 295,
+            "y0": 488.6699,
+            "y1": 501.6699
+          },
+          "text": "Tribune Narmirio Drakomir",
+          "fixes": {
+            "joinSpace": [
+              2,
+              7
+            ]
+          }
+        },
+        "statline": {
+          "op": "value",
+          "page": 78,
+          "pattern": "statline",
+          "dropText": "Narmirio Drakomir:",
+          "box": {
+            "x0": 51,
+            "x1": 291.02000000000004,
+            "y0": 645.6699,
+            "y1": 749.6699
+          },
+          "fixes": {
+            "joinSpace": [
+              0,
+              1,
+              2,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "mergeHyphen": [
+              4
+            ]
+          }
+        },
+        "description": {
+          "op": "text",
+          "page": 78,
+          "paras": [
+            {
+              "box": {
+                "x0": 26,
+                "x1": 295,
+                "y0": 505.6699,
+                "y1": 631.6699
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  9,
+                  10
+                ],
+                "mergeHyphen": [
+                  8
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ax3.apollonisMeteros": {
+      "kind": "kind.npc",
+      "name": "Guildmaster Apollonis Meteros",
+      "cite": "AX3 p.76",
+      "pages": [
+        78
+      ],
+      "meta": {
+        "group": "Old District — Notable Residents"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 78,
+          "box": {
+            "x0": 303,
+            "x1": 572,
+            "y0": 94.79989999999998,
+            "y1": 107.79989999999998
+          },
+          "text": "Guildmaster Apollonis Meteros",
+          "fixes": {
+            "joinSpace": [
+              2,
+              3
+            ]
+          }
+        },
+        "statline": {
+          "op": "value",
+          "page": 78,
+          "pattern": "statline",
+          "dropText": "Apollonis Meteros:",
+          "box": {
+            "x0": 321,
+            "x1": 561.0280000000001,
+            "y0": 239.79989999999998,
+            "y1": 367.7999
+          },
+          "fixes": {
+            "joinSpace": [
+              0,
+              1,
+              2,
+              4,
+              5,
+              6,
+              7,
+              10,
+              14,
+              16,
+              18,
+              19,
+              21,
+              22
+            ],
+            "mergeHyphen": [
+              9,
+              12
+            ]
+          }
+        },
+        "description": {
+          "op": "text",
+          "page": 78,
+          "paras": [
+            {
+              "box": {
+                "x0": 296,
+                "x1": 572,
+                "y0": 111.79989999999998,
+                "y1": 225.79989999999998
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  5,
+                  6,
+                  11
+                ],
+                "mergeHyphen": [
+                  4,
+                  8,
+                  10
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ax3.oldDistrictSpecialEncounters": {
+      "kind": "kind.rolltable",
+      "name": "Old District — Special Encounters",
+      "cite": "AX3 p.77",
+      "pages": [
+        79,
+        80
+      ],
+      "meta": {
+        "group": "Old District"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 79,
+          "box": {
+            "x0": 51,
+            "x1": 305,
+            "y0": 69.19979999999998,
+            "y1": 88.19979999999998
+          },
+          "text": "SPECIAL ENCOUNTERS"
+        },
+        "description": {
+          "op": "text",
+          "page": 79,
+          "paras": [
+            {
+              "box": {
+                "x0": 36,
+                "x1": 305,
+                "y0": 92.19979999999998,
+                "y1": 110.19979999999998
+              },
+              "fixes": {
+                "joinSpace": [
+                  0
+                ]
+              }
+            }
+          ]
+        },
+        "roll": {
+          "op": "value",
+          "page": 79,
+          "pattern": "dice",
+          "box": {
+            "x0": 36,
+            "x1": 305,
+            "y0": 92.19979999999998,
+            "y1": 110.19979999999998
+          }
+        },
+        "rows": {
+          "op": "text",
+          "page": 79,
+          "paras": [
+            {
+              "box": {
+                "x0": 36,
+                "x1": 305,
+                "y0": 125.19979999999998,
+                "y1": 227.19979999999998
+              },
+              "section": "r1",
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "mergeHyphen": [
+                  2,
+                  10
+                ],
+                "drop": [
+                  0
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 36,
+                "x1": 305,
+                "y0": 242.19979999999998,
+                "y1": 380.1998
+              },
+              "section": "r2",
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  8,
+                  9,
+                  10,
+                  11,
+                  14,
+                  15
+                ],
+                "mergeHyphen": [
+                  7,
+                  13
+                ],
+                "drop": [
+                  0
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 36,
+                "x1": 305,
+                "y0": 395.1998,
+                "y1": 485.1998
+              },
+              "section": "r3",
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  3,
+                  4,
+                  5,
+                  6,
+                  9
+                ],
+                "mergeHyphen": [
+                  2,
+                  8
+                ],
+                "drop": [
+                  0
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 36,
+                "x1": 305,
+                "y0": 500.1998,
+                "y1": 530.1998
+              },
+              "section": "r4",
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2
+                ],
+                "drop": [
+                  0
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 36,
+                "x1": 305,
+                "y0": 545.1998,
+                "y1": 743.1998
+              },
+              "section": "r5",
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  14,
+                  15,
+                  16,
+                  17,
+                  18,
+                  19
+                ],
+                "mergeHyphen": [
+                  4,
+                  13
+                ],
+                "drop": [
+                  0
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 76.2699,
+                "y1": 211.2699
+              },
+              "section": "r6",
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11
+                ],
+                "drop": [
+                  0
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 226.2699,
+                "y1": 352.2699
+              },
+              "section": "r7",
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "drop": [
+                  0
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 367.2699,
+                "y1": 538.2699
+              },
+              "section": "r8",
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14
+                ],
+                "drop": [
+                  0
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 553.2699,
+                "y1": 688.2699
+              },
+              "section": "r9",
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11
+                ],
+                "drop": [
+                  0
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 306,
+                "x1": 572,
+                "y0": 703.2699,
+                "y1": 733.2699
+              },
+              "section": "r10",
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2
+                ],
+                "drop": [
+                  0
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 26,
+                "x1": 295,
+                "y0": 76.2699,
+                "y1": 178.2699
+              },
+              "section": "r10",
+              "page": 80,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "mergeHyphen": [
+                  8
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 26,
+                "x1": 295,
+                "y0": 193.2699,
+                "y1": 400.2699
+              },
+              "section": "r11",
+              "page": 80,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  7,
+                  12,
+                  13,
+                  14,
+                  17,
+                  18,
+                  19,
+                  20
+                ],
+                "mergeHyphen": [
+                  9,
+                  11,
+                  16,
+                  22,
+                  24
+                ],
+                "drop": [
+                  0
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 26,
+                "x1": 295,
+                "y0": 415.2699,
+                "y1": 565.2699
+              },
+              "section": "r12",
+              "page": 80,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14
+                ],
+                "mergeHyphen": [
+                  2,
+                  4
+                ],
+                "drop": [
+                  0
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 26,
+                "x1": 295,
+                "y0": 580.2699,
+                "y1": 694.2699
+              },
+              "section": "r13",
+              "page": 80,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  4,
+                  9,
+                  10,
+                  11,
+                  12
+                ],
+                "mergeHyphen": [
+                  3,
+                  6,
+                  8
+                ],
+                "drop": [
+                  0
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ax3.gabriolEirenikos": {
+      "kind": "kind.npc",
+      "name": "Gabriol Eirenikos",
+      "cite": "AX3 p.197",
+      "pages": [
+        199,
+        200
+      ],
+      "meta": {
+        "group": "NPC Party — Imperial Vanguard"
+      },
+      "fields": {
+        "name": {
+          "op": "expect",
+          "page": 199,
+          "box": {
+            "x0": 317.4,
+            "x1": 555,
+            "y0": 67.59990000000005,
+            "y1": 86.59990000000005
+          },
+          "text": "GABRIOL EIRENIKOS"
+        },
+        "statline": {
+          "op": "value",
+          "page": 199,
+          "pattern": "statline",
+          "dropText": "Gabriol Eirenikos:",
+          "box": {
+            "x0": 335.4,
+            "x1": 575.4280000000001,
+            "y0": 335.5999,
+            "y1": 607.5998999999999
+          },
+          "fixes": {
+            "joinSpace": [
+              0,
+              1,
+              4,
+              6,
+              9,
+              12,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              27,
+              29,
+              31,
+              33,
+              35,
+              36,
+              37,
+              39,
+              40,
+              42,
+              44,
+              46,
+              47,
+              48,
+              52,
+              54,
+              56,
+              58,
+              62,
+              64,
+              65,
+              67,
+              69,
+              70,
+              73,
+              74,
+              76,
+              77,
+              79,
+              81,
+              83,
+              84,
+              85,
+              86,
+              87
+            ],
+            "mergeHyphen": [
+              11,
+              14,
+              50,
+              60,
+              72
+            ]
+          }
+        },
+        "description": {
+          "op": "text",
+          "page": 199,
+          "paras": [
+            {
+              "box": {
+                "x0": 306,
+                "x1": 555,
+                "y0": 90.59990000000005,
+                "y1": 180.59990000000005
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 306,
+                "x1": 555,
+                "y0": 195.59990000000005,
+                "y1": 321.5999
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 306,
+                "x1": 555,
+                "y0": 630.7999,
+                "y1": 696.7999
+              },
+              "fixes": {
+                "joinSpace": [
+                  1,
+                  2,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  14,
+                  15
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 556,
+                "x1": 572,
+                "y0": 243.59990000000005,
+                "y1": 285.5999
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 556,
+                "x1": 572,
+                "y0": 348.5999,
+                "y1": 390.5999
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 556,
+                "x1": 572,
+                "y0": 444.5999,
+                "y1": 522.5998999999999
+              },
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 556,
+                "x1": 572,
+                "y0": 654.7999,
+                "y1": 660.7999
+              }
+            },
+            {
+              "box": {
+                "x0": 26,
+                "x1": 572,
+                "y0": 76.2699,
+                "y1": 166.2699
+              },
+              "page": 200,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 26,
+                "x1": 572,
+                "y0": 181.2699,
+                "y1": 223.2699
+              },
+              "page": 200,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  8,
+                  9
+                ],
+                "mergeHyphen": [
+                  7
+                ]
+              }
+            },
+            {
+              "box": {
+                "x0": 26,
+                "x1": 572,
+                "y0": 238.2699,
+                "y1": 268.2699
+              },
+              "page": 200,
+              "fixes": {
+                "joinSpace": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "skips": {
+    "71": [
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 0,
+        "y1": 60,
+        "reason": "running-head"
+      },
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 750,
+        "y1": 792,
+        "reason": "folio"
+      },
+      {
+        "x0": 578,
+        "x1": 612,
+        "y0": 0,
+        "y1": 792,
+        "reason": "margin-furniture"
+      }
+    ],
+    "72": [
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 0,
+        "y1": 60,
+        "reason": "running-head"
+      },
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 750,
+        "y1": 792,
+        "reason": "folio"
+      },
+      {
+        "x0": 0,
+        "x1": 34,
+        "y0": 0,
+        "y1": 792,
+        "reason": "margin-furniture"
+      }
+    ],
+    "73": [
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 0,
+        "y1": 60,
+        "reason": "running-head"
+      },
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 750,
+        "y1": 792,
+        "reason": "folio"
+      },
+      {
+        "x0": 578,
+        "x1": 612,
+        "y0": 0,
+        "y1": 792,
+        "reason": "margin-furniture"
+      }
+    ],
+    "75": [
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 0,
+        "y1": 60,
+        "reason": "running-head"
+      },
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 750,
+        "y1": 792,
+        "reason": "folio"
+      },
+      {
+        "x0": 578,
+        "x1": 612,
+        "y0": 0,
+        "y1": 792,
+        "reason": "margin-furniture"
+      }
+    ],
+    "76": [
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 0,
+        "y1": 60,
+        "reason": "running-head"
+      },
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 750,
+        "y1": 792,
+        "reason": "folio"
+      },
+      {
+        "x0": 0,
+        "x1": 34,
+        "y0": 0,
+        "y1": 792,
+        "reason": "margin-furniture"
+      }
+    ],
+    "77": [
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 0,
+        "y1": 60,
+        "reason": "running-head"
+      },
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 750,
+        "y1": 792,
+        "reason": "folio"
+      },
+      {
+        "x0": 578,
+        "x1": 612,
+        "y0": 0,
+        "y1": 792,
+        "reason": "margin-furniture"
+      }
+    ],
+    "78": [
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 0,
+        "y1": 60,
+        "reason": "running-head"
+      },
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 750,
+        "y1": 792,
+        "reason": "folio"
+      },
+      {
+        "x0": 0,
+        "x1": 34,
+        "y0": 0,
+        "y1": 792,
+        "reason": "margin-furniture"
+      }
+    ],
+    "79": [
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 0,
+        "y1": 60,
+        "reason": "running-head"
+      },
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 750,
+        "y1": 792,
+        "reason": "folio"
+      },
+      {
+        "x0": 578,
+        "x1": 612,
+        "y0": 0,
+        "y1": 792,
+        "reason": "margin-furniture"
+      }
+    ],
+    "80": [
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 0,
+        "y1": 60,
+        "reason": "running-head"
+      },
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 750,
+        "y1": 792,
+        "reason": "folio"
+      },
+      {
+        "x0": 0,
+        "x1": 34,
+        "y0": 0,
+        "y1": 792,
+        "reason": "margin-furniture"
+      }
+    ],
+    "199": [
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 0,
+        "y1": 60,
+        "reason": "running-head"
+      },
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 750,
+        "y1": 792,
+        "reason": "folio"
+      },
+      {
+        "x0": 578,
+        "x1": 612,
+        "y0": 0,
+        "y1": 792,
+        "reason": "margin-furniture"
+      }
+    ],
+    "200": [
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 0,
+        "y1": 60,
+        "reason": "running-head"
+      },
+      {
+        "x0": 0,
+        "x1": 612,
+        "y0": 750,
+        "y1": 792,
+        "reason": "folio"
+      },
+      {
+        "x0": 0,
+        "x1": 34,
+        "y0": 0,
+        "y1": 792,
+        "reason": "margin-furniture"
+      }
+    ]
+  }
+}

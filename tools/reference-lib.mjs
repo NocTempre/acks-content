@@ -10,12 +10,15 @@
 import fs from "node:fs";
 
 export const LIB = "C:\\Proj\\acks-reference\\ACKSII";
+export const LIB_AX = "C:\\Proj\\acks-reference\\AX";
 
 /** Book id -> the exact printing the register's page numbers were read from. */
 export const FILES = {
   rr: `${LIB}\\ACKSII_Revised_Rulebook_DIGITAL_FINAL_r10_2nd_Printing.pdf`,
   jj: `${LIB}\\ACKSII_Judges_Journal_DIGITAL_FINAL_r9_2nd_Printing.pdf`,
   mm: `${LIB}\\ACKSII_Monstrous_Manual_DIGITAL_FINAL_r7_2nd_Printing.pdf`,
+  ax2: `${LIB_AX}\\AX2_Secrets_of_the_Nethercity_-_Bookmarked.pdf`,
+  ax3: `${LIB_AX}\\AX3_Capital_of_the_Borderlands.pdf`,
 };
 
 /**

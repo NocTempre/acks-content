@@ -1,0 +1,90 @@
+[
+  {
+    "id": "ax2.fungalCreeper",
+    "kind": "kind.monsterLegacy",
+    "book": "ax2",
+    "name": "Fungal Creeper",
+    "anchor": {
+      "display": "FUNGAL CREEPER"
+    },
+    "pages": [
+      145,
+      146
+    ],
+    "meta": {
+      "group": "New Monsters"
+    },
+    "assists": {
+      "columns": [
+        54,
+        324
+      ]
+    }
+  },
+  {
+    "id": "ax2.khepri",
+    "kind": "kind.monsterLegacy",
+    "book": "ax2",
+    "name": "Khepri",
+    "anchor": {
+      "display": "KHEPRI"
+    },
+    "pages": [
+      149,
+      150
+    ],
+    "meta": {
+      "group": "New Monsters",
+      "revisedBy": "mm.khepri"
+    },
+    "assists": {
+      "columns": [
+        54,
+        324
+      ]
+    }
+  },
+  {
+    "id": "ax2.mummyLord",
+    "kind": "kind.monsterLegacy",
+    "book": "ax2",
+    "name": "Mummy Lord",
+    "anchor": {
+      "display": "MUMMY LORD"
+    },
+    "pages": [
+      151
+    ],
+    "meta": {
+      "group": "New Monsters",
+      "revisedBy": "mm.mummyLord"
+    },
+    "assists": {
+      "columns": [
+        54,
+        324
+      ]
+    }
+  },
+  {
+    "id": "ax2.tunnelPrawn",
+    "kind": "kind.monsterLegacy",
+    "book": "ax2",
+    "name": "Tunnel Prawn",
+    "anchor": {
+      "display": "TUNNEL PRAWN"
+    },
+    "pages": [
+      153
+    ],
+    "meta": {
+      "group": "New Monsters"
+    },
+    "assists": {
+      "columns": [
+        54,
+        324
+      ]
+    }
+  }
+]

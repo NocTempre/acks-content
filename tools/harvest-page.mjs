@@ -34,12 +34,7 @@ import {
 import { extractStatPairs } from "../scripts/stats.mjs";
 import { BOOKS, fingerprintWarning } from "../scripts/books.mjs";
 
-const LIB = "C:\\Proj\\acks-reference\\ACKSII";
-const FILES = {
-  rr: `${LIB}\\ACKSII_Revised_Rulebook_DIGITAL_FINAL_r10_2nd_Printing.pdf`,
-  jj: `${LIB}\\ACKSII_Judges_Journal_DIGITAL_FINAL_r9_2nd_Printing.pdf`,
-  mm: `${LIB}\\ACKSII_Monstrous_Manual_DIGITAL_FINAL_r7_2nd_Printing.pdf`,
-};
+import { FILES } from "./reference-lib.mjs";
 
 // Monster stat-block labels that reliably mark an MM stat page (a page with
 // several of these is a monster entry; body-only pages have ~none).

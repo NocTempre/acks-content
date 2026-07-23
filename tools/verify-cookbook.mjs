@@ -32,7 +32,17 @@ const start = startArg ? parseInt(startArg, 10) : 0;
 const end = endArg ? parseInt(endArg, 10) : Infinity;
 
 const registers = JSON.parse(fs.readFileSync(path.join(COOKBOOK, "registers.json"), "utf8"));
-const bookFiles = fs.readdirSync(COOKBOOK).filter((f) => f.endsWith(".json") && f !== "registers.json");
+// Book cookbooks only: index.json and the content-type cookbooks (equipment,
+// powers, …) have no `book` fingerprint and no page-anchored composites.
+const bookFiles = fs.readdirSync(COOKBOOK).filter((f) => f.endsWith(".json") && f !== "registers.json" && f !== "index.json");
+
+// Composite ids across EVERY book cookbook: a creature-table ref may point at
+// another book's entry (the defer-to-ACKS-II rule sends ax2 rooms to mm.*).
+const knownComposites = new Set();
+for (const f of bookFiles) {
+  const c = JSON.parse(fs.readFileSync(path.join(COOKBOOK, f), "utf8"));
+  if (c.book) for (const id of Object.keys(c.entries ?? {})) knownComposites.add(id);
+}
 
 let failures = 0;
 let warnings = 0;
@@ -48,7 +58,13 @@ function checkRefs(value, entryId, path0) {
     return;
   }
   if (typeof value !== "object") return;
-  if (value.ref) {
+  if (value.ref && !value.ref.startsWith("def.")) {
+    // Composite ref (creature table): resolves against cookbook entries.
+    if (!knownComposites.has(value.ref)) {
+      console.log(`FK   ${entryId}: ${path0} -> ${value.ref} MISSING from every book cookbook`);
+      failures++;
+    }
+  } else if (value.ref) {
     const node = registers.nodes[value.ref];
     if (!node) {
       console.log(`FK   ${entryId}: ${path0} -> ${value.ref} MISSING from registers.nodes`);
@@ -66,6 +82,7 @@ function checkRefs(value, entryId, path0) {
 
 for (const file of bookFiles) {
   const cb = JSON.parse(fs.readFileSync(path.join(COOKBOOK, file), "utf8"));
+  if (!cb.book) continue; // content-type cookbook — verified by its own tooling
   const bookId = cb.book.id;
   if (bookArg && bookId !== bookArg) continue;
   const pdf = FILES[bookId];
@@ -108,21 +125,68 @@ for (const file of bookFiles) {
       }
     }
 
+    const kind = cb.entries[id].kind;
     const words = wordsOf(f.description);
     const statCount = Object.values(f.stats ?? {}).filter(
       (v) => v === 0 || (!!v && (typeof v !== "object" || Object.keys(v).length) && v !== ""),
     ).length;
     const nameOk = f.name?.ok;
-    if (!nameOk || !words || !statCount) {
-      console.log(`FAIL ${id}: expect=${nameOk ? "ok" : `MISMATCH(${f.name?.found ?? "none"})`} descWords=${words} stats=${statCount}`);
+    // Pass criteria are KIND-shaped: a location is prose, an npc is a parsed
+    // statline, a rolltable is rows; only monster kinds owe a stat block.
+    const rows = Array.isArray(f.rows) ? f.rows : [];
+    const sl = f.statline;
+    const slOk = !!(sl && (sl.class || sl.hp != null || sl.ac != null));
+    const fail = (detail) => {
+      console.log(`FAIL ${id}: expect=${nameOk ? "ok" : `MISMATCH(${f.name?.found ?? "none"})`} ${detail}`);
       failures++;
+    };
+    if (kind === "kind.location") {
+      if (!nameOk || !words) {
+        fail(`descWords=${words}`);
+        continue;
+      }
+      checkRefs(f, id, "");
+      const creatures = Object.values(f.creatures ?? {});
+      const cStr = creatures.length
+        ? ` creatures=[${creatures.map((c) => `${c?.text ?? "?"}${c?.ref ? `->${c.ref}` : ""}`).join(", ")}]`
+        : "";
+      console.log(`OK   ${id}: ${f.description.length} paras/${words}w${cStr}`);
+      continue;
+    }
+    if (kind === "kind.npc") {
+      if (!nameOk || !slOk) {
+        fail(`statline=${sl ? Object.keys(sl).join(",") : "none"} descWords=${words}`);
+        continue;
+      }
+      checkRefs(f, id, "");
+      console.log(
+        `OK   ${id}: ${f.description?.length ?? 0} paras/${words}w ` +
+          `${sl.class ? `${sl.class.name} ${sl.class.level}` : "creature"} ac=${sl.ac} hp=${sl.hp} ` +
+          `${sl.abilities ? `abil=${Object.keys(sl.abilities).length}` : ""}${sl.proficiencies ? ` profs=${sl.proficiencies.length}` : ""}${sl.equipment ? " equip" : ""}`,
+      );
+      continue;
+    }
+    if (kind === "kind.rolltable") {
+      if (!nameOk || !rows.length) {
+        fail(`rows=${rows.length}`);
+        continue;
+      }
+      checkRefs(f, id, "");
+      const ranges = rows.map((r) => (r.section ?? "").replace(/^r/, ""));
+      console.log(`OK   ${id}: ${rows.length} row-paras roll=${f.roll ?? "(derive)"} ranges=${ranges[0]}..${ranges[ranges.length - 1]} descWords=${words}`);
+      continue;
+    }
+    if (!nameOk || !words || !statCount) {
+      fail(`descWords=${words} stats=${statCount}`);
       continue;
     }
     checkRefs(f, id, "");
     const atk = f.attacks;
     const atkStr = atk
       ? `atk[${(atk.modes ?? []).map((m) => m.segments.map((s) => `${s.name ?? "?"} ${s.damage} ${s.damageType?.key ?? "?"}${s.quality ? ` ${s.quality.toUpperCase()}` : ""}`).join(" + ")).join(" OR ")}] throw=${atk.throw}`
-      : "no-attacks";
+      : kind === "kind.monsterLegacy"
+        ? `atkRaw=${JSON.stringify(String(f.stats.attacks ?? "?")).slice(0, 30)} dmg=${JSON.stringify(String(f.stats.damage ?? "?")).slice(0, 30)}`
+        : "no-attacks";
     const type = f.stats.type;
     console.log(
       `OK   ${id}: ${f.description.length} paras/${words}w stats=${statCount} ac=${f.stats.armorClass} hd=${f.stats.hitDice} ` +
