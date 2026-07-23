@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.29.0
+
+AX2 (Secrets of the Nethercity) and AX3 (Capital of the Borderlands) join the
+cookbook — the first adventure books, with four new kinds and their bindings:
+
+- **Location journals** (`kind.location`): keyed areas import as JournalEntry
+  pages (one journal per complex/district, one page per key) whose prose stays
+  a lazy `@PdfText` tag — pin a page to a scene to attach it to the map. AX2's
+  inline `[MONSTER]`/`[LORE]`/`[LOOT]`/… icons become prose sections, and each
+  quick-stat label emits a creature link.
+- **Defer-to-ACKS-II**: a new `creature` register maps printed names onto the
+  entry the seat should use — renames ruled by the conversion registry
+  (Carcass Scavenger → Carrion Horror) — and appendix monsters reprinted in
+  the MM (`meta.revisedBy`) import the MM version whenever that book is open,
+  falling back to the AX block otherwise.
+- **NPC actors** (`kind.npc`): the new `statline` executor pattern parses the
+  era's inline quick-stat blocks (class/level, ability scores, AC/HD/hp/
+  attacks/saves, proficiencies, equipment) even when prose and block sit on
+  different pages; proficiencies resolve through the ability-provider tiers
+  into embedded items; scores and gear notes persist in
+  `flags["acks-content"].npc`.
+- **Adventure roll tables** (`kind.rolltable`): grid tables (the 4-column
+  wandering-monster spread) and numbered-list tables (district special
+  encounters) import as RollTables — ranges are shipped structure, row text
+  materializes from the seat's book, the formula reads off the page (2d10) or
+  derives mechanically from ranges starting at 1 (1d20).
+- **Legacy monster blocks** (`kind.monsterLegacy`): ACKS I label-column stat
+  blocks (with variant columns) bind onto the same monster-actor surface.
+- New GM macros: *Import Location Journals*, *Import Adventure Roll Tables*.
+  `connectBookUrl(bookId, url)` joins the api for hosted/staged PDFs.
+- Pilot coverage: AX2 entrance caves A1–A4, both Nethercity table sets, four
+  appendix monsters; AX3 Old District (keys 1–14U, Argollëan Family, City
+  Watch, two resident NPCs, special encounters) and Gabriol Eirenikos of the
+  NPC Party. The remaining ~500 entries follow the same recipes in sweep
+  batches.
+
 ## 0.24.1
 
 - Add the `url` field to the manifest (GitHub repo link), matching the rest of

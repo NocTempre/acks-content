@@ -662,6 +662,11 @@ function reportImport(done, picked, skipped) {
 
 async function importOne(bookId, id, folderId) {
   const found = cookbookEntry(id);
+  // Adventure kinds route to their own binders; journals/tables have their own
+  // importers and are never built here.
+  const kind = found?.entry?.kind;
+  if (kind === "kind.npc" || kind === "kind.monsterLegacy") return importAdventureActor(bookId, id, folderId);
+  if (kind && kind !== "kind.monster") return null;
   const session = ctx.sessionDocs.get(bookId);
   const node = await executeEntry(session.doc, found.cb, data.registers, id);
   if (!node.ok) {
@@ -774,6 +779,307 @@ export async function refillMonster(actor) {
  * descriptor; classification and any materialized mechanics persist in
  * flags["acks-abilities"].extras, so the ability stays usable without the book.
  */
+/* -------------------------------------------- */
+/*  Adventure binding (AX line)                 */
+/*  location -> journal page, rolltable ->      */
+/*  RollTable, npc / monsterLegacy -> Actor     */
+/* -------------------------------------------- */
+
+const ACTOR_KINDS = new Set(["kind.monster", "kind.monsterLegacy", "kind.npc"]);
+/** kinds an actor-import flow may enumerate (unknown/absent kind = MM-era monster). */
+const actorKindOf = (e) => !e.kind || ACTOR_KINDS.has(e.kind);
+const ALIGN_WORD = { L: "Lawful", N: "Neutral", C: "Chaotic" };
+
+/** The lazy-prose tag persisted on world documents (never the prose itself). */
+const pdfTag = (id, label) => `<p>@PdfText[${id}]{${label}}</p>`;
+
+/**
+ * Defer-to-newest: an adventure entry reprinted in a book this seat has OPEN
+ * (meta.revisedBy, e.g. ax2.khepri -> mm.khepri) imports from there instead —
+ * the ACKS II printing outranks the adventure's ACKS I block when present.
+ */
+function deferTarget(id) {
+  const rev = cookbookEntry(id)?.entry?.meta?.revisedBy;
+  if (!rev) return null;
+  const revBook = rev.split(".")[0];
+  return ctx.sessionDocs.has(revBook) && cookbookEntry(rev) ? rev : null;
+}
+
+/** Legacy (ACKS I label-column) stats, translated onto the bindMonster surface. */
+function bindLegacyMonster(node) {
+  const s = node.fields.stats ?? {};
+  const morale =
+    typeof s.morale === "string" && /^[+-]?\d+$/.test(s.morale.trim()) ? parseInt(s.morale, 10) : s.morale;
+  const bound = bindMonster({
+    ...node,
+    fields: { ...node.fields, attacks: null, stats: { ...s, morale, speedLand: s.movement } },
+  });
+  const atkText = [s.attacks, s.damage].filter(Boolean).join(" — ");
+  if (atkText) bound.system.attacks = atkText;
+  // One weapon item when the era's "N (name)" attack + dice damage parse.
+  const m = /^\s*\d*\s*\(?\s*([A-Za-z][A-Za-z' -]*)\)?/.exec(String(s.attacks ?? ""));
+  const dmg = diceOf(s.damage);
+  if (m && dmg) {
+    bound.items = [
+      ...(bound.items ?? []),
+      {
+        name: capitalize(m[1].trim()),
+        type: "weapon",
+        img: "icons/svg/sword.svg",
+        system: {
+          description: "", damage: dmg, bonus: 0, melee: true, missile: false, equipped: true,
+          pattern: "transparent", tags: [], counter: { value: 1, max: 1 }, cost: 0, weight: 0, weight6: 0,
+        },
+      },
+    ];
+  }
+  return bound;
+}
+
+/**
+ * A parsed quick-stat block (the `statline` pattern) onto a monster-type
+ * actor. Values persist in world fields (the GM's hand-typed equivalence);
+ * ability scores and gear notes go to flags — the monster schema has no score
+ * fields — and prose stays a lazy tag.
+ */
+function bindNpc(node) {
+  const sl = node.fields.statline ?? {};
+  const system = {};
+  if (Number.isInteger(sl.ac)) system.aac = { value: sl.ac };
+  if (Number.isInteger(sl.hp)) {
+    const hdCount = parseInt(String(sl.hd ?? sl.class?.level ?? 1), 10) || 1;
+    system.hp = { value: sl.hp, max: sl.hp, hd: `${hdCount}d8` };
+  }
+  // Save row from printed save level (else class level). NOTE: the shared LUT
+  // is the fighter line — the MM approximation this module already uses.
+  const level = sl.save?.level ?? sl.class?.level ?? 0;
+  const row = savesForLevel(level);
+  system.saves = Object.fromEntries(Object.entries(row).map(([k, v]) => [k, { value: v }]));
+  system.saves.breath = { value: row.blast };
+  system.saves.wand = { value: row.implements };
+  system.details = {
+    ...(typeof sl.ml === "number" ? { morale: Math.max(-6, Math.min(4, sl.ml)) } : {}),
+    ...(sl.xp != null ? { xp: sl.xp } : {}),
+    ...(sl.al ? { alignment: ALIGN_WORD[sl.al] ?? sl.al } : {}),
+  };
+  const mv = /(\d+)/.exec(String(sl.mv ?? ""));
+  if (mv) system.movement = { base: parseInt(mv[1], 10) };
+  if (sl.atk?.throw != null) system.thac0 = { throw: sl.atk.throw };
+  if (sl.atk) system.attacks = [sl.atk.count, sl.atk.text ? `(${sl.atk.text})` : "", sl.dmg ? `— ${sl.dmg}` : ""].filter(Boolean).join(" ");
+  const items = [];
+  if (sl.atk?.text) {
+    items.push({
+      name: capitalize(sl.atk.text),
+      type: "weapon",
+      img: "icons/svg/sword.svg",
+      system: {
+        description: "", damage: diceOf(sl.dmg) || "", bonus: 0, melee: true, missile: false, equipped: true,
+        pattern: "transparent", tags: [], counter: { value: 1, max: 1 }, cost: 0, weight: 0, weight6: 0,
+      },
+    });
+  }
+  return { system, items, statline: sl };
+}
+
+/** Actor import for kind.npc / kind.monsterLegacy (with the defer rule). */
+async function importAdventureActor(bookId, id, folderId) {
+  const target = deferTarget(id);
+  if (target) {
+    const tb = target.split(".")[0];
+    ui.notifications.info(`acks-content | ${id} is reprinted in ${BOOKS[tb]?.label ?? tb} — importing ${target} instead.`);
+    return importOne(tb, target, folderId);
+  }
+  const found = cookbookEntry(id);
+  const session = ctx.sessionDocs.get(bookId);
+  const node = await executeEntry(session.doc, found.cb, data.registers, id);
+  if (!node.ok) {
+    ui.notifications.warn(`acks-content | ${found.entry.name}: page did not match the cookbook (different printing?) — skipped.`);
+    return null;
+  }
+  const kind = found.entry.kind;
+  const bound = kind === "kind.npc" ? bindNpc(node) : bindLegacyMonster(node);
+  const paras = node.fields.description ?? [];
+  cookbookCacheParas(bookId, id, paras);
+  const sl = bound.statline;
+  const classLine = sl?.class ? `<p><em>${sl.class.name} ${sl.class.level}${sl.class.note ? ` (${sl.class.note})` : ""}</em></p>` : "";
+  bound.system.details = {
+    ...(bound.system.details ?? {}),
+    biography: classLine + pdfTag(id, found.entry.cite),
+  };
+  // Proficiency tokens resolve through the shared ability-provider tiers.
+  if (sl?.proficiencies?.length) {
+    const { items: profItems, missing } = await resolveAbilities(sl.proficiencies);
+    bound.items = [...(bound.items ?? []), ...profItems];
+    if (missing.length) console.log(`${MODULE_ID} | ${id}: unresolved proficiencies ${missing.join(", ")}`);
+  }
+  return Actor.create({
+    name: found.entry.name,
+    type: "monster",
+    folder: folderId,
+    system: bound.system,
+    items: bound.items ?? [],
+    flags: {
+      [MODULE_ID]: {
+        cookbook: { id, book: bookId, kind },
+        ...(sl
+          ? {
+              npc: {
+                ...(sl.class ? { class: sl.class } : {}),
+                ...(sl.abilities ? { abilities: sl.abilities } : {}),
+                ...(sl.equipment ? { equipment: sl.equipment } : {}),
+                ...(sl.classAbilities ? { classAbilities: sl.classAbilities } : {}),
+                ...(sl.spells ? { spells: sl.spells } : {}),
+                ...(sl.hpEach ? { hpEach: true } : {}),
+              },
+            }
+          : {}),
+      },
+    },
+  });
+}
+
+async function ensureTypedFolder(type) {
+  return (
+    game.folders.find((fo) => fo.type === type && fo.name === FOLDER_NAME) ??
+    Folder.create({ name: FOLDER_NAME, type })
+  );
+}
+
+/**
+ * Location journals: one JournalEntry per meta.group, one page per keyed
+ * entry, page body = lazy tag + creature links (the seat-extracted creature
+ * lookups, deferring to the ACKS II entry when the register maps one). Pages
+ * update in place on re-import, so coverage grows without duplicating.
+ */
+export async function cookbookImportJournals() {
+  if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only (creates journals).");
+  const openBooks = [...data.books.keys()].filter((b) => ctx.sessionDocs.has(b));
+  let made = 0;
+  let updated = 0;
+  for (const bookId of openBooks) {
+    const cb = data.books.get(bookId);
+    const session = ctx.sessionDocs.get(bookId);
+    const locs = Object.entries(cb.entries).filter(([, e]) => e.kind === "kind.location");
+    if (!locs.length) continue;
+    const folder = await ensureTypedFolder("JournalEntry");
+    const groups = new Map();
+    for (const [id, e] of locs) {
+      const g = e.meta?.group ?? BOOKS[bookId]?.label ?? bookId;
+      if (!groups.has(g)) groups.set(g, []);
+      groups.get(g).push([id, e]);
+    }
+    for (const [group, list] of groups) {
+      const jName = `${BOOKS[bookId]?.short ?? bookId} — ${group}`;
+      let journal = game.journal.find((j) => j.getFlag(MODULE_ID, "cookbook")?.group === group && j.getFlag(MODULE_ID, "cookbook")?.book === bookId);
+      journal ??= await JournalEntry.create({
+        name: jName,
+        folder: folder.id,
+        flags: { [MODULE_ID]: { cookbook: { book: bookId, group } } },
+      });
+      list.sort((a, b) => (a[1].pages[0] - b[1].pages[0]) || a[0].localeCompare(b[0]));
+      let sort = 0;
+      for (const [id, e] of list) {
+        sort += 100;
+        const node = await executeEntry(session.doc, cb, data.registers, id).catch(() => null);
+        if (node?.ok) cookbookCacheParas(bookId, id, node.fields.description ?? []);
+        const creatures = Object.values(node?.fields?.creatures ?? {}).filter((c) => c && (c.ref || c.text));
+        const creatureHtml = creatures.length
+          ? `<p><strong>Creatures:</strong> ${creatures
+              .map((c) => (c.ref ? `@PdfText[${c.ref}]{${c.text}}` : c.text))
+              .join(" · ")}</p>`
+          : "";
+        const content = pdfTag(id, e.cite) + creatureHtml;
+        const existing = journal.pages.find((p) => p.getFlag(MODULE_ID, "cookbook")?.id === id);
+        if (existing) {
+          await existing.update({ "text.content": content, sort });
+          updated++;
+        } else {
+          await journal.createEmbeddedDocuments("JournalEntryPage", [
+            {
+              name: e.name,
+              type: "text",
+              sort,
+              text: { content, format: CONST.JOURNAL_ENTRY_PAGE_FORMATS.HTML },
+              flags: { [MODULE_ID]: { cookbook: { id, book: bookId } } },
+            },
+          ]);
+          made++;
+        }
+      }
+    }
+  }
+  if (!made && !updated) return ui.notifications.warn("acks-content | no location entries in any open book — connect AX2/AX3 first.");
+  ui.notifications.info(`acks-content | location journals: ${made} page(s) created, ${updated} refreshed, in "${FOLDER_NAME}".`);
+  return { made, updated };
+}
+
+/**
+ * Roll tables: ranges are shipped structure (r<lo> / r<lo>-<hi> sections);
+ * row TEXT materializes from the seat's book at import and persists in the
+ * world — the GM's hand-typed-table equivalence, like imported stat values.
+ * The formula comes from the page (dice locator) or, when the rows start at
+ * 1, mechanically from the shipped range structure.
+ */
+export async function cookbookImportRollTables() {
+  if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only (creates roll tables).");
+  const openBooks = [...data.books.keys()].filter((b) => ctx.sessionDocs.has(b));
+  const present = new Set(game.tables.map((t) => t.getFlag(MODULE_ID, "cookbook")?.id).filter(Boolean));
+  let made = 0;
+  let skipped = 0;
+  for (const bookId of openBooks) {
+    const cb = data.books.get(bookId);
+    const session = ctx.sessionDocs.get(bookId);
+    const tables = Object.entries(cb.entries).filter(([, e]) => e.kind === "kind.rolltable");
+    if (!tables.length) continue;
+    const folder = await ensureTypedFolder("RollTable");
+    for (const [id, e] of tables) {
+      if (present.has(id)) {
+        skipped++;
+        continue;
+      }
+      const node = await executeEntry(session.doc, cb, data.registers, id).catch(() => null);
+      if (!node?.ok) {
+        ui.notifications.warn(`acks-content | ${e.name}: page did not match the cookbook — skipped.`);
+        continue;
+      }
+      // Rows arrive as section-labelled paragraphs; a row that wrapped columns
+      // has several paras under one section, joined here in order.
+      const rowText = new Map();
+      for (const p of node.fields.rows ?? []) {
+        const key = p.section ?? "";
+        rowText.set(key, rowText.has(key) ? `${rowText.get(key)} ${p.text}` : p.text);
+      }
+      const results = [];
+      for (const [sec, text] of rowText) {
+        const m = /^r(\d+)(?:-(\d+))?$/.exec(sec);
+        if (!m) continue;
+        const lo = parseInt(m[1], 10);
+        const hi = m[2] ? parseInt(m[2], 10) : lo;
+        results.push({ type: CONST.TABLE_RESULT_TYPES.TEXT, text, range: [lo, hi] });
+      }
+      if (!results.length) continue;
+      results.sort((a, b) => a.range[0] - b.range[0]);
+      const lows = results.map((r) => r.range[0]);
+      const his = results.map((r) => r.range[1]);
+      const formula =
+        (typeof node.fields.roll === "string" && node.fields.roll) ||
+        (Math.min(...lows) === 1 ? `1d${Math.max(...his)}` : "");
+      await RollTable.create({
+        name: e.name,
+        folder: folder.id,
+        formula,
+        description: pdfTag(id, e.cite),
+        results,
+        flags: { [MODULE_ID]: { cookbook: { id, book: bookId } } },
+      });
+      made++;
+    }
+  }
+  if (!made && !skipped) return ui.notifications.warn("acks-content | no roll-table entries in any open book — connect AX2/AX3 first.");
+  ui.notifications.info(`acks-content | roll tables: ${made} created, ${skipped} already present, in "${FOLDER_NAME}".`);
+  return { made, skipped };
+}
+
 /**
  * Resolve a LevelValue at a level. A local copy of acks-lib's resolver, kept
  * small on purpose: acks-content does not otherwise depend on acks-lib, and a
@@ -1587,11 +1893,12 @@ export async function cookbookImport() {
       `acks-content | no cookbook book is open this session — connect one first (PoC 2 / unlock dialog).`,
     );
   }
-  const bookId = openBooks[0]; // one cookbook book so far (MM)
+  const bookId = openBooks[0];
   const cb = data.books.get(bookId);
   const esc = foundry.utils.escapeHTML ?? ((x) => x);
   const have = importedMonsterIds();
   const rows = Object.entries(cb.entries)
+    .filter(([, e]) => actorKindOf(e))
     .sort((a, b) => a[1].pages[0] - b[1].pages[0])
     .map(
       ([id, e]) => `<label class="acks-content-browse-row" data-name="${esc(e.name.toLowerCase())}" data-have="${have.has(id) ? 1 : 0}">
@@ -1703,6 +2010,7 @@ export async function cookbookImportMonsters() {
   }
   const bookId = openBooks[0];
   const ids = Object.entries(data.books.get(bookId).entries)
+    .filter(([, e]) => actorKindOf(e))
     .sort((a, b) => a[1].pages[0] - b[1].pages[0])
     .map(([id]) => id);
   const present = importedMonsterIds();

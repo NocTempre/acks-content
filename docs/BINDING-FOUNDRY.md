@@ -9,10 +9,21 @@ other VTTs) while cookbooks stay valid.
 ## Responsibilities of the binding (none of these live in the cookbook)
 
 - **Routing:** register kind → Foundry document plan. `kind.monster` → Actor
-  type `monster` (+ embedded weapon/ability Items), notes → JournalEntry (the
-  "memorial wall"), tables → RollTable or JournalEntry, definitions →
-  tooltip/`@PdfText` targets. Unrouted kinds default to JournalEntry — routing
-  coverage may lag capture without losing anything.
+  type `monster` (+ embedded weapon/ability Items); `kind.monsterLegacy` (AX
+  appendix blocks) → the same Actor surface via a stats translation, deferring
+  to the entry `meta.revisedBy` names when that book is open on this seat;
+  `kind.npc` → Actor from the parsed statline (values persist in world fields,
+  ability scores/gear notes in `flags["acks-content"].npc`, proficiencies
+  through the ability-provider tiers); `kind.location` → JournalEntry page
+  (one JournalEntry per `meta.group`, body = lazy `@PdfText` tag + creature
+  links from the seat-extracted creature lookups — pin the page to a scene to
+  attach it to the map); `kind.rolltable` → RollTable (ranges from shipped
+  section structure, row text materialized at import into the GM's world — the
+  hand-typed-table equivalence — formula from the page's dice locator, else
+  derived mechanically from ranges starting at 1); notes → JournalEntry (the
+  "memorial wall"); definitions → tooltip/`@PdfText` targets. Unrouted kinds
+  default to JournalEntry — routing coverage may lag capture without losing
+  anything.
 - **Field mapping:** executor output → `system.*` paths (the successor of
   `scripts/stats-map.mjs`). E.g. `stats.armorClass` → `system.aac.value`,
   save class+level → the saves LUT, attacks → weapon Items with

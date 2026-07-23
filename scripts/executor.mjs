@@ -1217,9 +1217,11 @@ export async function executeEntry(doc, bookCookbook, registers, entryId, opts =
       fields.name = result;
       continue;
     }
-    // Nest "stats.x" under fields.stats
-    if (field.startsWith("stats.")) {
-      (fields.stats ??= {})[field.slice(6)] = result;
+    // Nest dotted fields: "stats.x" under fields.stats, "creatures.0" under
+    // fields.creatures — one generic rule so new kinds need no special case.
+    if (field.includes(".")) {
+      const dot = field.indexOf(".");
+      (fields[field.slice(0, dot)] ??= {})[field.slice(dot + 1)] = result;
     } else {
       fields[field] = result;
     }

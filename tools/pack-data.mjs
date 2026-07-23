@@ -56,6 +56,24 @@ api.cookbookImportTables();`,
     ),
     macro("ackscMacCookbook", "Cookbook — Import Monsters (GM)", "icons/svg/mystery-man.svg", GUARD + `api.cookbookImport();`, 200),
     macro(
+      "ackscMacAdvJourn",
+      "Cookbook — Import Location Journals (GM)",
+      "icons/svg/book.svg",
+      GUARD +
+        `if (!api.cookbookImportJournals) return ui.notifications.warn("acks-content | location journals need a newer module build.");
+api.cookbookImportJournals();`,
+      202,
+    ),
+    macro(
+      "ackscMacAdvTable",
+      "Cookbook — Import Adventure Roll Tables (GM)",
+      "icons/svg/d20-grey.svg",
+      GUARD +
+        `if (!api.cookbookImportRollTables) return ui.notifications.warn("acks-content | adventure roll tables need a newer module build.");
+api.cookbookImportRollTables();`,
+      204,
+    ),
+    macro(
       "ackscMacEquipAll",
       "Cookbook — Import ALL Equipment (GM)",
       "icons/svg/item-bag.svg",

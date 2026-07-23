@@ -32,6 +32,7 @@ import {
   cookbookFillCompanions, cookbookPruneAbilities, registerAbilityDirectoryButtons, importAbility, cookbookDebug, cookbookStub,
   cookbookCanReveal, cookbookProse, cookbookCount, refillMonster, resolveAbilities,
   importEquipment, importAllEquipment, cookbookEquipmentIds,
+  cookbookImportJournals, cookbookImportRollTables,
 } from "./cookbook.mjs";
 
 const SETTING_DYNAMIC = "dynamicRecipes";
@@ -124,6 +125,21 @@ function rerenderPdfTextApps() {
     }
   }
   return n;
+}
+
+/**
+ * Programmatic connect: read a PDF from a URL this seat can fetch (a file the
+ * GM staged under the Foundry data dir, or any served path). The interactive
+ * connectBook() stays the normal path; this one serves hosted copies and
+ * automated live tests. Session memory only, like every connect — nothing is
+ * stored or uploaded.
+ */
+async function connectBookUrl(bookId, url) {
+  if (!BOOKS[bookId]) return ui.notifications.warn(`acks-content | unknown book id "${bookId}".`);
+  const resp = await fetch(url);
+  if (!resp.ok) return ui.notifications.warn(`acks-content | could not read ${url} (${resp.status}).`);
+  const buffer = await resp.arrayBuffer();
+  return ingestBook(bookId, buffer);
 }
 
 async function ingestBook(bookId, buffer, { silent = false } = {}) {
@@ -747,10 +763,11 @@ Hooks.once("ready", async () => {
   registerAbilityDirectoryButtons();
   await loadCookbook();
   const api = {
-    connectBook, browseAndLoad, applyStats, bookStatus, forgetBooks,
+    connectBook, connectBookUrl, browseAndLoad, applyStats, bookStatus, forgetBooks,
     proseFor, cookbookImport, cookbookImportMonsters, cookbookImportAbilities, cookbookImportAbilitiesDialog, cookbookUpdateAbilities, cookbookFillCompanions, cookbookPruneAbilities,
     importAbility, cookbookDebug, cookbookProse, cookbookCount,
     cookbookImportTables,
+    cookbookImportJournals, cookbookImportRollTables,
     importEquipment, importAllEquipment, cookbookEquipmentIds,
     RECIPES, BOOKS,
   };
