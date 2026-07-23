@@ -8431,7 +8431,7 @@
         "category": "equipment",
         "group": "vehicle"
       },
-      "icon": "icons/svg/cart.svg",
+      "icon": "icons/svg/stone-path.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -8490,7 +8490,7 @@
         "category": "equipment",
         "group": "vehicle"
       },
-      "icon": "icons/svg/cart.svg",
+      "icon": "icons/svg/stone-path.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -8548,7 +8548,7 @@
         "category": "equipment",
         "group": "vehicle"
       },
-      "icon": "icons/svg/cart.svg",
+      "icon": "icons/svg/stone-path.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -8634,7 +8634,7 @@
         "category": "equipment",
         "group": "vehicle"
       },
-      "icon": "icons/svg/cart.svg",
+      "icon": "icons/svg/stone-path.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -8719,7 +8719,7 @@
         "category": "equipment",
         "group": "vehicle"
       },
-      "icon": "icons/svg/cart.svg",
+      "icon": "icons/svg/stone-path.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -8802,7 +8802,7 @@
         "category": "equipment",
         "group": "vehicle"
       },
-      "icon": "icons/svg/cart.svg",
+      "icon": "icons/svg/stone-path.svg",
       "fields": {
         "name": {
           "op": "expect",
@@ -8915,7 +8915,7 @@
         "category": "equipment",
         "group": "vehicle"
       },
-      "icon": "icons/svg/cart.svg",
+      "icon": "icons/svg/stone-path.svg",
       "fields": {
         "name": {
           "op": "expect",

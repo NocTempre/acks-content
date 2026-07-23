@@ -774,7 +774,7 @@ Hooks.once("ready", async () => {
     importAbility, cookbookDebug, cookbookProse, cookbookCount,
     cookbookImportTables,
     cookbookImportJournals, cookbookImportRollTables,
-    importEquipment, importAllEquipment, cookbookEquipmentIds,
+    importEquipment, importAllEquipment, cookbookEquipmentIds, repairEquipmentAbilities,
     RECIPES, BOOKS,
   };
   globalThis.acksContent = api;

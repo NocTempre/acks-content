@@ -591,11 +591,62 @@ export function bindMonster(node) {
 /*  GM import dialog                            */
 /* -------------------------------------------- */
 
+/* -------------------------------------------- */
+/*  Import target folders (one tree per type)   */
+/* -------------------------------------------- */
+
+/**
+ * Every import lands in a tree, not a heap:
+ *
+ *   ACKS Cookbook
+ *     └── <book label>            e.g. "AX2 Secrets of the Nethercity"
+ *           └── <entry meta.group>  e.g. "New Monsters", "Old District — …"
+ *
+ * Actors, journals and roll tables each get their own type-rooted copy of it
+ * (Foundry folders are per document type). Entries without a group sit in the
+ * book folder; content-type items (abilities, equipment) use their own second
+ * level instead of a book. Resolved folders are cached for the session AND
+ * pre-created before any concurrent import starts, so parallel workers cannot
+ * race two folders of the same name into existence.
+ */
+const folderCache = new Map();
+
+async function ensureFolderPath(type, names) {
+  let parent = null;
+  for (const name of names.filter(Boolean).map((n) => String(n).trim()).filter(Boolean)) {
+    const key = `${type}|${parent?.id ?? "root"}|${name}`;
+    let folder = folderCache.get(key);
+    if (!folder) {
+      folder =
+        game.folders.find(
+          (fo) => fo.type === type && fo.name === name && (fo.folder?.id ?? null) === (parent?.id ?? null),
+        ) ?? (await Folder.create({ name, type, folder: parent?.id ?? null, sorting: "a" }));
+      folderCache.set(key, folder);
+    }
+    parent = folder;
+  }
+  return parent;
+}
+
+const bookFolderName = (bookId) => BOOKS[bookId]?.label ?? bookId;
+/** The folder an entry of this kind belongs in, creating the path as needed. */
+const targetFolder = (type, bookId, group) =>
+  ensureFolderPath(type, [FOLDER_NAME, bookFolderName(bookId), group]);
+
+/** Pre-create every folder a batch will need, before the workers fan out. */
+async function prepareFolders(type, ids) {
+  const seen = new Set();
+  for (const id of ids) {
+    const found = cookbookEntry(id);
+    const key = `${bookOf(found)}|${found?.entry?.meta?.group ?? ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    await targetFolder(type, bookOf(found), found?.entry?.meta?.group);
+  }
+}
+
 async function ensureFolder() {
-  return (
-    game.folders.find((fo) => fo.type === "Actor" && fo.name === FOLDER_NAME) ??
-    Folder.create({ name: FOLDER_NAME, type: "Actor" })
-  );
+  return ensureFolderPath("Actor", [FOLDER_NAME]);
 }
 
 /**
@@ -631,16 +682,23 @@ const IMPORT_CONCURRENCY = 4;
  * unreadable page must not abandon the other 286 — and the shared iterator means
  * a slow entry never blocks a free worker from starting the next.
  */
-async function importMany(bookId, ids, folderId, label) {
+async function importMany(ids, label) {
   const bar = ui.notifications.info(label, { progress: true });
   const total = ids.length;
   let done = 0;
   let finished = 0;
+  // Every id names its OWN book (a batch may span every connected book) and its
+  // own destination folder; the tree is built up front so the workers below
+  // only ever read the cache.
+  await prepareFolders("Actor", ids);
   const it = ids[Symbol.iterator]();
   const worker = async () => {
     for (let n = it.next(); !n.done; n = it.next()) {
       const id = n.value;
-      const actor = await importOne(bookId, id, folderId).catch(
+      const found = cookbookEntry(id);
+      const bookId = bookOf(found);
+      const folder = await targetFolder("Actor", bookId, found?.entry?.meta?.group);
+      const actor = await importOne(bookId, id, folder?.id ?? null).catch(
         (err) => (console.error(`${MODULE_ID} | import ${id}`, err), null),
       );
       if (actor) done++;
@@ -650,6 +708,23 @@ async function importMany(bookId, ids, folderId, label) {
   await Promise.all(Array.from({ length: Math.min(IMPORT_CONCURRENCY, total || 1) }, worker));
   bar?.update?.({ pct: 1, message: label });
   return done;
+}
+
+/**
+ * Actor-kind entry ids across EVERY connected book, in book then page order.
+ * The single-book `openBooks[0]` this replaced meant a seat with three books
+ * open could only ever import from the first one.
+ */
+function actorEntriesAcrossBooks() {
+  const openBooks = [...data.books.keys()].filter((b) => ctx.sessionDocs.has(b));
+  const rows = [];
+  for (const bookId of openBooks) {
+    for (const [id, e] of Object.entries(data.books.get(bookId).entries)) {
+      if (actorKindOf(e)) rows.push({ id, entry: e, bookId });
+    }
+  }
+  rows.sort((a, b) => a.bookId.localeCompare(b.bookId) || a.entry.pages[0] - b.entry.pages[0] || a.id.localeCompare(b.id));
+  return { openBooks, rows };
 }
 
 /** Report an import run, naming what was skipped as already present. */
@@ -900,7 +975,10 @@ async function importAdventureActor(bookId, id, folderId) {
     }
     const tb = target.split(".")[0];
     ui.notifications.info(`acks-content | ${id} is reprinted in ${BOOKS[tb]?.label ?? tb} — importing ${target} instead.`);
-    return importOne(tb, target, folderId);
+    // File it under the book it actually came FROM, not the adventure that
+    // pointed at it.
+    const tFolder = await targetFolder("Actor", tb, cookbookEntry(target)?.entry?.meta?.group);
+    return importOne(tb, target, tFolder?.id ?? folderId);
   }
   const found = cookbookEntry(id);
   const session = ctx.sessionDocs.get(bookId);
@@ -966,13 +1044,6 @@ async function importAdventureActor(bookId, id, folderId) {
   return actor;
 }
 
-async function ensureTypedFolder(type) {
-  return (
-    game.folders.find((fo) => fo.type === type && fo.name === FOLDER_NAME) ??
-    Folder.create({ name: FOLDER_NAME, type })
-  );
-}
-
 /**
  * Location journals: one JournalEntry per meta.group, one page per keyed
  * entry, page body = lazy tag + creature links (the seat-extracted creature
@@ -989,7 +1060,9 @@ export async function cookbookImportJournals() {
     const session = ctx.sessionDocs.get(bookId);
     const locs = Object.entries(cb.entries).filter(([, e]) => e.kind === "kind.location");
     if (!locs.length) continue;
-    const folder = await ensureTypedFolder("JournalEntry");
+    // The BOOK is the folder now, so the journal itself is named by its group
+    // alone ("A. Entrance Caves") rather than repeating the book on every row.
+    const folder = await ensureFolderPath("JournalEntry", [FOLDER_NAME, bookFolderName(bookId)]);
     const groups = new Map();
     for (const [id, e] of locs) {
       const g = e.meta?.group ?? BOOKS[bookId]?.label ?? bookId;
@@ -997,13 +1070,20 @@ export async function cookbookImportJournals() {
       groups.get(g).push([id, e]);
     }
     for (const [group, list] of groups) {
-      const jName = `${BOOKS[bookId]?.short ?? bookId} — ${group}`;
       let journal = game.journal.find((j) => j.getFlag(MODULE_ID, "cookbook")?.group === group && j.getFlag(MODULE_ID, "cookbook")?.book === bookId);
-      journal ??= await JournalEntry.create({
-        name: jName,
-        folder: folder.id,
-        flags: { [MODULE_ID]: { cookbook: { book: bookId, group } } },
-      });
+      if (journal) {
+        // Re-file (and re-title) a journal made by an earlier release.
+        const move = {};
+        if (journal.name !== group) move.name = group;
+        if ((journal.folder?.id ?? null) !== folder.id) move.folder = folder.id;
+        if (Object.keys(move).length) await journal.update(move);
+      } else {
+        journal = await JournalEntry.create({
+          name: group,
+          folder: folder.id,
+          flags: { [MODULE_ID]: { cookbook: { book: bookId, group } } },
+        });
+      }
       list.sort((a, b) => (a[1].pages[0] - b[1].pages[0]) || a[0].localeCompare(b[0]));
       let sort = 0;
       for (const [id, e] of list) {
@@ -1059,7 +1139,6 @@ export async function cookbookImportRollTables() {
     const session = ctx.sessionDocs.get(bookId);
     const tables = Object.entries(cb.entries).filter(([, e]) => e.kind === "kind.rolltable");
     if (!tables.length) continue;
-    const folder = await ensureTypedFolder("RollTable");
     for (const [id, e] of tables) {
       if (present.has(id)) {
         skipped++;
@@ -1070,6 +1149,7 @@ export async function cookbookImportRollTables() {
         ui.notifications.warn(`acks-content | ${e.name}: page did not match the cookbook — skipped.`);
         continue;
       }
+      const folder = await targetFolder("RollTable", bookId, e.meta?.group);
       // Rows arrive as section-labelled paragraphs; a row that wrapped columns
       // has several paras under one section, joined here in order.
       const rowText = new Map();
@@ -1100,7 +1180,7 @@ export async function cookbookImportRollTables() {
         (Math.min(...lows) === 1 ? `1d${Math.max(...his)}` : "");
       await RollTable.create({
         name: e.name,
-        folder: folder.id,
+        folder: folder?.id ?? null,
         formula,
         description: pdfTag(id, e.cite),
         results,
@@ -1136,10 +1216,8 @@ function levelValueAt(v, level = 1) {
 /** "kw:sensingevil" -> "Sensing Evil"-ish, for the system's requirements field. */
 const capabilityLabel = (token) => {
   const slug = String(token).replace(/^kw:/, "");
-  for (const cb of data.content.values()) {
-    for (const [id, e] of Object.entries(cb.entries)) {
-      if (id.split(".").slice(2).join("").toLowerCase() === slug) return e.name;
-    }
+  for (const [id, e] of abilityEntries()) {
+    if (id.split(".").slice(2).join("").toLowerCase() === slug) return e.name;
   }
   return slug;
 };
@@ -1172,6 +1250,23 @@ export function abilityIcon(entry) {
   return entry?.icon || "icons/svg/book.svg";
 }
 
+/**
+ * `meta.category` is descriptive metadata a kind may set freely, but the
+ * ability model stores it in a CONSTRAINED choice field. Clamp rather than
+ * trust: an unknown value reached the DataModel and failed validation on every
+ * sheet render (the v0.26.0 equipment leak). Falls back to the model's own
+ * default so the item stays valid and usable.
+ */
+function abilityCategory(value) {
+  const known = globalThis.acksLib?.vocab?.ABILITY_CATEGORIES;
+  if (!value) return "proficiency";
+  if (known && !(value in known)) {
+    console.warn(`${MODULE_ID} | "${value}" is not an ability category; storing "proficiency".`);
+    return "proficiency";
+  }
+  return value;
+}
+
 export function bindAbility(entry, node, id, opts = {}) {
   const meta = entry.meta ?? {};
   const cite = entry.cite ?? "";
@@ -1182,7 +1277,7 @@ export function bindAbility(entry, node, id, opts = {}) {
     ? [{ type: "capability", ref: entry.aliasOf ?? meta.notStacksWith[0], notStacksWith: meta.notStacksWith }]
     : [];
   const extras = {
-    category: meta.category ?? "proficiency",
+    category: abilityCategory(meta.category),
     general: !!meta.general,
     repeatable: !!meta.repeatable,
     // A retired entry is still imported — an older or converted source may name
@@ -1268,11 +1363,24 @@ export function bindAbility(entry, node, id, opts = {}) {
   };
 }
 
-async function ensureItemFolder() {
-  return (
-    game.folders.find((fo) => fo.type === "Item" && fo.name === FOLDER_NAME) ??
-    Folder.create({ name: FOLDER_NAME, type: "Item" })
-  );
+/**
+ * Items are filed by CONTENT TYPE, not by book: a proficiency spans every book
+ * that prints it, and the whole point of the shared ability item is that one
+ * copy serves every actor. `id` picks the shelf ("def.prof.x" -> Proficiencies).
+ */
+const ITEM_SHELF = {
+  "def.prof": "Proficiencies",
+  "def.power": "Class Powers",
+  "def.skill": "Skills",
+  "def.equip": "Equipment",
+};
+const itemShelfFor = (id) => {
+  const key = String(id ?? "").split(".").slice(0, 2).join(".");
+  return ITEM_SHELF[key] ?? null;
+};
+
+async function ensureItemFolder(id = null) {
+  return ensureFolderPath("Item", [FOLDER_NAME, itemShelfFor(id)]);
 }
 
 /**
@@ -1307,8 +1415,32 @@ export async function importAbility(id, folderId) {
   return Item.create({ ...doc, folder });
 }
 
-/** Every definition id the shipped content-type cookbooks carry. */
-export const cookbookAbilityIds = () => [...data.content.values()].flatMap((cb) => Object.keys(cb.entries));
+/**
+ * Definition kinds that do NOT bind to an `ability` item.
+ *
+ * A content-type cookbook is not automatically an ABILITY cookbook: equipment
+ * binds to a core inventory item. Every ability path walks the content
+ * cookbooks generically, so a new non-ability kind silently joins the ability
+ * import unless it is excluded here — which is exactly what shipped in
+ * v0.26.0 and produced `category: equipment is not a valid choice` when the
+ * ability sheet tried to validate items that should never have been abilities.
+ */
+const NON_ABILITY_KINDS = new Set(["kind.equipment"]);
+
+/** Does this entry bind to an `ability` item? */
+export const isAbilityEntry = (entry) => !NON_ABILITY_KINDS.has(entry?.kind);
+
+/** Every [id, entry] pair across the content cookbooks that IS an ability. */
+export function* abilityEntries() {
+  for (const cb of data.content.values()) {
+    for (const [id, entry] of Object.entries(cb.entries)) {
+      if (isAbilityEntry(entry)) yield [id, entry];
+    }
+  }
+}
+
+/** Every definition id the shipped content-type cookbooks carry as an ability. */
+export const cookbookAbilityIds = () => [...abilityEntries()].map(([id]) => id);
 
 /* -------------------------------------------- */
 /*  Equipment                                   */
@@ -1387,8 +1519,33 @@ export const cookbookEquipmentIds = () =>
     .filter(([, e]) => e.kind === "kind.equipment")
     .map(([id]) => id);
 
+/**
+ * Remove `ability` items mis-created from equipment entries.
+ *
+ * v0.26.0 let equipment ids into the ability import, so a world that ran
+ * "Import ALL Abilities" holds ability-typed documents for gear. They are
+ * generated artifacts with an invalid category, they fail validation on every
+ * sheet render, and an item's type cannot be changed in place — so they are
+ * deleted and re-created properly by the equipment import. Only OUR generated
+ * documents are touched; a hand-made item is never deleted.
+ * @returns {Promise<number>} how many were removed
+ */
+export async function repairEquipmentAbilities() {
+  const wrong = game.items.filter(
+    (i) =>
+      i.type === "ability" &&
+      i.getFlag(MODULE_ID, "generated") &&
+      String(i.getFlag(MODULE_ID, "cookbook")?.id ?? "").startsWith("def.equip."),
+  );
+  if (!wrong.length) return 0;
+  await Item.deleteDocuments(wrong.map((i) => i.id));
+  console.warn(`${MODULE_ID} | removed ${wrong.length} equipment entr(ies) mis-imported as abilities (v0.26.0 defect).`);
+  return wrong.length;
+}
+
 /** Bulk import: every equipment entry, shared folder, dedup via importEquipment. */
 export async function importAllEquipment() {
+  const repaired = await repairEquipmentAbilities();
   const ids = cookbookEquipmentIds();
   const folder = (await ensureItemFolder())?.id ?? null;
   let created = 0;
@@ -1397,7 +1554,7 @@ export async function importAllEquipment() {
     const item = await importEquipment(id, folder);
     if (item && !before) created++;
   }
-  return { total: ids.length, created };
+  return { total: ids.length, created, repaired };
 }
 
 /* -------------------------------------------- */
@@ -1508,11 +1665,9 @@ function abilityNameIndex() {
     const list = index.get(key) ?? index.set(key, []).get(key);
     if (!list.includes(id)) list.push(id);
   };
-  for (const cb of data.content.values()) {
-    for (const [id, e] of Object.entries(cb.entries)) {
-      add(e.name, id);
-      for (const a of e.aliases ?? []) add(a, id);
-    }
+  for (const [id, e] of abilityEntries()) {
+    add(e.name, id);
+    for (const a of e.aliases ?? []) add(a, id);
   }
   return index;
 }
@@ -1572,10 +1727,8 @@ function preferredId(ids, present) {
 export async function cookbookImportAbilitiesDialog() {
   if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only (creates items).");
   const rows = [];
-  for (const cb of data.content.values()) {
-    for (const [id, e] of Object.entries(cb.entries)) {
-      rows.push({ id, name: e.name, cite: e.cite, book: e.book, category: e.meta?.category ?? "proficiency", alias: !!e.aliasOf, deprecated: !!e.meta?.deprecated });
-    }
+  for (const [id, e] of abilityEntries()) {
+    rows.push({ id, name: e.name, cite: e.cite, book: e.book, category: e.meta?.category ?? "proficiency", alias: !!e.aliasOf, deprecated: !!e.meta?.deprecated });
   }
   if (!rows.length) return ui.notifications.warn("acks-content | no abilities in the shipped cookbook.");
   rows.sort((a, b) => a.name.localeCompare(b.name));
@@ -1870,10 +2023,16 @@ export async function cookbookDebug(entryId) {
   if (!entryId) {
     const openBooks = [...data.books.keys()].filter((b) => ctx.sessionDocs.has(b));
     if (!openBooks.length) return ui.notifications.warn("acks-content | connect a cookbook book first (PoC 2 / unlock).");
-    const cb = data.books.get(openBooks[0]);
-    const rows = Object.entries(cb.entries)
-      .sort((a, b) => a[1].pages[0] - b[1].pages[0])
-      .map(([id, e]) => `<option value="${esc(id)}">${esc(e.name)} — ${esc(e.cite)}</option>`)
+    // Every connected book, grouped — debugging one book while three are open
+    // should not mean reconnecting.
+    const rows = openBooks
+      .map((bookId) => {
+        const opts = Object.entries(data.books.get(bookId).entries)
+          .sort((a, b) => a[1].pages[0] - b[1].pages[0])
+          .map(([id, e]) => `<option value="${esc(id)}">${esc(e.name)} — ${esc(e.cite)}</option>`)
+          .join("");
+        return `<optgroup label="${esc(BOOKS[bookId]?.label ?? bookId)}">${opts}</optgroup>`;
+      })
       .join("");
     return foundry.applications.api.DialogV2.prompt({
       window: { title: game.i18n.localize(`${LANG_PREFIX}.ui.debugTitle`) },
@@ -1927,15 +2086,29 @@ export async function cookbookImport() {
       `acks-content | no cookbook book is open this session — connect one first (PoC 2 / unlock dialog).`,
     );
   }
-  const bookId = openBooks[0];
-  const cb = data.books.get(bookId);
   const esc = foundry.utils.escapeHTML ?? ((x) => x);
   const have = importedMonsterIds();
-  const rows = Object.entries(cb.entries)
-    .filter(([, e]) => actorKindOf(e))
-    .sort((a, b) => a[1].pages[0] - b[1].pages[0])
-    .map(
-      ([id, e]) => `<label class="acks-content-browse-row" data-name="${esc(e.name.toLowerCase())}" data-have="${have.has(id) ? 1 : 0}">
+  const { rows: entryRows } = actorEntriesAcrossBooks();
+  // One list across every connected book, with a heading per book so a long
+  // list still says where each block came from. The filter matches the book
+  // label too, so typing "nethercity" narrows to that book.
+  let lastBook = null;
+  let lastGroup = null;
+  const rows = entryRows
+    .map(({ id, entry: e, bookId }) => {
+      let head = "";
+      if (bookId !== lastBook) {
+        lastBook = bookId;
+        lastGroup = null;
+        head += `<div class="acks-content-book-head">${esc(BOOKS[bookId]?.label ?? bookId)}</div>`;
+      }
+      const group = e.meta?.group ?? null;
+      if (group && group !== lastGroup) {
+        lastGroup = group;
+        head += `<div class="acks-content-group-head">${esc(group)}</div>`;
+      }
+      const searchable = `${e.name} ${BOOKS[bookId]?.label ?? bookId} ${group ?? ""}`.toLowerCase();
+      return `${head}<label class="acks-content-browse-row" data-name="${esc(searchable)}" data-have="${have.has(id) ? 1 : 0}">
         <input type="checkbox" name="sel" value="${esc(id)}">
         <span>${esc(e.name)}</span>
         <span class="acks-content-marks">${
@@ -1944,11 +2117,14 @@ export async function cookbookImport() {
             : ""
         }</span>
         <span class="acks-content-cite">${esc(e.cite)}</span>
-      </label>`,
-    )
+      </label>`;
+    })
     .join("");
   const content = `
-    <p class="notes">${game.i18n.format(`${LANG_PREFIX}.ui.cookbookIntro`, { n: Object.keys(cb.entries).length, book: BOOKS[bookId].label })}</p>
+    <p class="notes">${game.i18n.format(`${LANG_PREFIX}.ui.cookbookIntro`, {
+      n: entryRows.length,
+      book: openBooks.map((b) => BOOKS[b]?.short ?? b).join(", "),
+    })}</p>
     <div class="acks-content-abil-filters">
       <input type="text" name="filter" placeholder="${game.i18n.localize(`${LANG_PREFIX}.ui.cookbookFilter`)}">
       <label><input type="checkbox" name="hideHave"> ${game.i18n.localize(`${LANG_PREFIX}.ui.abilHidePresent`)}</label>
@@ -2020,8 +2196,7 @@ export async function cookbookImport() {
         // an import may have happened in another window since.
         const present = importedMonsterIds();
         const todo = picked.filter((id) => !present.has(id));
-        const folder = await ensureFolder();
-        const done = await importMany(bookId, todo, folder.id, game.i18n.localize(`${LANG_PREFIX}.ui.cookbookWorking`));
+        const done = await importMany(todo, game.i18n.localize(`${LANG_PREFIX}.ui.cookbookWorking`));
         reportImport(done, picked.length, picked.length - todo.length);
       },
     },
@@ -2042,11 +2217,7 @@ export async function cookbookImportMonsters() {
       `acks-content | no cookbook book is open this session — connect one first (PoC 2 / unlock dialog).`,
     );
   }
-  const bookId = openBooks[0];
-  const ids = Object.entries(data.books.get(bookId).entries)
-    .filter(([, e]) => actorKindOf(e))
-    .sort((a, b) => a[1].pages[0] - b[1].pages[0])
-    .map(([id]) => id);
+  const ids = actorEntriesAcrossBooks().rows.map((r) => r.id);
   const present = importedMonsterIds();
   const todo = ids.filter((id) => !present.has(id));
   if (!todo.length) {
@@ -2058,7 +2229,7 @@ export async function cookbookImportMonsters() {
     window: { title: game.i18n.localize(`${LANG_PREFIX}.ui.cookbookTitle`) },
     content: `<p>${game.i18n.format(`${LANG_PREFIX}.ui.cookbookAllConfirm`, {
       n: todo.length,
-      book: BOOKS[bookId].label,
+      book: openBooks.map((b) => BOOKS[b]?.label ?? b).join(", "),
       folder: FOLDER_NAME,
     })}${
       todo.length < ids.length
@@ -2067,8 +2238,7 @@ export async function cookbookImportMonsters() {
     }</p>`,
   });
   if (!ok) return null;
-  const folder = await ensureFolder();
-  const done = await importMany(bookId, todo, folder.id, game.i18n.localize(`${LANG_PREFIX}.ui.cookbookWorking`));
+  const done = await importMany(todo, game.i18n.localize(`${LANG_PREFIX}.ui.cookbookWorking`));
   reportImport(done, ids.length, ids.length - todo.length);
   return { done, skipped: ids.length - todo.length };
 }
