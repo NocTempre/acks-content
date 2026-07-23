@@ -708,6 +708,22 @@ export const TABLE_RECIPES = {
         ],
         emit: { container: "rows", keyField: "type" },
       },
+      // Slave MORALE/LOYALTY (JJ ~410 prose, one page): how the slave came
+      // into servitude sets loyalty, and the liberation rule.
+      slaveLoyalty: {
+        shape: "proseValues",
+        book: "jj",
+        printedPage: 410,
+        locate: "enslaved as adults have loyalty scores",
+        locateBare: true,
+        column: { xMin: 25, xMax: 590 },
+        values: [
+          { key: "enslavedAsAdult", find: "enslaved as adults have loyalty scores of", take: "signedInt" },
+          { key: "trainerBonus", find: "they receive a permanent", take: "signedInt" },
+          { key: "liberatedFanaticLoyalty", find: "have a base loyalty of", take: "signedInt" },
+          { key: "liberatedUpkeep", find: "paid their basic upkeep", take: "gp" },
+        ],
+      },
       // Slave-soldier upkeep and indoctrination costs (JJ ~410 prose).
       // Acquisition pipelines (own-realm levies, war captives) are realm play
       // and stay book-gated prose.
