@@ -31,8 +31,8 @@ import {
   initCookbook, loadCookbook, cookbookImport, cookbookImportMonsters, cookbookImportAbilities, cookbookImportAbilitiesDialog, cookbookUpdateAbilities,
   cookbookFillCompanions, cookbookPruneAbilities, registerAbilityDirectoryButtons, importAbility, cookbookDebug, cookbookStub,
   cookbookCanReveal, cookbookProse, cookbookCount, refillMonster, resolveAbilities,
-  importEquipment, importAllEquipment, cookbookEquipmentIds,
-  cookbookImportJournals, cookbookImportRollTables,
+  importEquipment, importAllEquipment, cookbookEquipmentIds, repairEquipmentAbilities,
+  cookbookImportJournals, cookbookImportRollTables, cookbookOrganize,
 } from "./cookbook.mjs";
 
 const SETTING_DYNAMIC = "dynamicRecipes";
@@ -773,7 +773,7 @@ Hooks.once("ready", async () => {
     proseFor, cookbookImport, cookbookImportMonsters, cookbookImportAbilities, cookbookImportAbilitiesDialog, cookbookUpdateAbilities, cookbookFillCompanions, cookbookPruneAbilities,
     importAbility, cookbookDebug, cookbookProse, cookbookCount,
     cookbookImportTables,
-    cookbookImportJournals, cookbookImportRollTables,
+    cookbookImportJournals, cookbookImportRollTables, cookbookOrganize,
     importEquipment, importAllEquipment, cookbookEquipmentIds, repairEquipmentAbilities,
     RECIPES, BOOKS,
   };

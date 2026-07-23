@@ -45,6 +45,33 @@
   margin-left: auto;
 }
 
+/* Book / group headings inside the monster-import list: one list now spans
+   every connected book, so each block has to say where it came from. Sticky so
+   the heading stays visible while scrolling a long book. */
+.acks-content-book-head,
+.acks-content-group-head {
+  position: sticky;
+  background: var(--color-bg, #f0f0e0);
+  padding: 3px 0 2px;
+}
+
+.acks-content-book-head {
+  top: 0;
+  margin-top: 6px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--color-border-light-tertiary, #999);
+  z-index: 2;
+}
+
+.acks-content-group-head {
+  top: 1.4em;
+  margin-top: 3px;
+  font-size: 0.9em;
+  opacity: 0.75;
+  padding-left: 0.4em;
+  z-index: 1;
+}
+
 /* GM ability tools in the Item directory header. Sits above the search box, so
    it keeps the directory's own spacing rather than introducing its own. */
 .acks-content-ability-tools {

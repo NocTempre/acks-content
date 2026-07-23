@@ -6,7 +6,7 @@
   "img": "icons/svg/blind.svg",
   "scope": "global",
   "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\napi.forgetBooks();",
-  "folder": null,
+  "folder": "ackscFldSetup000",
   "sort": 120,
   "ownership": {
     "default": 2

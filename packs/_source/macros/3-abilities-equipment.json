@@ -1,0 +1,19 @@
+{
+  "_id": "ackscFldAbils000",
+  "_key": "!folders!ackscFldAbils000",
+  "name": "3 · Abilities & Equipment",
+  "type": "Macro",
+  "folder": null,
+  "sorting": "m",
+  "sort": 300,
+  "description": "",
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "coreVersion": "14",
+    "createdTime": 1784332800000,
+    "modifiedTime": 1784332800000
+  }
+}

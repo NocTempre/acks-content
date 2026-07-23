@@ -1,5 +1,42 @@
 # Changelog
 
+## 0.35.0
+
+Multi-book imports, and a place for everything.
+
+### Fixed
+
+- **Only the first connected book could be imported.** Every actor flow —
+  the picker, "import ALL", and the debug dump — read `openBooks[0]`, so a
+  seat with AX2, AX3 and the Monstrous Manual open was offered AX2 alone.
+  All three now span every connected book (369 entries here), each entry
+  resolving its own book, folder and art.
+- The api failed to publish when `repairEquipmentAbilities` joined it
+  without an import, which left `acksContent` undefined at `ready`.
+
+### Import targets are organized
+
+Documents land in a tree instead of one flat folder:
+
+```
+ACKS Cookbook / <book> / <group>       actors, roll tables
+ACKS Cookbook / <book>                 location journals
+ACKS Cookbook / <content type>         abilities, powers, skills, equipment
+```
+
+Journals are named by their group now (the folder says the book).
+**Organize Cookbook Documents (GM)** files everything a previous release
+already imported — 572 documents moved in the test world — touching only
+folder and name, never content.
+
+### Macros are organized
+
+The compendium now ships folders: *1 · Your Book*, *2 · Import Content*,
+*3 · Abilities & Equipment*, *4 · Tools & Maintenance*. Macro names lost
+the redundant "Cookbook —" prefix and read as a workflow; ids are unchanged,
+so existing hotbar links keep working. The monster picker groups its list by
+book and district, with sticky headings.
+
 ## 0.31.0
 
 Actor art for the adventure books — chef-audited, not guessed:

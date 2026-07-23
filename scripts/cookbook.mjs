@@ -1195,6 +1195,69 @@ export async function cookbookImportRollTables() {
 }
 
 /**
+ * GM: file every already-imported cookbook document into the current folder
+ * tree. Earlier releases dropped everything into one flat "ACKS Cookbook"
+ * folder per type; this moves those documents (and any hand-moved stragglers)
+ * to where a fresh import would put them today. Only documents carrying our
+ * own cookbook flag are touched, and only their folder/name — never content.
+ */
+export async function cookbookOrganize() {
+  if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only (moves documents).");
+  const moved = { Actor: 0, JournalEntry: 0, RollTable: 0, Item: 0 };
+
+  const actors = game.actors.filter((a) => a.getFlag(MODULE_ID, "cookbook")?.id);
+  await prepareFolders("Actor", actors.map((a) => a.getFlag(MODULE_ID, "cookbook").id));
+  for (const a of actors) {
+    const id = a.getFlag(MODULE_ID, "cookbook").id;
+    const found = cookbookEntry(id);
+    const folder = await targetFolder("Actor", bookOf(found) ?? a.getFlag(MODULE_ID, "cookbook").book, found?.entry?.meta?.group);
+    if (folder && (a.folder?.id ?? null) !== folder.id) {
+      await a.update({ folder: folder.id });
+      moved.Actor++;
+    }
+  }
+
+  for (const j of game.journal.filter((x) => x.getFlag(MODULE_ID, "cookbook")?.group)) {
+    const { book, group } = j.getFlag(MODULE_ID, "cookbook");
+    const folder = await ensureFolderPath("JournalEntry", [FOLDER_NAME, bookFolderName(book)]);
+    const patch = {};
+    if (folder && (j.folder?.id ?? null) !== folder.id) patch.folder = folder.id;
+    if (j.name !== group) patch.name = group;
+    if (Object.keys(patch).length) {
+      await j.update(patch);
+      moved.JournalEntry++;
+    }
+  }
+
+  for (const t of game.tables.filter((x) => x.getFlag(MODULE_ID, "cookbook")?.id)) {
+    const { id, book } = t.getFlag(MODULE_ID, "cookbook");
+    const found = cookbookEntry(id);
+    const folder = await targetFolder("RollTable", bookOf(found) ?? book, found?.entry?.meta?.group);
+    if (folder && (t.folder?.id ?? null) !== folder.id) {
+      await t.update({ folder: folder.id });
+      moved.RollTable++;
+    }
+  }
+
+  await prepareItemShelves();
+  for (const i of game.items.filter((x) => x.getFlag(MODULE_ID, "cookbook")?.id)) {
+    const folder = await ensureItemFolder(i.getFlag(MODULE_ID, "cookbook").id);
+    if (folder && (i.folder?.id ?? null) !== folder.id) {
+      await i.update({ folder: folder.id });
+      moved.Item++;
+    }
+  }
+
+  const total = Object.values(moved).reduce((a, b) => a + b, 0);
+  ui.notifications.info(
+    total
+      ? `acks-content | organized ${total} document(s): ${Object.entries(moved).filter(([, n]) => n).map(([k, n]) => `${n} ${k}`).join(", ")}.`
+      : `acks-content | every cookbook document is already in place.`,
+  );
+  return moved;
+}
+
+/**
  * Resolve a LevelValue at a level. A local copy of acks-lib's resolver, kept
  * small on purpose: acks-content does not otherwise depend on acks-lib, and a
  * runtime reaching into a sibling module would break a seat that has not
@@ -1383,6 +1446,11 @@ async function ensureItemFolder(id = null) {
   return ensureFolderPath("Item", [FOLDER_NAME, itemShelfFor(id)]);
 }
 
+/** Create every item shelf before anything imports in parallel. */
+async function prepareItemShelves() {
+  for (const shelf of [null, ...Object.values(ITEM_SHELF)]) await ensureFolderPath("Item", [FOLDER_NAME, shelf]);
+}
+
 /**
  * Build — or REUSE — the shared ability item for a definition id. Deduped by
  * cookbook id, so every monster/NPC referencing a proficiency links to the SAME
@@ -1408,7 +1476,7 @@ export async function importAbility(id, folderId) {
     if (node?.ok) cookbookCacheParas(bookId, id, node.fields.description ?? []);
     else node = null;
   }
-  const folder = folderId ?? (await ensureItemFolder())?.id ?? null;
+  const folder = folderId ?? (await ensureItemFolder(id))?.id ?? null;
   const doc = bindAbility(found.entry, node, id);
   const extras = doc.flags["acks-abilities"].extras;
   extras.effects = await resolveCompanions(extras.effects);
@@ -1499,7 +1567,7 @@ export async function importEquipment(id, folderId) {
     if (node?.ok) cookbookCacheParas(bookId, id, node.fields.description ?? []);
     else node = null;
   }
-  const folder = folderId ?? (await ensureItemFolder())?.id ?? null;
+  const folder = folderId ?? (await ensureItemFolder(id))?.id ?? null;
   const item = await Item.create({ ...bindEquipment(found.entry, node, id), folder });
   // acks-equipment owns the RAW annotation layer (container capacities, the
   // harness, the bowquiver). Its profiles key off the printed name, so a
@@ -1547,7 +1615,8 @@ export async function repairEquipmentAbilities() {
 export async function importAllEquipment() {
   const repaired = await repairEquipmentAbilities();
   const ids = cookbookEquipmentIds();
-  const folder = (await ensureItemFolder())?.id ?? null;
+  await prepareItemShelves();
+  const folder = null; // per-id shelf
   let created = 0;
   for (const id of ids) {
     const before = game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id);
@@ -1814,7 +1883,8 @@ export async function cookbookImportAbilitiesDialog() {
       callback: async (event, button) => {
         const picked = [...button.form.querySelectorAll('input[name="sel"]:checked')].map((el) => el.value);
         if (!picked.length) return ui.notifications.warn("acks-content | nothing selected.");
-        const folder = (await ensureItemFolder())?.id ?? null;
+        await prepareItemShelves();
+        const folder = null; // per-id shelf
         let done = 0;
         for (const id of picked) {
           if (await importAbility(id, folder).catch((err) => (console.error(`${MODULE_ID} | import ${id}`, err), null))) done++;
@@ -1830,7 +1900,8 @@ export async function cookbookImportAbilities() {
   if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only.");
   const ids = cookbookAbilityIds();
   if (!ids.length) return ui.notifications.warn("acks-content | no abilities in the shipped cookbook.");
-  const folder = (await ensureItemFolder())?.id ?? null;
+  await prepareItemShelves();
+  const folder = null; // per-id shelf
   let made = 0;
   let reused = 0;
   for (const id of ids) {

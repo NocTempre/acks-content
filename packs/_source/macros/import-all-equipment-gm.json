@@ -1,13 +1,13 @@
 {
   "_id": "ackscMacEquipAll",
   "_key": "!macros!ackscMacEquipAll",
-  "name": "Cookbook — Import ALL Equipment (GM)",
+  "name": "Import ALL Equipment (GM)",
   "type": "script",
   "img": "icons/svg/item-bag.svg",
   "scope": "global",
   "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\nif (!api.importAllEquipment) return ui.notifications.warn(\"acks-content | equipment import needs a newer module build.\");\nconst r = await api.importAllEquipment();\nui.notifications.info(`acks-content | equipment: ${r.created} created, ${r.total} in the cookbook.`);",
-  "folder": null,
-  "sort": 205,
+  "folder": "ackscFldAbils000",
+  "sort": 320,
   "ownership": {
     "default": 2
   },

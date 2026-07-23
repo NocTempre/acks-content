@@ -1,12 +1,12 @@
 {
   "_id": "ackscMacCookbook",
   "_key": "!macros!ackscMacCookbook",
-  "name": "Cookbook — Import Monsters (GM)",
+  "name": "Import Monsters & NPCs — choose from a list (GM)",
   "type": "script",
   "img": "icons/svg/mystery-man.svg",
   "scope": "global",
   "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\napi.cookbookImport();",
-  "folder": null,
+  "folder": "ackscFldImport00",
   "sort": 200,
   "ownership": {
     "default": 2

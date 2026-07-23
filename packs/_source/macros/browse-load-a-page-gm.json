@@ -6,8 +6,8 @@
   "img": "icons/svg/direction.svg",
   "scope": "global",
   "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\napi.browseAndLoad();",
-  "folder": null,
-  "sort": 300,
+  "folder": "ackscFldTools000",
+  "sort": 410,
   "ownership": {
     "default": 2
   },

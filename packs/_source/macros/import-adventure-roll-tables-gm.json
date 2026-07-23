@@ -1,13 +1,13 @@
 {
   "_id": "ackscMacAdvTable",
   "_key": "!macros!ackscMacAdvTable",
-  "name": "Cookbook — Import Adventure Roll Tables (GM)",
+  "name": "Import Adventure Roll Tables (GM)",
   "type": "script",
   "img": "icons/svg/d20-grey.svg",
   "scope": "global",
   "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\nif (!api.cookbookImportRollTables) return ui.notifications.warn(\"acks-content | adventure roll tables need a newer module build.\");\napi.cookbookImportRollTables();",
-  "folder": null,
-  "sort": 204,
+  "folder": "ackscFldImport00",
+  "sort": 230,
   "ownership": {
     "default": 2
   },

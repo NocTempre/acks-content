@@ -1,13 +1,13 @@
 {
   "_id": "ackscMacCkDebug0",
   "_key": "!macros!ackscMacCkDebug0",
-  "name": "Cookbook — Debug Raw Extraction (GM)",
+  "name": "Debug Raw Extraction (GM)",
   "type": "script",
   "img": "icons/svg/eye.svg",
   "scope": "global",
   "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\napi.cookbookDebug();",
-  "folder": null,
-  "sort": 320,
+  "folder": "ackscFldTools000",
+  "sort": 430,
   "ownership": {
     "default": 2
   },

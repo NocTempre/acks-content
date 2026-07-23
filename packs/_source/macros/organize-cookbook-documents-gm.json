@@ -1,0 +1,20 @@
+{
+  "_id": "ackscMacOrganize",
+  "_key": "!macros!ackscMacOrganize",
+  "name": "Organize Cookbook Documents (GM)",
+  "type": "script",
+  "img": "icons/svg/sort.svg",
+  "scope": "global",
+  "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\nif (!api.cookbookOrganize) return ui.notifications.warn(\"acks-content | organizing needs a newer module build.\");\napi.cookbookOrganize();",
+  "folder": "ackscFldTools000",
+  "sort": 400,
+  "ownership": {
+    "default": 2
+  },
+  "flags": {},
+  "_stats": {
+    "coreVersion": "14",
+    "createdTime": 1784332800000,
+    "modifiedTime": 1784332800000
+  }
+}

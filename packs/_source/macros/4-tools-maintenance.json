@@ -1,0 +1,19 @@
+{
+  "_id": "ackscFldTools000",
+  "_key": "!folders!ackscFldTools000",
+  "name": "4 · Tools & Maintenance",
+  "type": "Macro",
+  "folder": null,
+  "sorting": "m",
+  "sort": 400,
+  "description": "",
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "coreVersion": "14",
+    "createdTime": 1784332800000,
+    "modifiedTime": 1784332800000
+  }
+}

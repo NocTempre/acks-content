@@ -1,12 +1,12 @@
 {
   "_id": "ackscMacTblDocs0",
   "_key": "!macros!ackscMacTblDocs0",
-  "name": "Cookbook — Create Foundry Tables from Import (GM)",
+  "name": "Create Foundry Tables from Rules Import (GM)",
   "type": "script",
   "img": "icons/svg/d20-grey.svg",
   "scope": "global",
   "command": "const svc = globalThis.acksLib?.services?.get?.(\"ruledata-import\");\nif (!svc?.materializeDocs) return ui.notifications.warn(\"acks-content | the ruledata provider does not offer materializeDocs — update acks-location.\");\nconst r = await svc.materializeDocs();\nui.notifications.info(`acks-content | ${r.exported} table(s) written as Foundry documents, ${r.placeholders} placeholder(s) for expected-but-missing tables.`);",
-  "folder": null,
+  "folder": "ackscFldImport00",
   "sort": 250,
   "ownership": {
     "default": 2

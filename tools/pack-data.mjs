@@ -20,7 +20,35 @@ const GUARD = `const api = globalThis.acksContent;
 if (!api) return ui.notifications.warn("acks-content | module not ready (is it enabled?).");
 `;
 
-function macro(id, name, img, command, sort = 0) {
+/**
+ * Compendium folders. Same identity rule as macros: `_id` is forever (a new id
+ * re-imports as a second folder), and it carries the "acksc" prefix the
+ * namespacing gate enforces on every pack document.
+ */
+function folder(id, name, sort) {
+  return {
+    _id: id,
+    _key: `!folders!${id}`,
+    name,
+    type: "Macro",
+    folder: null,
+    sorting: "m",
+    sort,
+    description: "",
+    ownership: { default: 0 },
+    flags: {},
+    _stats: { ...STATS },
+  };
+}
+
+const FOLDERS = {
+  setup: "ackscFldSetup000",
+  import: "ackscFldImport00",
+  abilities: "ackscFldAbils000",
+  tools: "ackscFldTools000",
+};
+
+function macro(id, name, img, command, sort = 0, folderId = null) {
   return {
     _id: id,
     _key: `!macros!${id}`,
@@ -29,7 +57,7 @@ function macro(id, name, img, command, sort = 0) {
     img,
     scope: "global",
     command,
-    folder: null,
+    folder: folderId,
     sort,
     ownership: { default: 2 },
     flags: {},
@@ -39,101 +67,137 @@ function macro(id, name, img, command, sort = 0) {
 
 function buildMacros() {
   return [
-    /* --- 100s: set this seat up. What a new user does first. --- */
-    macro("ackscMacConnect0", "Connect Your Book (this seat)", "icons/svg/book.svg", GUARD + `api.connectBook();`, 100),
-    macro("ackscMacStatus00", "Book Status (this seat)", "icons/svg/chest.svg", GUARD + `api.bookStatus();`, 110),
-    macro("ackscMacClear000", "Forget Books (this seat)", "icons/svg/blind.svg", GUARD + `api.forgetBooks();`, 120),
+    /* Folders group the macros into the order a GM actually uses them. Folder
+       ids are identity too — renaming a folder is free, re-issuing its id is
+       not (every world that imported the pack would gain a second one). */
+    folder(FOLDERS.setup, "1 \u00b7 Your Book", 100),
+    folder(FOLDERS.import, "2 \u00b7 Import Content", 200),
+    folder(FOLDERS.abilities, "3 \u00b7 Abilities & Equipment", 300),
+    folder(FOLDERS.tools, "4 \u00b7 Tools & Maintenance", 400),
 
-    /* --- 200s: import from the cookbook. --- */
+    /* --- 1 · Your Book: what a new seat does first. --- */
+    macro("ackscMacConnect0", "Connect Your Book (this seat)", "icons/svg/book.svg", GUARD + `api.connectBook();`, 100, FOLDERS.setup),
+    macro("ackscMacStatus00", "Book Status (this seat)", "icons/svg/chest.svg", GUARD + `api.bookStatus();`, 110, FOLDERS.setup),
+    macro("ackscMacClear000", "Forget Books (this seat)", "icons/svg/blind.svg", GUARD + `api.forgetBooks();`, 120, FOLDERS.setup),
+
+    /* --- 2 · Import Content: cookbook -> world documents. --- */
     macro(
-      "ackscMacTables00",
-      "Cookbook — Import Rules Tables (GM)",
-      "icons/svg/coins.svg",
-      GUARD +
-        `if (!api.cookbookImportTables) return ui.notifications.warn("acks-content | table import needs a newer module build.");
-api.cookbookImportTables();`,
-      190,
+      "ackscMacCookbook",
+      "Import Monsters & NPCs \u2014 choose from a list (GM)",
+      "icons/svg/mystery-man.svg",
+      GUARD + `api.cookbookImport();`,
+      200,
+      FOLDERS.import,
     ),
-    macro("ackscMacCookbook", "Cookbook — Import Monsters (GM)", "icons/svg/mystery-man.svg", GUARD + `api.cookbookImport();`, 200),
+    macro(
+      "ackscMacMonsAll0",
+      "Import ALL Monsters & NPCs (GM)",
+      "icons/svg/aura.svg",
+      GUARD + `api.cookbookImportMonsters();`,
+      210,
+      FOLDERS.import,
+    ),
     macro(
       "ackscMacAdvJourn",
-      "Cookbook — Import Location Journals (GM)",
+      "Import Location Journals (GM)",
       "icons/svg/book.svg",
       GUARD +
         `if (!api.cookbookImportJournals) return ui.notifications.warn("acks-content | location journals need a newer module build.");
 api.cookbookImportJournals();`,
-      202,
+      220,
+      FOLDERS.import,
     ),
     macro(
       "ackscMacAdvTable",
-      "Cookbook — Import Adventure Roll Tables (GM)",
+      "Import Adventure Roll Tables (GM)",
       "icons/svg/d20-grey.svg",
       GUARD +
         `if (!api.cookbookImportRollTables) return ui.notifications.warn("acks-content | adventure roll tables need a newer module build.");
 api.cookbookImportRollTables();`,
-      204,
+      230,
+      FOLDERS.import,
+    ),
+    macro(
+      "ackscMacTables00",
+      "Import Rules Tables (GM)",
+      "icons/svg/coins.svg",
+      GUARD +
+        `if (!api.cookbookImportTables) return ui.notifications.warn("acks-content | table import needs a newer module build.");
+api.cookbookImportTables();`,
+      240,
+      FOLDERS.import,
+    ),
+    macro(
+      "ackscMacTblDocs0",
+      "Create Foundry Tables from Rules Import (GM)",
+      "icons/svg/d20-grey.svg",
+      `const svc = globalThis.acksLib?.services?.get?.("ruledata-import");
+if (!svc?.materializeDocs) return ui.notifications.warn("acks-content | the ruledata provider does not offer materializeDocs \u2014 update acks-location.");
+const r = await svc.materializeDocs();
+ui.notifications.info(\`acks-content | \${r.exported} table(s) written as Foundry documents, \${r.placeholders} placeholder(s) for expected-but-missing tables.\`);`,
+      250,
+      FOLDERS.import,
+    ),
+
+    /* --- 3 · Abilities & Equipment: the shared item library. --- */
+    macro(
+      "ackscMacAbilBrw0",
+      "Browse & Import Abilities (GM)",
+      "icons/svg/book.svg",
+      GUARD + `api.cookbookImportAbilitiesDialog();`,
+      300,
+      FOLDERS.abilities,
+    ),
+    macro(
+      "ackscMacAbilAll0",
+      "Import ALL Abilities (GM)",
+      "icons/svg/upgrade.svg",
+      GUARD + `api.cookbookImportAbilities();`,
+      310,
+      FOLDERS.abilities,
     ),
     macro(
       "ackscMacEquipAll",
-      "Cookbook — Import ALL Equipment (GM)",
+      "Import ALL Equipment (GM)",
       "icons/svg/item-bag.svg",
       GUARD +
         `if (!api.importAllEquipment) return ui.notifications.warn("acks-content | equipment import needs a newer module build.");
 const r = await api.importAllEquipment();
 ui.notifications.info(\`acks-content | equipment: \${r.created} created, \${r.total} in the cookbook.\`);`,
-      205,
-    ),
-    macro(
-      "ackscMacMonsAll0",
-      "Cookbook — Import ALL Monsters (GM)",
-      "icons/svg/aura.svg",
-      GUARD + `api.cookbookImportMonsters();`,
-      205,
-    ),
-    macro(
-      "ackscMacAbilBrw0",
-      "Cookbook — Browse & Import Abilities (GM)",
-      "icons/svg/book.svg",
-      GUARD + `api.cookbookImportAbilitiesDialog();`,
-      210,
-    ),
-    macro(
-      "ackscMacAbilAll0",
-      "Cookbook — Import ALL Abilities (GM)",
-      "icons/svg/upgrade.svg",
-      GUARD + `api.cookbookImportAbilities();`,
-      220,
+      320,
+      FOLDERS.abilities,
     ),
     macro(
       "ackscMacAbilUpd0",
-      "Cookbook — Update Abilities in World (GM)",
+      "Update Abilities in World (GM)",
       "icons/svg/regen.svg",
       GUARD + `api.cookbookUpdateAbilities();`,
-      230,
+      330,
+      FOLDERS.abilities,
     ),
     macro(
       "ackscMacAbilCmp0",
-      "Cookbook — Fill Companion Slots (GM)",
+      "Fill Companion Slots (GM)",
       "icons/svg/pawprint.svg",
       GUARD + `api.cookbookFillCompanions();`,
-      240,
+      340,
+      FOLDERS.abilities,
     ),
+
+    /* --- 4 · Tools & Maintenance. --- */
     macro(
-      "ackscMacTblDocs0",
-      "Cookbook — Create Foundry Tables from Import (GM)",
-      "icons/svg/d20-grey.svg",
-      `const svc = globalThis.acksLib?.services?.get?.("ruledata-import");
-if (!svc?.materializeDocs) return ui.notifications.warn("acks-content | the ruledata provider does not offer materializeDocs — update acks-location.");
-const r = await svc.materializeDocs();
-ui.notifications.info(\`acks-content | \${r.exported} table(s) written as Foundry documents, \${r.placeholders} placeholder(s) for expected-but-missing tables.\`);`,
-      250,
+      "ackscMacOrganize",
+      "Organize Cookbook Documents (GM)",
+      "icons/svg/sort.svg",
+      GUARD +
+        `if (!api.cookbookOrganize) return ui.notifications.warn("acks-content | organizing needs a newer module build.");
+api.cookbookOrganize();`,
+      400,
+      FOLDERS.tools,
     ),
-
-    /* --- 300s: tools. --- */
-    macro("ackscMacBrowse00", "Browse & Load a Page (GM)", "icons/svg/direction.svg", GUARD + `api.browseAndLoad();`, 300),
-    macro("ackscMacStats000", "Apply Stats from Book (GM)", "icons/svg/combat.svg", GUARD + `api.applyStats();`, 310),
-    macro("ackscMacCkDebug0", "Cookbook — Debug Raw Extraction (GM)", "icons/svg/eye.svg", GUARD + `api.cookbookDebug();`, 320),
-
+    macro("ackscMacBrowse00", "Browse & Load a Page (GM)", "icons/svg/direction.svg", GUARD + `api.browseAndLoad();`, 410, FOLDERS.tools),
+    macro("ackscMacStats000", "Apply Stats from Book (GM)", "icons/svg/combat.svg", GUARD + `api.applyStats();`, 420, FOLDERS.tools),
+    macro("ackscMacCkDebug0", "Debug Raw Extraction (GM)", "icons/svg/eye.svg", GUARD + `api.cookbookDebug();`, 430, FOLDERS.tools),
   ];
 }
 
