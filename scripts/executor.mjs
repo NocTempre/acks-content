@@ -998,9 +998,15 @@ export function parseStatline(text) {
       if (xp) out.xp = parseInt(xp[0].replace(/,/g, ""), 10);
       continue;
     }
+    // A stat that got its own ";"-separated segment ("…ML +2; XP 1,900;…").
+    const xpSeg = /^XP\s+([\d,]+)$/i.exec(seg);
+    if (xpSeg) {
+      if (out.xp == null) out.xp = parseInt(xpSeg[1].replace(/,/g, ""), 10);
+      continue;
+    }
     // Class segment: "Wizard* 5 (Fellowship)" / "Fighter 3" / "Normal Man".
     const cls = /^([A-Za-z][A-Za-z' -]*?)\*?\s+(\d+)\s*(?:\(([^)]*)\))?$/.exec(seg);
-    if (cls && !out.class) {
+    if (cls && !out.class && !/^(XP|ML|AC|HD|MV|Dmg|Save|SV|hp)$/i.test(cls[1].trim())) {
       out.class = { name: cls[1].trim(), level: parseInt(cls[2], 10), ...(cls[3] ? { note: cls[3].trim() } : {}) };
       continue;
     }

@@ -1051,11 +1051,17 @@ export async function cookbookImportRollTables() {
       }
       const results = [];
       for (const [sec, text] of rowText) {
-        const m = /^r(\d+)(?:-(\d+))?$/.exec(sec);
+        const m = /^r([\d,-]+)$/.exec(sec);
         if (!m) continue;
-        const lo = parseInt(m[1], 10);
-        const hi = m[2] ? parseInt(m[2], 10) : lo;
-        results.push({ type: CONST.TABLE_RESULT_TYPES.TEXT, text, range: [lo, hi] });
+        // A section may carry several ranges ("r6,7,16" — one printed truth
+        // covering several rumor rolls); each becomes its own result row.
+        for (const part of m[1].split(",")) {
+          const g = /^(\d+)(?:-(\d+))?$/.exec(part);
+          if (!g) continue;
+          const lo = parseInt(g[1], 10);
+          const hi = g[2] ? parseInt(g[2], 10) : lo;
+          results.push({ type: CONST.TABLE_RESULT_TYPES.TEXT, text, range: [lo, hi] });
+        }
       }
       if (!results.length) continue;
       results.sort((a, b) => a.range[0] - b.range[0]);

@@ -670,6 +670,9 @@ const AX_FIRST_TAG = /\[([A-Z][A-Z /&-]{1,20})\]/;
 // heading's column with that tolerance, and widen body boxes to cover the
 // hanging icon-tag runs.
 const AX_HANG = 12;
+// Die-cell shapes: "7", "3-4", and the comma group "6,7,16" (one result row
+// serving several rolls — the rumor-truth tables).
+const AX_DIE_RE = /^\d+(?:\s*[-–]\s*\d+)?(?:\s*,\s*\d+(?:\s*[-–]\s*\d+)?)*$/;
 const axColOf = (x, cols) => colOf(x + AX_HANG, cols);
 
 const axCite = (book, page) => `${BOOKS[book].short} p.${page - (BOOKS[book].printedOffset ?? 0)}`;
@@ -775,7 +778,7 @@ function axAnchor(pd, cols, entry, assists) {
  * columnar layouts page by page). `exclude` drops items (an NPC's statline
  * cluster, claimed by its own instruction).
  */
-async function axFlow(doc, entry, assists, start, exclude = new Set()) {
+async function axFlow(doc, entry, assists, start, exclude = new Set(), opts = {}) {
   const maxPage = Math.max(...entry.pages);
   const segs = [];
   let page = start.page;
@@ -783,13 +786,49 @@ async function axFlow(doc, entry, assists, start, exclude = new Set()) {
   let cols = start.cols;
   let col = start.col;
   let fromY = start.endY + 2;
+  // Sibling stops: NPC residents stack runin-after-runin with no display
+  // heading between them, so another register entry's runin anchor ends this
+  // entry's flow exactly like a heading would. Purely register-driven.
+  const stopAt = (opts.stopAt ?? []).map((s) => axFold(s)).filter(Boolean);
+  const siblingStop = (colX0, colX1, yMin) => {
+    if (!stopAt.length) return null;
+    const colItems = pd.items.filter(
+      (it) => it.h <= AX_BODY_MAX_H && it.x >= colX0 && it.x <= colX1 && it.y > yMin && it.y < AX_FOOT_Y,
+    );
+    for (const ln of toLines(colItems)) {
+      const t = axFold(ln.items.map((i) => i.str).join(""));
+      const rawLine = ln.items.map((i) => i.str).join(" ");
+      const clean = !/[.,;!?]/.test(rawLine);
+      // Same clauses as the runin anchor matcher, INCLUDING the suffix rule —
+      // sibling runins print with titles too ("pRovost mentenus Cavië") — and
+      // the same punctuation guard against sentence tails.
+      if (
+        stopAt.some(
+          (w) =>
+            t === w ||
+            (t.startsWith(w) && t.length <= w.length + 6) ||
+            (w.length >= 12 && t.startsWith(w.slice(0, 12)) && Math.abs(t.length - w.length) <= 4) ||
+            (w.length >= 6 && t.endsWith(w) && t.length <= w.length + 14 && clean),
+        )
+      )
+        return ln.y;
+    }
+    return null;
+  };
   for (let guard = 0; guard < 24; guard++) {
     const x0 = cols[col] - AX_HANG - 2;
     const x1 = cols[col + 1] ? cols[col + 1] - AX_HANG - 3 : pd.width - 40;
     const stopHead = axHeadingLines(pd)
       .filter((l) => axColOf(l.x0, cols) === col && l.y > fromY + 2)
       .sort((a, b) => a.y - b.y)[0];
-    const stopY = Math.min(stopHead ? stopHead.y - 4 : AX_FOOT_Y, assists.descStopY ?? AX_FOOT_Y, AX_FOOT_Y);
+    const sibY = siblingStop(x0, x1, fromY + 2);
+    const stopY = Math.min(
+      stopHead ? stopHead.y - 4 : AX_FOOT_Y,
+      sibY != null ? sibY - 4 : AX_FOOT_Y,
+      assists.descStopY ?? AX_FOOT_Y,
+      opts.stopYOnce ?? AX_FOOT_Y,
+      AX_FOOT_Y,
+    );
     const items = pd.items.filter(
       (it) =>
         it.h <= AX_BODY_MAX_H && !exclude.has(it) &&
@@ -797,7 +836,11 @@ async function axFlow(doc, entry, assists, start, exclude = new Set()) {
         it.y > AX_TOP_BAND,
     );
     if (items.length) segs.push({ page, pd, x0, x1, items });
-    if (stopHead || assists.descStopY) return segs;
+    if (stopHead || sibY != null || assists.descStopY || opts.stopYOnce) return segs;
+    // Interleaved layouts (a page split between two sections column-wise) make
+    // a column advance grab the OTHER section's tail; the chef can pin the
+    // flow to the anchor's column.
+    if (assists.sameColumnOnly) return segs;
     // No stop in this column: continue in the next column, else overleaf.
     if (col + 1 < cols.length) {
       col += 1;
@@ -868,7 +911,10 @@ function axParas(segs, anchorPage, opts = {}) {
       if (opts.statlines) {
         for (let li = 0; li < g.length; li++) {
           const label = g[li].items[0];
-          if (!/:$/.test(label.str.trim())) continue;
+          // A merged label run ("Liber Faunus: Venturer 10; …" in one run)
+          // makes an unusable lookup token — those blocks belong to npc
+          // entries; only clean short labels emit creature lookups.
+          if (!/:$/.test(label.str.trim()) || label.str.trim().length > 40) continue;
           const tail = g.slice(li).map((l) => l.items.map((i) => i.str).join(" ")).join(" ");
           if (/\b(MV|AC|HD|hp)\s*-?\d/.test(tail.slice(0, 160))) {
             statlines.push({ label, para, page: seg.page, pd: seg.pd });
@@ -944,6 +990,7 @@ async function axOpen(doc, entry) {
     const want = collapse(assists.anchor ?? entry.anchor.runin);
     const w = axFold(want);
     let hit = null;
+    let matchedOverride = null;
     for (let c = 0; c < cols.length && !hit; c++) {
       const colItems = pd.items.filter(
         (it) => it.h <= AX_BODY_MAX_H && axColOf(it.x, cols) === c && it.y > AX_TOP_BAND && it.y < AX_FOOT_Y,
@@ -951,14 +998,24 @@ async function axOpen(doc, entry) {
       for (const ln of toLines(colItems)) {
         const items = [...ln.items].sort((x, y) => x.x - y.x);
         const t = axFold(items.map((i) => i.str).join(""));
-        // The last clause mirrors the executor's 12-char-prefix fallback: AX3's
-        // small-caps name lines occasionally extract with a dropped glyph
-        // ("naRmiRo"), and the runtime expect tolerates exactly this much.
+        // Prefix clauses mirror the executor's expect fallbacks (including the
+        // 12-char rule for dropped small-caps glyphs). The SUFFIX clause covers
+        // titled runins ("pRovost mentenus Cavië" for anchor "Mentenus Cavië");
+        // since the runtime expect is prefix-only, a suffix hit ships the
+        // line's own printed text as the expect label instead. Suffix matches
+        // demand a punctuation-free standalone line — a sentence tail
+        // ("…with Clitus Omnus.") must never anchor.
+        const rawLine = items.map((i) => i.str).join(" ");
+        const suffix = t.endsWith(w) && t.length <= w.length + 14 && w.length >= 6 && !/[.,;!?]/.test(rawLine);
         if (
           t === w ||
           (t.startsWith(w) && t.length <= w.length + 6) ||
-          (w.length >= 12 && t.startsWith(w.slice(0, 12)) && Math.abs(t.length - w.length) <= 4)
+          (w.length >= 12 && t.startsWith(w.slice(0, 12)) && Math.abs(t.length - w.length) <= 4) ||
+          suffix
         ) {
+          if (suffix && !t.startsWith(w)) {
+            matchedOverride = collapse(items.map((i) => i.str).join(" "));
+          }
           hit = {
             line: {
               y: ln.y,
@@ -973,7 +1030,7 @@ async function axOpen(doc, entry) {
       }
     }
     if (!hit) throw new Error(`runin line "${want}" not found on p.${page}`);
-    a = { line: hit.line, col: hit.col, endY: hit.line.y, x1: hit.line.x1, matched: want };
+    a = { line: hit.line, col: hit.col, endY: hit.line.y, x1: hit.line.x1, matched: matchedOverride ?? want };
   } else {
     a = axAnchor(pd, cols, entry, assists);
   }
@@ -986,8 +1043,11 @@ async function axOpen(doc, entry) {
       box: {
         x0: a.line.x0 - 3,
         x1: Math.max(a.x1 + 3, colX1),
-        y0: a.line.y - (entry.anchor?.runin ? 8 : 14),
-        y1: a.endY + 5,
+        // Runin boxes must stay INSIDE the 12pt line pitch — at -8 the box
+        // caught the tail of the paragraph above and the expect read that
+        // line first.
+        y0: a.line.y - (entry.anchor?.runin ? 5 : 14),
+        y1: a.endY + (entry.anchor?.runin ? 4 : 5),
       },
       text: a.matched,
     },
@@ -1004,7 +1064,12 @@ async function axOpen(doc, entry) {
 async function compileLocation(doc, entry, kindRow) {
   const { assists, page, pd, cols, a, name } = await axOpen(doc, entry);
   const fields = { name };
-  const segs = await axFlow(doc, entry, assists, { page, pd, cols, col: a.col, endY: a.endY });
+  const segs = await axFlow(
+    doc, entry, assists,
+    { page, pd, cols, col: a.col, endY: a.endY },
+    new Set(),
+    { stopAt: assists.stopLines ?? [] },
+  );
   const { paras, statlines } = axParas(segs, page, { iconTags: entry.book === "ax2", statlines: true });
   if (!paras.length) throw new Error(`no body paragraphs under "${entry.name}" p.${page}`);
   fields.description = { op: "text", page, paras };
@@ -1035,15 +1100,39 @@ async function compileLocation(doc, entry, kindRow) {
  * presentation); assists.statlineAt names it, assists.statLabel overrides the
  * label text when it differs from "<name>:".
  */
-async function compileNpc(doc, entry, kindRow) {
-  const { assists, page, pd, cols, a, name } = await axOpen(doc, entry);
-  const fields = { name };
+async function compileNpc(doc, entry, kindRow, bookCtx) {
+  const assists = entry.assists ?? {};
+  const page = entry.pages[0];
+  // anchorAtStatline: roster blocks with no printed intro of their own (a
+  // school's named veterans) anchor on the statline label itself — the name
+  // expect covers the label run and there is no prose flow.
+  let opened = null;
+  let pd;
+  let cols;
+  if (assists.anchorAtStatline) {
+    pd = await pageItems(doc, page);
+    cols = axColumns(pd, assists);
+  } else {
+    opened = await axOpen(doc, entry);
+    ({ pd, cols } = opened);
+  }
+  const a = opened?.a;
+  const fields = {};
+  if (opened) fields.name = opened.name;
 
   const statPage = assists.statlineAt ?? page;
   const spd = statPage === page ? pd : await pageItems(doc, statPage);
   const label = assists.statLabel ?? `${entry.name}:`;
-  const labelRun = spd.items.find((it) => collapse(it.str) === label) ??
-    spd.items.find((it) => /:$/.test(it.str.trim()) && collapse(it.str).toLowerCase().startsWith(label.replace(/:$/, "").toLowerCase()));
+  // Three label shapes: an exact run; a run that merely STARTS with the label
+  // (the printer merged label and clause into one run); a run whose colon got
+  // its own run. Merged runs strip the label by CHARACTER COUNT (stripPrefix —
+  // a count, never text), since dropText only removes whole runs.
+  const exact = spd.items.find((it) => collapse(it.str) === label);
+  const merged = exact ? null : spd.items.find((it) => collapse(it.str).startsWith(label) && it.y > AX_TOP_BAND);
+  const loose = exact || merged ? null : spd.items.find(
+    (it) => /:$/.test(it.str.trim()) && collapse(it.str).toLowerCase().startsWith(label.replace(/:$/, "").toLowerCase()),
+  );
+  const labelRun = exact ?? merged ?? loose;
   if (!labelRun) throw new Error(`statline label "${label}" not found on p.${statPage}`);
   // The block: contiguous lines at (or right of) the label's indent, WITHIN the
   // label's own column — same-y items of the neighbouring column must not join
@@ -1067,15 +1156,45 @@ async function compileNpc(doc, entry, kindRow) {
   const sx1 = Math.max(...cluster.flatMap((l) => l.items.map((i) => i.x + (i.w ?? 0))));
   fields.statline = withFixes(
     {
-      op: "value", page: statPage, pattern: "statline", dropText: collapse(labelRun.str),
+      op: "value", page: statPage, pattern: "statline",
+      ...(merged ? {} : { dropText: collapse(labelRun.str) }),
       box: { x0: labelRun.x - 3, x1: sx1 + 3, y0: cluster[0].y - 4, y1: cluster[cluster.length - 1].y + 4 },
     },
     spd,
   );
+  if (merged) {
+    const runs = runsIn(spd, fields.statline);
+    const li = runs.indexOf(labelRun);
+    if (li >= 0) (fields.statline.fixes ??= {}).stripPrefix = { ...(fields.statline.fixes?.stripPrefix ?? {}), [li]: label.length };
+  }
 
-  const segs = await axFlow(doc, entry, assists, { page, pd, cols, col: a.col, endY: a.endY }, clusterItems);
-  const { paras } = axParas(segs, page, { iconTags: entry.book === "ax2" });
-  if (paras.length) fields.description = { op: "text", page, paras };
+  if (!opened) {
+    // The expect text is the LABEL as printed (sans colon) — always right by
+    // construction, where the display name may normalize nicknames away.
+    fields.name = {
+      op: "expect", page: statPage,
+      box: { x0: labelRun.x - 3, x1: labelRun.x + (labelRun.w ?? 60) + 3, y0: labelRun.y - 5, y1: labelRun.y + 5 },
+      text: label.replace(/\s*:\s*$/, "").slice(0, 60),
+    };
+  } else {
+    // Residents stack name-over-name with nothing display-size between them:
+    // the entry's own statline (same page AND column as the anchor) ends the
+    // prose, and every sibling npc's anchor is a stop line (plus any
+    // chef-authored assists.stopLines, e.g. a section runin). `noDescStop`
+    // opts out for blocks whose prose legitimately continues past the block
+    // (Gabriol's spell appendix).
+    const sameColBlock = statPage === page && sCol === a.col && labelRun.y > a.endY;
+    const flowOpts = {
+      stopAt: [
+        ...(bookCtx?.npcAnchors?.filter((s) => s !== (entry.anchor?.runin ?? entry.anchor?.display)) ?? []),
+        ...(assists.stopLines ?? []),
+      ],
+      ...(sameColBlock && !assists.noDescStop ? { stopYOnce: labelRun.y - 4 } : {}),
+    };
+    const segs = await axFlow(doc, entry, assists, { page, pd, cols, col: a.col, endY: a.endY }, clusterItems, flowOpts);
+    const { paras } = axParas(segs, page, { iconTags: entry.book === "ax2" });
+    if (paras.length) fields.description = { op: "text", page, paras };
+  }
 
   const out = {
     kind: entry.kind, name: entry.name, cite: axCite(entry.book, page), pages: entry.pages,
@@ -1118,36 +1237,59 @@ async function compileRollTable(doc, entry, kindRow) {
     fields.name = opened.name;
   }
 
-  if (assists.grid) {
-    const g = assists.grid;
-    const gpage = g.page ?? page;
-    const gpd = await pageItems(doc, gpage);
-    const lines = toLines(gpd.items.filter((it) => it.y >= g.y0 && it.y <= g.y1 && it.x >= g.dieX0 && it.x <= g.cellX1));
-    const rows = [];
-    for (const ln of lines) {
-      const die = ln.items.find((it) => it.x >= g.dieX0 && it.x <= g.dieX1 && /^\d+(?:\s*[-–]\s*\d+)?$/.test(it.str.trim()));
-      const cellRuns = ln.items.filter((it) => it.x >= g.cellX0 && it.x <= g.cellX1);
-      if (die) rows.push({ die, lines: [ln], cellRuns: [...cellRuns] });
-      else if (rows.length && cellRuns.length) {
-        rows[rows.length - 1].lines.push(ln);
-        rows[rows.length - 1].cellRuns.push(...cellRuns);
+  const gridList = assists.grids ?? (assists.grid ? [assists.grid] : null);
+  if (gridList) {
+    // Several grid configs merge into ONE table: a d% table printed as two
+    // side-by-side halves, or a grid continuing onto the next page. Rows keep
+    // config order, which is the printed reading order.
+    const paras = [];
+    for (const g of gridList) {
+      const gpage = g.page ?? page;
+      const gpd = await pageItems(doc, gpage);
+      const lines = toLines(gpd.items.filter((it) => it.y >= g.y0 && it.y <= g.y1 && it.x >= g.dieX0 && it.x <= g.cellX1));
+      const rows = [];
+      if (g.centerDies) {
+        // Multi-line rows print the die number VERTICALLY CENTERED (the rumor
+        // tables): a row's band runs midpoint-to-midpoint between consecutive
+        // dies, not die-line-downward.
+        const dies = gpd.items
+          .filter((it) => it.y >= g.y0 && it.y <= g.y1 && it.x >= g.dieX0 && it.x <= g.dieX1 && AX_DIE_RE.test(it.str.trim()))
+          .sort((a, b) => a.y - b.y);
+        if (!dies.length) throw new Error(`grid dies empty for ${entry.id} p.${gpage}`);
+        for (let i = 0; i < dies.length; i++) {
+          const y0 = i === 0 ? g.y0 : (dies[i - 1].y + dies[i].y) / 2 + 1;
+          const y1 = i === dies.length - 1 ? g.y1 : (dies[i].y + dies[i + 1].y) / 2 - 1;
+          rows.push({ die: dies[i], band: { y0, y1 } });
+        }
+      } else {
+        for (const ln of lines) {
+          const die = ln.items.find((it) => it.x >= g.dieX0 && it.x <= g.dieX1 && AX_DIE_RE.test(it.str.trim()));
+          const cellRuns = ln.items.filter((it) => it.x >= g.cellX0 && it.x <= g.cellX1);
+          if (die) rows.push({ die, lines: [ln], cellRuns: [...cellRuns] });
+          else if (rows.length && cellRuns.length) {
+            rows[rows.length - 1].lines.push(ln);
+            rows[rows.length - 1].cellRuns.push(...cellRuns);
+          }
+        }
       }
+      if (!rows.length) throw new Error(`grid rows empty for ${entry.id} p.${gpage}`);
+      for (const r of rows) {
+        // No x padding: neighbouring result columns abut, and a run starting on
+        // the shared edge must fall in exactly one entry's cell band.
+        const x0 = g.claimDie ? g.dieX0 : g.cellX0;
+        const para = {
+          box: r.band
+            ? { x0, x1: g.cellX1, y0: r.band.y0, y1: r.band.y1 }
+            : { x0, x1: g.cellX1, y0: r.lines[0].y - 4, y1: r.lines[r.lines.length - 1].y + 4 },
+          section: `r${r.die.str.trim().replace(/\s*[-–]\s*/g, "-").replace(/\s*,\s*/g, ",")}`,
+        };
+        if (gpage !== page) para.page = gpage;
+        const drop = g.claimDie ? new Set([r.die]) : null;
+        paras.push(withFixes(para, gpd, drop));
+      }
+      if (g.headerSkip) (skipsOut[gpage] ??= []).push({ x0: g.dieX0 - 2, x1: g.cellX1 + 2, y0: g.headerSkip[0], y1: g.headerSkip[1], reason: "table-header" });
     }
-    if (!rows.length) throw new Error(`grid rows empty for ${entry.id} p.${gpage}`);
-    const paras = rows.map((r) => {
-      // No x padding: neighbouring result columns abut, and a run starting on
-      // the shared edge must fall in exactly one entry's cell band.
-      const x0 = g.claimDie ? g.dieX0 : g.cellX0;
-      const para = {
-        box: { x0, x1: g.cellX1, y0: r.lines[0].y - 4, y1: r.lines[r.lines.length - 1].y + 4 },
-        section: `r${r.die.str.trim().replace(/\s*[-–]\s*/, "-")}`,
-      };
-      if (gpage !== page) para.page = gpage;
-      const drop = g.claimDie ? new Set([r.die]) : null;
-      return withFixes(para, gpd, drop);
-    });
     fields.rows = { op: "text", page, paras };
-    if (g.headerSkip) (skipsOut[gpage] ??= []).push({ x0: g.dieX0 - 2, x1: g.cellX1 + 2, y0: g.headerSkip[0], y1: g.headerSkip[1], reason: "table-header" });
     // An anchored grid table may carry section intro prose above/before the
     // grid (bounded by assists.descStopY, which also ends the flow).
     if (opened) {
@@ -1175,8 +1317,18 @@ async function compileRollTable(doc, entry, kindRow) {
       for (const ln of lines) {
         const first = ln.items[0];
         const m = /^(\d+(?:\s*[-–]\s*\d+)?)\s*:$/.exec(first.str.trim());
-        if (m) {
-          rows.push({ range: m[1].replace(/\s*[-–]\s*/, "-"), anchor: first, portions: [{ seg, lines: [ln] }] });
+        // The printer sometimes fuses the anchor with its text ("8: A frail…"
+        // in one run) — a fused anchor still starts a row; its digits strip by
+        // CHARACTER COUNT instead of a whole-run drop.
+        const fused = m ? null : /^(\d+(?:\s*[-–]\s*\d+)?)(\s*:\s*)\S/.exec(first.str);
+        if (m || fused) {
+          const g = m ?? fused;
+          rows.push({
+            range: g[1].replace(/\s*[-–]\s*/, "-"),
+            anchor: first,
+            fusedLen: fused ? g[1].length + g[2].length : 0,
+            portions: [{ seg, lines: [ln] }],
+          });
         } else if (rows.length) {
           const row = rows[rows.length - 1];
           const last = row.portions[row.portions.length - 1];
@@ -1215,7 +1367,8 @@ async function compileRollTable(doc, entry, kindRow) {
             section: `r${r.range}`,
           };
           if (portion.seg.page !== page) para.page = portion.seg.page;
-          return withFixes(para, portion.seg.pd, pi === 0 ? new Set([r.anchor]) : null);
+          const strip = pi === 0 && r.fusedLen ? new Map([[r.anchor, r.fusedLen]]) : null;
+          return withFixes(para, portion.seg.pd, pi === 0 && !r.fusedLen ? new Set([r.anchor]) : null, strip);
         }),
       ),
     };
@@ -1246,21 +1399,33 @@ async function compileLegacyMonster(doc, entry, kindRow) {
   const fields = { name };
   const colX0 = cols[a.col] - AX_HANG - 2;
   const colX1 = cols[a.col + 1] ? cols[a.col + 1] - AX_HANG - 3 : pd.width - 40;
+  // Some variant blocks span the FULL page width above two-column prose (the
+  // eight-variant animal mummies): the block machinery then reads the whole
+  // width while the prose flow keeps the page's real columns.
+  const bX1 = assists.blockFullWidth ? pd.width - 34 : colX1;
   const rowsMap = kindRow.fields.stats.rows;
-  const labelRe = new RegExp(`^(${Object.keys(rowsMap).map((k) => k.replace(/[%()]/g, "\\$&")).join("|")})\\s*:$`);
+  // Case-insensitive: "% in Lair:" prints lowercase on some pages.
+  const labelRe = new RegExp(`^(${Object.keys(rowsMap).map((k) => k.replace(/[%()]/g, "\\$&")).join("|")})\\s*:$`, "i");
+  const rowsMapLower = Object.fromEntries(Object.entries(rowsMap).map(([k, v]) => [k.toLowerCase(), v]));
+  // A page may stack SEVERAL variant blocks under one heading (MUMMY, ANIMAL
+  // prints eight variants as two four-column blocks); assists.statBlockY pins
+  // this entry to its block's y-band.
+  const blockLo = assists.statBlockY?.[0] ?? a.endY;
+  const blockHi = assists.statBlockY?.[1] ?? AX_FOOT_Y;
   const labels = pd.items
-    .filter((it) => it.h <= AX_BODY_MAX_H && it.x >= colX0 && it.x <= colX1 && it.y > a.endY && labelRe.test(collapse(it.str)))
+    .filter((it) => it.h <= AX_BODY_MAX_H && it.x >= colX0 && it.x <= bX1 && it.y > blockLo && it.y < blockHi && labelRe.test(collapse(it.str)))
     .sort((x, y) => x.y - y.y);
   if (!labels.length) throw new Error(`no legacy stat labels under "${entry.name}" p.${page}`);
   const blockY0 = labels[0].y;
   const blockY1 = labels[labels.length - 1].y;
 
-  // Variant headers sit between the heading and the first label row.
+  // Variant headers sit between the heading (or block band top) and the first
+  // label row.
   const variantRuns = toLines(
-    pd.items.filter((it) => it.h <= AX_BODY_MAX_H && it.x >= colX0 && it.x <= colX1 && it.y > a.endY + 2 && it.y < blockY0 - 3),
+    pd.items.filter((it) => it.h <= AX_BODY_MAX_H && it.x >= colX0 && it.x <= bX1 && it.y > (assists.statBlockY ? blockLo : a.endY + 2) && it.y < blockY0 - 3),
   ).flatMap((ln) => ln.items).sort((x, y) => x.x - y.x);
   let bandX0;
-  let bandX1 = colX1;
+  let bandX1 = bX1;
   let claimLabels = true;
   if (assists.variantCol) {
     const idx = variantRuns.findIndex((r) => collapse(r.str).toLowerCase() === assists.variantCol.toLowerCase());
@@ -1270,15 +1435,15 @@ async function compileLegacyMonster(doc, entry, kindRow) {
     claimLabels = idx === 0;
   } else {
     const valueXs = labels
-      .map((l) => pd.items.filter((it) => Math.abs(it.y - l.y) <= 3 && it.x > l.x + (l.w ?? 0) + 2 && it.x <= colX1).sort((x, y) => x.x - y.x)[0])
+      .map((l) => pd.items.filter((it) => Math.abs(it.y - l.y) <= 3 && it.x > l.x + (l.w ?? 0) + 2 && it.x <= bX1).sort((x, y) => x.x - y.x)[0])
       .filter(Boolean)
       .map((it) => it.x);
     bandX0 = (valueXs.length ? Math.min(...valueXs) : labels[0].x + 60) - 4;
   }
 
   for (const l of labels) {
-    const key = collapse(l.str).replace(/\s*:$/, "");
-    const spec = rowsMap[key];
+    const key = collapse(l.str).replace(/\s*:$/, "").toLowerCase();
+    const spec = rowsMapLower[key];
     if (!spec) continue;
     const instr = {
       op: "value", page, pattern: spec.pattern,
@@ -1299,7 +1464,7 @@ async function compileLegacyMonster(doc, entry, kindRow) {
     // band instead — they are column captions, not content.
   }
 
-  const segs = await axFlow(doc, entry, { ...assists, descStopY: assists.descStopY }, { page, pd, cols, col: a.col, endY: blockY1 + 4 });
+  const segs = await axFlow(doc, entry, { ...assists, descStopY: assists.descStopY }, { page, pd, cols, col: a.col, endY: (assists.descStartY ?? blockY1) + 4 });
   const { paras } = axParas(segs, page, {});
   if (paras.length) fields.description = { op: "text", page, paras };
 
@@ -1996,6 +2161,14 @@ async function main() {
       },
       entries: {},
     };
+    // Per-book authoring context: sibling npc anchors become stop lines for
+    // stacked-resident prose flows (see compileNpc).
+    const bookCtx = {
+      npcAnchors: list
+        .filter((e) => e.kind === "kind.npc")
+        .map((e) => e.anchor?.runin ?? e.anchor?.display)
+        .filter(Boolean),
+    };
     for (const entry of list.sort((a, b) => a.pages[0] - b.pages[0])) {
       const kindRow = kinds[entry.kind];
       if (!kindRow) {
@@ -2028,7 +2201,7 @@ async function main() {
       }
       try {
         const compiled = axCompile
-          ? await axCompile(doc, entry, kindRow)
+          ? await axCompile(doc, entry, kindRow, bookCtx)
           : await compileMonster(doc, entry, kindRow, glyphChars);
         const { _unmappedLabels, _skips, ...ship } = compiled;
         if (_skips) {
