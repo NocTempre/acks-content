@@ -611,19 +611,43 @@ const importedMonsterIds = () =>
   new Set(game.actors.map((a) => a.getFlag(MODULE_ID, "cookbook")?.id).filter(Boolean));
 
 /**
- * Run a list of entry ids through importOne with a progress bar.
+ * How many monsters to import at once. Each import is a PIPELINE of work that
+ * uses different resources — pdf.js page extraction (one shared worker), image
+ * decode + PNG encode (main thread), art upload (network), and a document write
+ * (DB) — so running a handful concurrently overlaps stages that would otherwise
+ * idle waiting on each other. The cap is deliberate and small: firing all ~287
+ * at once would pin every page's decoded artwork in memory and flood the single
+ * worker's queue, trading one bottleneck for a worse one. 4 keeps each resource
+ * busy without oversubscribing any.
+ */
+const IMPORT_CONCURRENCY = 4;
+
+/**
+ * Run a list of entry ids through importOne with a progress bar, bounded to
+ * IMPORT_CONCURRENCY at a time.
  *
  * Each import parses pages out of the seat's PDF, so a whole book is minutes of
  * work: without feedback the client looks hung. Errors are per-entry — one
- * unreadable page must not abandon the other 286.
+ * unreadable page must not abandon the other 286 — and the shared iterator means
+ * a slow entry never blocks a free worker from starting the next.
  */
 async function importMany(bookId, ids, folderId, label) {
   const bar = ui.notifications.info(label, { progress: true });
+  const total = ids.length;
   let done = 0;
-  for (const [i, id] of ids.entries()) {
-    bar?.update?.({ pct: i / ids.length, message: `${label} ${i + 1}/${ids.length}` });
-    if (await importOne(bookId, id, folderId).catch((err) => (console.error(`${MODULE_ID} | import ${id}`, err), null))) done++;
-  }
+  let finished = 0;
+  const it = ids[Symbol.iterator]();
+  const worker = async () => {
+    for (let n = it.next(); !n.done; n = it.next()) {
+      const id = n.value;
+      const actor = await importOne(bookId, id, folderId).catch(
+        (err) => (console.error(`${MODULE_ID} | import ${id}`, err), null),
+      );
+      if (actor) done++;
+      bar?.update?.({ pct: ++finished / total, message: `${label} ${finished}/${total}` });
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(IMPORT_CONCURRENCY, total || 1) }, worker));
   bar?.update?.({ pct: 1, message: label });
   return done;
 }
@@ -654,26 +678,11 @@ async function importOne(bookId, id, folderId) {
   const fmsActive = game.modules.get("acks-monsters")?.active;
   if (!fmsActive) system.details = { ...(system.details ?? {}), biography: tag(null) };
 
-  const actor = await Actor.create({
-    name: found.entry.name,
-    type: "monster",
-    folder: folderId,
-    system,
-    ...(prototypeToken ? { prototypeToken } : {}),
-    ...(Object.keys(flags ?? {}).length ? { flags } : {}),
-  });
-  // Foundry REPORTS a schema-validation failure and returns undefined rather
-  // than throwing, so without this the next line dereferences nothing and the
-  // real error — already in the console — is buried under a TypeError from
-  // three frames away. One unimportable monster must read as one skipped
-  // monster, not as a crash in the importer.
-  if (!actor) {
-    ui.notifications.warn(`acks-content | ${found.entry.name}: the system rejected the extracted stats — skipped (see console).`);
-    return null;
-  }
+  // Full Monster Sheet: route description SECTIONS onto its fields; each field
+  // gets its own section-scoped lazy tag, unrouted sections -> notes. Built up
+  // front so the extras ride along in the single create below.
+  let fmsFlags = null;
   if (fmsActive) {
-    // Route description SECTIONS onto the Full Monster Sheet's fields; each
-    // field gets its own section-scoped lazy tag. Unrouted sections -> notes.
     const ROUTE = {
       appearance: "appearance", combat: "combat", ecology: "ecology",
       encounter: "encounterText", lair: "encounterText",
@@ -687,20 +696,41 @@ async function importOne(bookId, id, folderId) {
     if (!Object.keys(description).length) description.appearance = tag(null);
     // Classification / saves / vision / movement / ecology / defenses extras
     // mapped from the same executed node (see buildExtras).
-    await actor.update({ "flags.acks-monsters.extras": { ...buildExtras(node), description } });
+    fmsFlags = { "acks-monsters": { extras: { ...buildExtras(node), description } } };
   }
-  if (items.length) {
-    await actor.createEmbeddedDocuments(
-      "Item",
-      // Merge, don't replace: an embedded shared ability keeps its cookbook id
-      // (that id is what resolves its lazy prose and marks it as the shared one).
-      items.map((i) => ({
-        ...i,
-        flags: { ...(i.flags ?? {}), [MODULE_ID]: { ...(i.flags?.[MODULE_ID] ?? {}), generated: true } },
-      })),
-    );
+
+  // ONE write, not four. create/update/createEmbeddedDocuments/setFlag were each
+  // a separate socket round-trip a bulk import paid per monster; fold the
+  // embedded items, the cookbook id, and the FMS extras into the single create
+  // (measured ~2.6x on the write phase alone). Art follows separately — it needs
+  // the uploaded file path.
+  const actor = await Actor.create({
+    name: found.entry.name,
+    type: "monster",
+    folder: folderId,
+    system,
+    ...(prototypeToken ? { prototypeToken } : {}),
+    // Merge, don't replace: an embedded shared ability keeps its cookbook id
+    // (that id is what resolves its lazy prose and marks it as the shared one).
+    items: items.map((i) => ({
+      ...i,
+      flags: { ...(i.flags ?? {}), [MODULE_ID]: { ...(i.flags?.[MODULE_ID] ?? {}), generated: true } },
+    })),
+    flags: {
+      ...(flags ?? {}),
+      [MODULE_ID]: { ...((flags ?? {})[MODULE_ID] ?? {}), cookbook: { id, cite: found.entry.cite } },
+      ...(fmsFlags ?? {}),
+    },
+  });
+  // Foundry REPORTS a schema-validation failure and returns undefined rather
+  // than throwing, so without this the next line dereferences nothing and the
+  // real error — already in the console — is buried under a TypeError from
+  // three frames away. One unimportable monster must read as one skipped
+  // monster, not as a crash in the importer.
+  if (!actor) {
+    ui.notifications.warn(`acks-content | ${found.entry.name}: the system rejected the extracted stats — skipped (see console).`);
+    return null;
   }
-  await actor.setFlag(MODULE_ID, "cookbook", { id, cite: found.entry.cite });
   if (node.fields.art && ctx.importArtForPage) {
     await ctx.importArtForPage(actor, session.doc, { id, page: found.entry.pages[0] });
   }
