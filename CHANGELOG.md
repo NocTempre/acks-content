@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.30.0
+
+The AX2/AX3 NPC and roll-table sweep — location journals stay at the pilot
+slice by request; people and dice are now complete:
+
+- **49 named NPCs across AX3**: every resident with a printed stat block in
+  all eight districts — the Faunus syndicate (Liber, Hesta, Aranth,
+  Megaravicos), the Sand & Bones four, three gladiatorial lanistas and four
+  named veterans, the Solar Citadel clergy, the Tower of Knowledge wizards
+  (Regent Aurëus, Provost Mentenus, Clitus, Inspector Mara), the Temple
+  district clergy, the Eclipse Hideout six, the Lake councilors and death
+  cult, the Prefectural household — plus the full Imperial Vanguard five.
+  Quick/full page splits merge per entry; prose bounds are held by
+  register-driven sibling stops and statline auto-stops.
+- **17 more roll tables**: all seven district special-encounter lists
+  (1d10, after-dark rows included), the d100 City and Undercity Encounter
+  tables, Random Borderlands Rumors (d30), Rumors of Cyfaraun and the
+  judge's behind-the-rumor table (one printed truth may cover several rolls
+  — comma-grouped dies become multiple ranges), Random Irritating Rumors,
+  AX2's wall-grave occupants, mummy-reaction, and both magic-item tables.
+  Grid machinery learned centered die columns, split/multi-page grids, and
+  fused "8: text" list anchors.
+- **All 14 AX2 New Monsters headings → 24 entries** with per-variant stats
+  (mechanical cobras, faewyrds, undead bone golems, ALL EIGHT animal
+  mummies, animated statues). Per-entry defer rulings: the animated statues
+  and the Sarcophagal Worm (verified stat-identical) import their ACKS II
+  MM revisions when that book is open; the undead bone golems were ruled
+  distinct from the MM's construct bone golem and extract from AX2.
+- Deferred imports now skip when the world already holds the target entry.
+
 ## 0.29.0
 
 AX2 (Secrets of the Nethercity) and AX3 (Capital of the Borderlands) join the

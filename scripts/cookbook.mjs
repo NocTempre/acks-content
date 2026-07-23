@@ -885,6 +885,13 @@ function bindNpc(node) {
 async function importAdventureActor(bookId, id, folderId) {
   const target = deferTarget(id);
   if (target) {
+    // The deferred TARGET id gets its own already-present check — the caller
+    // only filtered on the adventure id, and a world that imported the MM
+    // entry directly must not get a twin.
+    if (importedMonsterIds().has(target)) {
+      ui.notifications.info(`acks-content | ${id} defers to ${target}, which this world already has — skipped.`);
+      return null;
+    }
     const tb = target.split(".")[0];
     ui.notifications.info(`acks-content | ${id} is reprinted in ${BOOKS[tb]?.label ?? tb} — importing ${target} instead.`);
     return importOne(tb, target, folderId);
