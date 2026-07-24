@@ -32,7 +32,7 @@ import { createDocFor } from "./poc.mjs";
 import { importTables, tableRecipeCount } from "./tables-binding.mjs";
 import { progressBar } from "./progress.mjs";
 import {
-  initCookbook, loadCookbook, cookbookImport, cookbookImportMonsters, cookbookImportAbilities, cookbookImportAbilitiesDialog, cookbookUpdateAbilities,
+  initCookbook, loadCookbook, cookbookImport, cookbookImportIds, cookbookImportMonsters, cookbookImportAbilities, cookbookImportAbilitiesDialog, cookbookUpdateAbilities,
   cookbookFillCompanions, cookbookPruneAbilities, registerAbilityDirectoryButtons, importAbility, cookbookDebug, cookbookStub,
   cookbookCanReveal, cookbookProse, cookbookCount, refillMonster, resolveAbilities,
   importEquipment, importAllEquipment, cookbookEquipmentIds, repairEquipmentAbilities,
@@ -1020,7 +1020,7 @@ Hooks.once("ready", async () => {
   await loadCookbook();
   const api = {
     connectBook, connectBookUrl, reconnectBooks, browseAndLoad, applyStats, bookStatus, forgetBooks,
-    proseFor, cookbookImport, cookbookImportMonsters, cookbookImportAbilities, cookbookImportAbilitiesDialog, cookbookUpdateAbilities, cookbookFillCompanions, cookbookPruneAbilities,
+    proseFor, cookbookImport, cookbookImportIds, cookbookImportMonsters, cookbookImportAbilities, cookbookImportAbilitiesDialog, cookbookUpdateAbilities, cookbookFillCompanions, cookbookPruneAbilities,
     importAbility, cookbookDebug, cookbookProse, cookbookCount,
     cookbookImportTables,
     cookbookImportJournals, cookbookImportRollTables, cookbookOrganize,

@@ -14,7 +14,7 @@
  */
 import { MODULE_ID, LANG_PREFIX } from "./constants.mjs";
 import { BOOKS } from "./books.mjs";
-import { executeEntry, materializeEffects } from "./executor.mjs";
+import { executeEntry, materializeEffects, attackModel } from "./executor.mjs";
 import { savesForLevel } from "./stats.mjs";
 import { progressBar } from "./progress.mjs";
 
@@ -399,10 +399,12 @@ const TOKEN_SIZE = {
   colossal: { width: 8, height: 6 },
 };
 
-/** Map one executed node to acks actor data + embedded items. */
-export function bindMonster(node) {
-  const f = node.fields;
-  const s = f.stats ?? {};
+/**
+ * Map the SCALAR stat fields to system paths — the shared half of the binding,
+ * used whole-block by bindMonster and per-grid-row by the template importer
+ * (one mapping owner; a template row is just a partial stat block).
+ */
+export function bindStatsScalars(s) {
   const system = {};
 
   if (Number.isInteger(s.armorClass)) system.aac = { value: s.armorClass };
@@ -440,6 +442,15 @@ export function bindMonster(node) {
   const speed = String(s.speedLand ?? "");
   const nums = [...speed.matchAll(/(\d+)/g)].map((m) => parseInt(m[1], 10));
   if (nums.length) system.movement = { base: nums[nums.length - 1] };
+
+  return { system, moraleNA };
+}
+
+/** Map one executed node to acks actor data + embedded items. */
+export function bindMonster(node) {
+  const f = node.fields;
+  const s = f.stats ?? {};
+  const { system, moraleNA } = bindStatsScalars(s);
 
   const atk = f.attacks;
   if (atk) {
@@ -744,6 +755,7 @@ async function importOne(bookId, id, folderId) {
   // importers and are never built here.
   const kind = found?.entry?.kind;
   if (kind === "kind.npc" || kind === "kind.monsterLegacy") return importAdventureActor(bookId, id, folderId);
+  if (kind === "kind.monsterTemplate") return importTemplate(bookId, id, folderId);
   if (kind && kind !== "kind.monster") return null;
   const session = ctx.sessionDocs.get(bookId);
   const node = await executeEntry(session.doc, found.cb, data.registers, id);
@@ -826,6 +838,271 @@ async function importOne(bookId, id, folderId) {
   return actor;
 }
 
+/* -------------------------------------------- */
+/*  Template binding (kind.monsterTemplate)     */
+/*  grids -> acks-lib.template generator actor  */
+/* -------------------------------------------- */
+
+/**
+ * ACKS ladders derived by formula rather than read from a page, the
+ * savesForLevel precedent: the monster attack throw improves 1 per HD from
+ * 10+ at 1 HD (the thrall's own printed ladder confirms 11 − HD row by row).
+ */
+const monsterThrowForHd = (hd) => Math.max(11 - Math.max(1, hd), -10);
+
+/** "Adult (51-75 years)" -> "Adult"; smallcap case healed ("Green dragon" ->
+ *  "Green Dragon") — the short piece generated names use. */
+const nameLabelOf = (label) =>
+  String(label ?? "")
+    .replace(/\s*\([^)]*\)\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b[a-z]/g, (c) => c.toUpperCase());
+
+const intFrom = (v) => {
+  const m = /-?\d[\d,]*/.exec(String(v ?? ""));
+  return m ? parseInt(m[0].replace(/,/g, ""), 10) : null;
+};
+
+/** One weapon-item payload, the same shape bindMonster embeds. */
+const weaponPayload = (name, damage, { naturalWeapon = null, damageType = null, attackMode = 0 } = {}) => ({
+  name,
+  type: "weapon",
+  img: "icons/svg/sword.svg",
+  flags: {
+    "acks-monsters": {
+      ...(naturalWeapon ? { naturalWeapon } : {}),
+      ...(damageType ? { damageType } : {}),
+      ...(attackMode > 0 ? { attackMode } : {}),
+    },
+  },
+  system: {
+    description: "", damage, bonus: 0, melee: true, missile: false, equipped: attackMode === 0,
+    pattern: "transparent", tags: [], counter: { value: 1, max: 1 }, cost: 0, weight: 0, weight6: 0,
+  },
+});
+
+/**
+ * Weapon items from a FORM's attack routine + one damage cell, via the shared
+ * attackModel (no parallel parser). The form tables separate attack names with
+ * "/" where stat lines use "," — normalize inside the parenthetical only.
+ * `types` is the form's glyph-mapped damage-type list, in segment order.
+ */
+function weaponsFromRoutine(routine, damageText, types) {
+  if (!routine || !damageText) return [];
+  const normalized = String(routine).replace(/\(([^)]*)\)/g, (_, inner) => `(${inner.replace(/\s*\/\s*/g, ", ")})`);
+  const { modes } = attackModel(normalized, String(damageText));
+  const items = [];
+  let gi = 0;
+  for (const [mi, mode] of modes.entries()) {
+    const seen = {};
+    for (const [j, seg] of (mode.dmgSegs ?? []).entries()) {
+      const ne = mode.names?.[j] ?? mode.names?.[mode.names.length - 1] ?? null;
+      const base = capitalize(ne?.name ?? "Attack");
+      seen[base] = (seen[base] ?? 0) + 1;
+      items.push(
+        weaponPayload(seen[base] > 1 ? `${base} ${seen[base]}` : base, diceOf(seg) || seg, {
+          naturalWeapon: ne?.nw ?? null,
+          damageType: types?.[gi]?.key ?? null,
+          attackMode: mi,
+        })
+      );
+      gi++;
+    }
+  }
+  return items;
+}
+
+/** Cell keys shown as note lines on an option (materialized world data). */
+const OPTION_NOTE_KEYS = [
+  "size", "habitat", "hideColor", "breathWeapon", "chanceSpeech", "casterLevel", "spells",
+  "rebukedAs", "abilitiesGained", "speedFly", "speedSwim", "speedClimb", "speedBurrow",
+  "bme", "ccf", "lairChance", "caughtAsleep", "normalLoad", "immunity", "vision",
+  "otherSenses", "xpSpeechless", "xpSpeaking", "attackRoutine",
+];
+
+const fmtCell = (v) =>
+  Array.isArray(v) ? v.map((x) => x?.key ?? x?.text ?? String(x)).join(", ") : String(v);
+
+/** Build one axis option (engine-ready patches) from a merged grid row. */
+function templateOption(ax, row, cells, { id, cite, sections }) {
+  const hitDice = cells.hitDice ?? (ax.keyIsHd && /^\d+$/.test(row.key) ? row.key : undefined);
+  const { system } = bindStatsScalars({
+    armorClass: cells.armorClass,
+    hitDice,
+    save: cells.save,
+    morale: typeof cells.morale === "number" ? cells.morale : undefined,
+    treasureType: cells.treasureType ? String(cells.treasureType).toUpperCase() : undefined,
+    dungeonEnc: cells.dungeonEnc,
+    wildernessEnc: cells.wildernessEnc,
+    speedLand: cells.speedLand,
+    xp: intFrom(cells.xpSpeechless) ?? intFrom(cells.xpSpeaking) ?? intFrom(cells.xp) ?? undefined,
+  });
+
+  // Attack throw: printed on the row (thrall "weapon 10+") outranks the
+  // HD-derived ladder; with neither, the generated actor keeps defaults.
+  const printedThrow = /(-?\d+)\s*\+/.exec(String(cells.attacks ?? ""))?.[1];
+  const hdCount = parseInt(String(hitDice ?? ""), 10);
+  if (printedThrow != null) system.thac0 = { throw: parseInt(printedThrow, 10) };
+  else if (Number.isInteger(hdCount)) system.thac0 = { throw: monsterThrowForHd(hdCount) };
+
+  if (cells.attacks) system.attacks = [cells.attacks, cells.damage].filter(Boolean).join(" — ");
+
+  // A single-axis damage die with no routine (the elemental tiers): one
+  // generic natural attack; forms with routines get their weapons in `cells`.
+  const items = [];
+  if (cells.damage && !cells.attackRoutine && !cells.attacks) {
+    items.push(weaponPayload("Strike", diceOf(cells.damage) || String(cells.damage), { naturalWeapon: "strike" }));
+  }
+
+  const label = capitalize(String(row.label ?? row.key));
+  const secKey = sections.has(row.key) ? row.key : sections.has(`${row.key}s`) ? `${row.key}s` : null;
+  const notes = OPTION_NOTE_KEYS.filter((k) => cells[k] != null && cells[k] !== "").map(
+    (k) => `${k}: ${fmtCell(cells[k])}`
+  );
+  const html =
+    `<p><strong>${label}.</strong>` +
+    `${secKey ? ` @PdfText[${id}#${secKey}]{${cite}}` : ""}` +
+    `${notes.length ? ` <em>${notes.join("; ")}</em>` : ""}</p>`;
+
+  return {
+    key: row.key,
+    label,
+    nameLabel: nameLabelOf(row.label ?? row.key),
+    rollMin: null,
+    rollMax: null,
+    menuBudget: ax.budgetCol ? intFrom(cells[ax.budgetCol]) : null,
+    art: "",
+    merge: system,
+    items,
+    html,
+  };
+}
+
+/**
+ * kind.monsterTemplate -> an `acks-lib.template` GENERATOR actor.
+ *
+ * All book-parsing intelligence happens HERE, once, at import: grid rows map
+ * through the same scalar binder as full stat blocks, form routines through
+ * the same attackModel, and the template actor stores only engine-ready
+ * patches. acks-lib's roll/resolve then never interprets book content — which
+ * is what keeps one owner per mapping. Values persist in world data (the
+ * hand-typed-table equivalence), prose stays lazy tags.
+ */
+async function importTemplate(bookId, id, folderId) {
+  const TEMPLATE_TYPE = globalThis.acksLib?.TEMPLATE_TYPE;
+  if (!TEMPLATE_TYPE) {
+    ui.notifications.warn(`acks-content | ${id}: needs acks-lib 0.16+ (template actor type) — skipped.`);
+    return null;
+  }
+  const found = cookbookEntry(id);
+  const session = ctx.sessionDocs.get(bookId);
+  const node = await executeEntry(session.doc, found.cb, data.registers, id);
+  if (!node.ok) {
+    ui.notifications.warn(`acks-content | ${found.entry.name}: page did not match the cookbook (different printing?) — skipped.`);
+    return null;
+  }
+  const spec = found.entry.template ?? {};
+  const cite = found.entry.cite;
+  const gridRows = (name) => node.fields.grids?.[name]?.rows ?? [];
+
+  const paras = node.fields.description ?? [];
+  cookbookCacheParas(bookId, id, paras);
+  const sections = new Set(paras.map((p) => p.section).filter(Boolean));
+
+  const axes = [];
+  for (const ax of spec.axes ?? []) {
+    const [firstGrid, ...restGrids] = ax.grids ?? [];
+    const rows = gridRows(firstGrid);
+    const restByKey = restGrids.map((g) => new Map(gridRows(g).map((r) => [r.key, r.cells])));
+    const options = rows.map((row) => {
+      const cells = { ...row.cells };
+      for (const m of restByKey) Object.assign(cells, m.get(row.key) ?? {});
+      return templateOption(ax, row, cells, { id, cite, sections });
+    });
+    if (!options.length) console.warn(`${MODULE_ID} | ${id}: axis "${ax.key}" materialized no options.`);
+    axes.push({
+      key: ax.key,
+      label: ax.label ?? ax.key,
+      roll: ax.roll ?? "",
+      derive: { from: ax.derive?.from ?? "", max: ax.derive?.max ?? null },
+      options,
+    });
+  }
+
+  // N-dimensional refinements: each 2D damage cell becomes typed weapon items
+  // via the FORM axis's routine + glyph-mapped damage types.
+  const cells = [];
+  for (const c of spec.cells ?? []) {
+    const [aKey, bKey] = c.by ?? [];
+    const bSpec = (spec.axes ?? []).find((x) => x.key === bKey);
+    const formInfo = new Map();
+    for (const g of bSpec?.grids ?? []) {
+      for (const r of gridRows(g)) {
+        const prev = formInfo.get(r.key) ?? {};
+        formInfo.set(r.key, {
+          routine: r.cells.attackRoutine ?? prev.routine,
+          types: r.cells.damageType ?? prev.types,
+        });
+      }
+    }
+    for (const row of gridRows(c.grid)) {
+      for (const [formKey, dmg] of Object.entries(row.cells)) {
+        const info = formInfo.get(formKey) ?? {};
+        cells.push({
+          by: [aKey, bKey],
+          key: `${row.key}|${formKey}`,
+          merge: { attacks: [info.routine, String(dmg)].filter(Boolean).join(" — ") },
+          items: weaponsFromRoutine(info.routine, dmg, info.types),
+        });
+      }
+    }
+  }
+
+  const menu = {
+    die: spec.menu?.die ?? "",
+    budgetAxis: spec.menu?.budgetAxis ?? "",
+    rows: (spec.menu?.rows ?? []).map((r) => ({
+      min: r.min ?? null,
+      max: r.max ?? null,
+      label: r.label ?? "",
+      cost: r.cost ?? null,
+      html:
+        r.section && sections.has(r.section)
+          ? `<p><strong>${r.label}.</strong> @PdfText[${id}#${r.section}]{${cite}}</p>`
+          : `<p><strong>${r.label}</strong> (${cite})</p>`,
+    })),
+  };
+
+  const actor = await Actor.create({
+    name: found.entry.name,
+    type: TEMPLATE_TYPE,
+    folder: folderId,
+    system: {
+      output: { actorType: "monster", nameFormat: spec.nameFormat ?? "" },
+      axes,
+      cells,
+      menu,
+      details: { biography: pdfTag(id, cite) },
+    },
+    flags: { [MODULE_ID]: { cookbook: { id, cite } } },
+  });
+  if (!actor) {
+    ui.notifications.warn(`acks-content | ${found.entry.name}: the system rejected the template — skipped (see console).`);
+    return null;
+  }
+  if (node.fields.art && ctx.importArtForPage) {
+    const artInstr = found.entry.fields?.art ?? {};
+    await ctx.importArtForPage(actor, session.doc, {
+      id,
+      page: artInstr.page ?? found.entry.pages[0],
+      name: artInstr.name ?? node.fields.art.name ?? null,
+      box: artInstr.box ?? null,
+    });
+  }
+  return actor;
+}
+
 /**
  * Re-read an already-imported monster's stats from this seat's book.
  *
@@ -869,7 +1146,7 @@ export async function refillMonster(actor) {
 /*  RollTable, npc / monsterLegacy -> Actor     */
 /* -------------------------------------------- */
 
-const ACTOR_KINDS = new Set(["kind.monster", "kind.monsterLegacy", "kind.npc"]);
+const ACTOR_KINDS = new Set(["kind.monster", "kind.monsterLegacy", "kind.npc", "kind.monsterTemplate"]);
 /** kinds an actor-import flow may enumerate (unknown/absent kind = MM-era monster). */
 const actorKindOf = (e) => !e.kind || ACTOR_KINDS.has(e.kind);
 const ALIGN_WORD = { L: "Lawful", N: "Neutral", C: "Chaotic" };
@@ -2444,6 +2721,15 @@ export async function cookbookDebug(entryId) {
     content,
     ok: { label: game.i18n.localize(`${LANG_PREFIX}.ui.close`) },
   });
+}
+
+/**
+ * GM/dev: import an explicit id list (QA + scripted tests — the same bounded
+ * pool the dialog and import-all use, folders included).
+ */
+export async function cookbookImportIds(ids) {
+  if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only (creates actors).");
+  return importMany(ids ?? [], game.i18n.localize(`${LANG_PREFIX}.ui.cookbookWorking`));
 }
 
 export async function cookbookImport() {

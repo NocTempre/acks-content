@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.41.0
+
+**The four table-template monsters import — as generators.**
+
+- **Schema v2 (acks-cookbook/2): the `grid` instruction.** A printed table
+  read by authored geometry — data-row band, label span, column spans with
+  cell patterns; sideways tables via `transpose` (with per-property pattern
+  overrides); `dropRows` claims headers without emitting them; `glyphs`
+  maps the PUA damage-marks through the shipped table. v1 cookbooks keep
+  executing unchanged.
+- **kind.monsterTemplate: dragon, cacodemon, elemental, vampire thrall** —
+  deferred since v0.3.1 because every stat cell reads "varies by rank/age/
+  tier". Their tables now compile as grids, their prose flows across all
+  pages with run-in sections (the d100 ability menus become section-linked
+  lazy tags), and the printed "varies" column is claimed for residue honesty.
+- **Import route → `acks-lib.template` generator actors** (needs acks-lib
+  ≥ 0.16.0). Grid rows map through the same scalar binder as full stat
+  blocks and form routines through the same attackModel — one mapping owner.
+  The template actor stores engine-ready patches per axis option (system
+  fragments, typed weapon payloads from the 2D damage cells, lazy-tag notes,
+  menu rows with printed d100 bands and slot costs); acks-lib's builder
+  sheet then pins/derives/rolls choices and stamps out concrete monsters.
+  One click on a bare template yields a rules-legal random creature.
+- **Dev surface:** `acksContent.cookbookImportIds([...])` imports an explicit
+  id list (QA / scripted tests); dump-entry prints grid rows and survives
+  content-type cookbooks.
+
 ## 0.40.0
 
 **Equipment imports as what it is.**

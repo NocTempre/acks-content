@@ -4337,7 +4337,8 @@
           "grids": [
             "chars",
             "powers"
-          ]
+          ],
+          "keyIsHd": true
         }
       ],
       "grids": {
