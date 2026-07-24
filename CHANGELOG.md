@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.48.0
+
+**Getting Started walkthrough.** A first-launch dialog
+(`scripts/getting-started.mjs`) auto-opens on join for a seat with no book
+open or remembered (a returning seat still gets the reconnect dialog instead
+— never both): it explains the bring-your-own-book model, offers Connect a
+book, and — for the GM — an **Import everything** button that sequences the
+idempotent importers (abilities → equipment → monsters & NPCs → location
+journals → roll tables → rules tables), narrating each step. A per-seat
+"don't show again" checkbox persists the moment it is toggled; the
+walkthrough stays reachable via `acksContent.gettingStarted({force:true})`,
+a new **Getting Started** macro in the compendium, and a client setting.
+
 ## 0.47.0
 
 **Dragons look like dragons; fixed stats reach every generation.**

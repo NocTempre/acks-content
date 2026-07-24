@@ -153,3 +153,34 @@
 .acks-content-reconnect-done {
   opacity: 0.6;
 }
+
+/* Getting Started dialog: generous but bounded, actions on their own row. */
+.acks-content-gs h3 {
+  margin: 0.6em 0 0.2em;
+  border-bottom: 1px solid var(--color-border-light-tertiary, #999);
+}
+
+.acks-content-gs-action {
+  display: flex;
+  gap: 0.5em;
+  align-items: center;
+  margin: 0.3em 0 0.5em;
+}
+
+.acks-content-gs-action button {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.acks-content-gs-action .notes {
+  margin: 0;
+  opacity: 0.85;
+}
+
+.acks-content-gs-dismiss {
+  display: flex;
+  gap: 0.4em;
+  align-items: center;
+  margin-top: 0.5em;
+  font-size: var(--font-size-12, 12px);
+}

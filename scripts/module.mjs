@@ -38,6 +38,7 @@ import {
   importEquipment, importAllEquipment, cookbookEquipmentIds, repairEquipmentAbilities,
   cookbookImportJournals, cookbookImportRollTables, cookbookOrganize,
 } from "./cookbook.mjs";
+import { registerGettingStartedSettings, showGettingStarted } from "./getting-started.mjs";
 
 const SETTING_DYNAMIC = "dynamicRecipes";
 const LEGACY_KEYS = ["acks-content.proseCache", "acks-content.contentCache"]; // pre-possession-model storage
@@ -1006,6 +1007,7 @@ async function onRevealClick(event) {
 
 Hooks.once("init", () => {
   game.settings.register(MODULE_ID, SETTING_DYNAMIC, { scope: "world", config: false, type: Object, default: {} });
+  registerGettingStartedSettings();
   setWorker(`modules/${MODULE_ID}/vendor/pdf.worker.mjs`);
   setWasmUrl(`modules/${MODULE_ID}/vendor/wasm/`);
   CONFIG.TextEditor.enrichers.push({
@@ -1035,6 +1037,7 @@ Hooks.once("ready", async () => {
     cookbookImportTables,
     cookbookImportJournals, cookbookImportRollTables, cookbookOrganize,
     importEquipment, importAllEquipment, cookbookEquipmentIds, repairEquipmentAbilities,
+    gettingStarted: showGettingStarted,
     RECIPES, BOOKS,
   };
   globalThis.acksContent = api;
@@ -1051,7 +1054,10 @@ Hooks.once("ready", async () => {
     `${MODULE_ID} | ready. Macros in "ACKS Content — Macros", or: acksContent.connectBook() · acksContent.cookbookImport() · acksContent.cookbookImportAbilitiesDialog() · acksContent.cookbookUpdateAbilities() · acksContent.browseAndLoad().`,
   );
 
-  // Reopen remembered books; offer the reconnect gesture for the rest.
+  // Reopen remembered books; offer the reconnect gesture for the rest. A seat
+  // with nothing remembered at all is (probably) brand new — that seat gets
+  // the Getting Started walkthrough instead, never both dialogs.
   const pending = await restoreBooks();
   if (pending.length) await offerReconnect(pending);
+  else if (!sessionDocs.size && !(await locations()).size) await showGettingStarted();
 });

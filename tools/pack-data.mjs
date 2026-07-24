@@ -76,6 +76,16 @@ function buildMacros() {
     folder(FOLDERS.tools, "4 \u00b7 Tools & Maintenance", 400),
 
     /* --- 1 · Your Book: what a new seat does first. --- */
+    macro(
+      "ackscMacGetStart",
+      "Getting Started (open the walkthrough)",
+      "icons/svg/light.svg",
+      GUARD +
+        `if (!api.gettingStarted) return ui.notifications.warn("acks-content | the walkthrough needs a newer module build.");
+api.gettingStarted({ force: true });`,
+      90,
+      FOLDERS.setup,
+    ),
     macro("ackscMacConnect0", "Connect Your Book (this seat)", "icons/svg/book.svg", GUARD + `api.connectBook();`, 100, FOLDERS.setup),
     macro(
       "ackscMacReconn00",
