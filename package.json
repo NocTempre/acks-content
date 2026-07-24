@@ -17,7 +17,8 @@
     "compile": "node tools/compile-cookbook.mjs",
     "verify:cookbook": "node tools/verify-cookbook.mjs",
     "ledger": "node tools/ledger-init.mjs",
-    "prepare": "git config core.hooksPath .githooks"
+    "prepare": "git config core.hooksPath .githooks",
+    "verify:compendium": "node tools/verify-against-compendium.mjs"
   },
   "devDependencies": {
     "@foundryvtt/foundryvtt-cli": "^1.0.0",

@@ -1307,8 +1307,9 @@ export async function cookbookOrganize() {
  * NOTE a local `levelValueAt()` used to sit here — a third copy of acks-lib's
  * LevelValue resolver, needed only because an imported ability's roll target
  * had to be FLATTENED to a first-level number to fit the core item's single
- * `rollTarget`. Ladders now travel whole into `system.rolls` and the system
- * resolves them against the actor, so nothing here has to resolve anything.
+ * `rollTarget`. Ladders now travel whole into the acks-abilities flag and are
+ * resolved there against the character, so nothing here has to resolve
+ * anything — this module locates and classifies, it does not evaluate.
  */
 
 /** "kw:sensingevil" -> "Sensing Evil"-ish, for the system's requirements field. */
@@ -1419,28 +1420,30 @@ export function bindAbility(entry, node, id, opts = {}) {
     // book would withhold something the cookbook already states. Those apply
     // either way; anything pointing at a number still waits for the book.
     effects: [...aliasEffects, ...(node?.fields?.effects ?? materializeEffects(entry.fields?.effects?.specs, []))],
-    // NOTE rolls are NOT in this flag. They are system data (`system.rolls`)
-    // and are written below — the flag held them only while the core item
-    // could carry a single roll.
+    // `rolls` is assembled below, after the throws have been classified, and
+    // assigned onto this same object — see the note there for why it goes here
+    // rather than to the core item's single roll field.
     // Immunity-granting abilities (Divine Health, Wakefulness, Fiery
     // Resistance…) materialize defenses from the seat's OWN prose via the
     // executor's vocabulary scan — nothing about which is shipped.
     ...(node?.fields?.defenses ? { defenses: node.fields.defenses } : {}),
   };
-  // Drive the SYSTEM's own fields. An ability whose extract classified throws
-  // becomes rollable natively — the system stores every roll in `system.rolls`
-  // and rolls them itself — and a prerequisite lands in the requirements field
-  // the sheet already shows. Without this the mechanics exist but nothing in
-  // the game can reach them.
+  // EVERY throw the extract classified becomes a roll, not just the first. The
+  // recipe's own `rolls` (a chef naming each throw) wins when present;
+  // otherwise the classified `throw` effects are lifted in order. Ladders are
+  // carried WHOLE — acks-abilities resolves them against the character's level
+  // or rank at render time, so nothing is flattened on the way in.
   //
-  // EVERY throw becomes a roll, not just the first. The recipe's own `rolls`
-  // (a chef naming each throw) wins when present; otherwise the classified
-  // `throw` effects are lifted in order. The ladder is carried WHOLE — the
-  // system resolves it against the actor's level or rank at render time, so
-  // nothing is flattened to a first-level number on the way in.
+  // These go to the acks-abilities flag and NOT to `system.roll` /
+  // `system.rollTarget`. The core item can hold exactly one roll, so writing
+  // there too would mean two stores for the same thing, disagreeing the moment
+  // an ability has more than one throw — and it is the second store that made
+  // the sheet and the chat card roll different numbers. acks-abilities owns
+  // ability rolls and folds core's fields in on read for items it has not
+  // written; nothing needs a shadow copy.
   const gate = extras.effects.filter((e) => e.type === "requires").flatMap((e) => e.refs ?? []);
   const thrown = extras.effects.filter((e) => e.type === "throw");
-  const rolls =
+  extras.rolls =
     node?.fields?.rolls?.length
       ? node.fields.rolls
       : thrown.map((t, i) => ({
@@ -1451,9 +1454,6 @@ export function bindAbility(entry, node, id, opts = {}) {
           target: t.value ?? { kind: "flat", flat: 0 },
           scale: t.value?.on || "level",
           condition: t.condition || "",
-          blindroll: false,
-          save: "",
-          note: "",
         }));
 
   return {
@@ -1463,7 +1463,8 @@ export function bindAbility(entry, node, id, opts = {}) {
     system: {
       description: `<p>@PdfText[${id}]{${cite}}</p>`,
       proficiencytype: meta.general ? "general" : "class",
-      ...(rolls.length ? { rolls } : {}),
+      // `requirements` is plain descriptive text with no second store behind
+      // it, so it still lands on the core field the sheet already shows.
       ...(gate.length ? { requirements: gate.map(capabilityLabel).join(", ").slice(0, 120) } : {}),
     },
     flags: {

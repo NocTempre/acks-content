@@ -1,0 +1,6 @@
+{
+  "_note": "Chef-authored map from a SYSTEM COMPENDIUM name to the register name that covers it. Used only by tools/verify-against-compendium.mjs to silence a difference someone has read and settled. Keys are case/punctuation-folded (lowercase, alphanumeric only). Never guessed by a tool.",
+  "_example": {
+    "blacklore": "Black Lore of Zahar"
+  }
+}

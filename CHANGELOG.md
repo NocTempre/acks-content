@@ -2,19 +2,47 @@
 
 ## 0.39.0
 
-**Imported abilities carry every roll, into the system's own store.**
+**Imported abilities carry every roll, unflattened.**
 
-- An ability's rolls are written to `system.rolls`, not to the acks-abilities
-  flag. The system now holds all of them; the flag held them only while the
-  core item could carry one.
 - **Every classified throw becomes a roll, not just the first.** An entry whose
-  extract found four throws used to import as one — the remaining three were
-  reachable only through the module sheet, if it was installed.
+  extract found four throws imported as one; the rest were unreachable.
 - **Ladders are no longer flattened on import.** A rank or level progression
-  used to be resolved to its first-level number to fit the single `rollTarget`,
-  so "11+ / 7+ / 3+ by rank" arrived as a bare 11. The whole ladder now travels
-  and the system resolves it against the character. This also retires a local
-  copy of the LevelValue resolver that existed purely to do the flattening.
+  was resolved to its first-level number to fit the core item's single
+  `rollTarget`, so "11+ / 7+ / 3+ by rank" arrived as a bare 11 and read as
+  fixed. The whole ladder now travels, and acks-abilities resolves it against
+  the character. This also retires a local copy of the LevelValue resolver that
+  existed purely to do the flattening.
+- **Rolls are no longer written to `system.roll` / `system.rollTarget`.** The
+  core item holds exactly one roll, so writing there as well as to the
+  acks-abilities flag meant two stores for the same thing — disagreeing the
+  moment an ability had more than one throw. acks-abilities owns ability rolls
+  and reads core's fields for items it has not written, so no shadow copy is
+  needed. `system.requirements` is still set: it is plain text with no second
+  store behind it.
+
+Note: without acks-abilities installed, an imported ability's throws are inert
+data rather than a rollable core field. That module is the binding target for
+ability mechanics; this one supplies the content.
+
+**New: `npm run verify:compendium`** — cross-checks the register against the
+system's shipped compendiums. This module does not import them (content comes
+from the reader's own book), but they are an independent list of what ACKS
+content exists, built by other people from the same books — which makes them a
+free correctness check on the register. Advisory only; never fails a build, and
+reports names and flags, never book text.
+
+First run found, in the proficiency list: 16 entries the system has that the
+register does not (mostly ACKS I → II renames — Black Lore / Black Lore of
+Zahar, Intimidate / Intimidation, Righteous Turning / Righteous Rebuke), and 4
+register entries that are not proficiencies at all but section headings
+harvested from RR p.17 ("Weapons", "Armor", "Fighting Styles",
+"Non-Proficient Use of Weapons and Armor").
+
+It does **not** compare the general/class flag: every document in the shipped
+pack carries `proficiencytype: "general"`, which is the schema default rather
+than a value anyone set, so comparing against it would manufacture a
+disagreement for every entry the register got right. The tool detects that
+rather than assuming it.
 
 Re-import (or re-run "Import ALL Abilities") to pick the extra rolls up on
 content imported by an earlier version.
