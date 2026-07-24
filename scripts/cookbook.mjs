@@ -1530,7 +1530,11 @@ async function prepareItemShelves() {
   // an empty folder is never created for content this world does not have.
   const groups = new Set();
   for (const id of cookbookEquipmentIds()) {
-    const g = cookbookEntry(id)?.entry?.meta?.group;
+    const entry = cookbookEntry(id)?.entry;
+    // Animals file under Actors when acks-lib is present, so their item shelf
+    // would stand empty — the one thing this loop exists to avoid.
+    if (isAnimalEntry(entry) && canImportAnimals()) continue;
+    const g = entry?.meta?.group;
     if (GROUP_SHELF[g]) groups.add(GROUP_SHELF[g]);
   }
   for (const g of groups) await ensureFolderPath("Item", [FOLDER_NAME, ITEM_SHELF["def.equip"], g]);
@@ -1600,25 +1604,76 @@ export const cookbookAbilityIds = () => [...abilityEntries()].map(([id]) => id);
 /* -------------------------------------------- */
 
 /**
- * Bind an equipment entry to a core inventory item (type `item`). Mirrors
+ * The core item type an equipment entry becomes.
+ *
+ * Everything used to import as `item`, so a sword was a sack: no damage, no
+ * attack, and — because `equipped` lives only on `weapon` and `armor` — nothing
+ * the character could actually wield or wear. The register says which group an
+ * entry belongs to, so the type follows from data rather than from a name scan.
+ *
+ * `animal` is deliberately NOT here: a mule is a creature, not a thing, and it
+ * imports as an actor. See importEquipment.
+ */
+const EQUIPMENT_TYPE = Object.freeze({
+  weapon: "weapon",
+  armor: "armor",
+  shield: "armor", // the system models a shield as armour with type "shield"
+});
+
+/** The core item type for an entry, defaulting to plain inventory. */
+export const equipmentTypeOf = (entry) => EQUIPMENT_TYPE[entry?.meta?.group] ?? "item";
+
+/**
+ * Bind an equipment entry to the core item it should become. Mirrors
  * bindAbility's posture: the cookbook pre-declares NOTHING the page says —
  * name + citation always; the descriptor text stays lazy behind @PdfText;
  * cost and weight materialize only when a chef-authored locator lands on the
  * register row (none ship yet, so they default to core's 0 and the printed
  * table governs — the entry says so via its unaudited marker).
+ *
+ * The TYPE-SPECIFIC fields follow the same rule. A weapon's damage and an
+ * armour's AC are page values: absent a locator that read them from the seat's
+ * own book, the item is created with the system's defaults and the printed
+ * table governs. What the type buys even with nothing extracted is the
+ * behaviour — a weapon can be equipped, attacks, and takes a fighting style;
+ * armour can be worn and counts toward AC — which an `item` never could.
  */
 export function bindEquipment(entry, node, id) {
   const cite = entry.cite ?? "";
   const meta = entry.meta ?? {};
   const f = node?.fields ?? {};
+  const type = equipmentTypeOf(entry);
+
+  // Fields that exist only on the chosen type. `item` keeps subtype/quantity;
+  // weapon and armor have neither and would fail validation if handed them.
+  const typed = {};
+  if (type === "item") {
+    typed.subtype = meta.subtype === "clothing" ? "clothing" : "item";
+    typed.quantity = { value: 1, max: 0 };
+  } else if (type === "weapon") {
+    if (f.damage) typed.damage = f.damage;
+    if (Number.isFinite(f.bonus)) typed.bonus = f.bonus;
+    // Melee/missile is a printed property of the weapon, not an inference: only
+    // set what the extract actually found.
+    if (typeof f.melee === "boolean") typed.melee = f.melee;
+    if (typeof f.missile === "boolean") typed.missile = f.missile;
+    if (f.range) typed.range = f.range;
+  } else if (type === "armor") {
+    if (Number.isFinite(f.aac)) typed.aac = { value: f.aac };
+    // The system's armour `type` choices are unarmored/veryLight/light/medium/
+    // heavy/shield. A shield entry is that type by definition; anything else
+    // waits for the page to say so rather than being guessed from its weight.
+    if (meta.group === "shield") typed.type = "shield";
+    else if (f.armorType) typed.type = f.armorType;
+  }
+
   return {
     name: entry.name,
-    type: "item",
+    type,
     img: abilityIcon(entry),
     system: {
       description: `<p>@PdfText[${id}]{${cite}}</p>`,
-      subtype: meta.subtype === "clothing" ? "clothing" : "item",
-      quantity: { value: 1, max: 0 },
+      ...typed,
       // Page values — present only when a locator materialized them from the
       // seat's own book. Absent locators leave core's defaults.
       ...(Number.isFinite(f.cost) ? { cost: f.cost } : {}),
@@ -1634,14 +1689,80 @@ export function bindEquipment(entry, node, id) {
 }
 
 /**
- * Import one equipment entry as a world item (shared, deduped by cookbook id).
- * Bookless seats still get the item — name, icon, citation stub — the same
+ * Bind an `animal` equipment entry to an ACTOR instead of an item.
+ *
+ * The RR equipment chapter prices ten animals because you buy them in a shop,
+ * but a war dog is a creature: it fights, it can be attacked, it has morale,
+ * and it can be ridden. Imported as inventory it was none of those — the system
+ * had it filed next to the rope.
+ *
+ * Requires acks-lib, which supplies the `acks-lib.animal` sub-type. Without it
+ * there is nowhere for a creature to go, so the entry stays an item rather than
+ * failing the import; the caller decides.
+ */
+export function bindAnimal(entry, node, id) {
+  const cite = entry.cite ?? "";
+  const f = node?.fields ?? {};
+  return {
+    name: entry.name,
+    type: globalThis.acksLib?.ANIMAL_TYPE ?? "acks-lib.animal",
+    img: abilityIcon(entry),
+    system: {
+      // ONE details object. Spreading a second `details` later would replace
+      // this one wholesale and silently drop the citation.
+      details: {
+        biography: `<p>@PdfText[${id}]{${cite}}</p>`,
+        ...(Number.isFinite(f.morale) ? { morale: f.morale } : {}),
+      },
+      animal: {
+        species: entry.name,
+        // Everything below is a PAGE VALUE: present only if the seat's book
+        // supplied it. Nothing about an animal's price, load or speed ships.
+        ...(Number.isFinite(f.cost) ? { cost: f.cost } : {}),
+        ...(Number.isFinite(f.capacity6) ? { capacity6: f.capacity6 } : {}),
+        ...(Number.isFinite(f.unencumbered6) ? { unencumbered6: f.unencumbered6 } : {}),
+        ...(typeof f.mountable === "boolean" ? { mountable: f.mountable } : {}),
+        ...(f.training ? { training: f.training } : {}),
+      },
+      ...(Number.isFinite(f.movement) ? { movement: { base: f.movement } } : {}),
+    },
+    flags: {
+      [MODULE_ID]: {
+        cookbook: { id, cite, ...(entry.audited ? {} : { unaudited: true }) },
+        generated: true,
+      },
+    },
+  };
+}
+
+/**
+ * Can this seat file animals as creatures? acks-lib supplies the
+ * `acks-lib.animal` actor sub-type; without it there is nowhere for one to go.
+ */
+const canImportAnimals = () => !!globalThis.acksLib?.ANIMAL_TYPE && !!game.actors;
+
+/** Does this entry describe a creature rather than a thing? */
+const isAnimalEntry = (entry) => entry?.meta?.group === "animal";
+
+/**
+ * Import one equipment entry, deduped by cookbook id.
+ *
+ * Most entries become world ITEMS. An animal becomes an ACTOR — a mule is a
+ * creature you buy, not a thing you carry — provided acks-lib is present to
+ * supply the sub-type. Without it the animal falls back to an item rather than
+ * failing the import, because a bookless, lib-less seat should still get the
+ * shop list.
+ *
+ * Bookless seats still get the document — name, icon, citation stub — the same
  * bring-your-own-book posture as abilities.
  */
 export async function importEquipment(id, folderId) {
   const found = cookbookEntry(id);
   if (!found) return null;
-  const existing = game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id);
+
+  const asActor = isAnimalEntry(found.entry) && canImportAnimals();
+  const collection = asActor ? game.actors : game.items;
+  const existing = collection.find((d) => d.getFlag(MODULE_ID, "cookbook")?.id === id);
   if (existing) return existing;
 
   const bookId = bookOf(found);
@@ -1652,6 +1773,12 @@ export async function importEquipment(id, folderId) {
     if (node?.ok) cookbookCacheParas(bookId, id, node.fields.description ?? []);
     else node = null;
   }
+
+  if (asActor) {
+    const folder = (await ensureFolderPath("Actor", [FOLDER_NAME, "Animals"]))?.id ?? null;
+    return Actor.create({ ...bindAnimal(found.entry, node, id), folder });
+  }
+
   const folder = folderId ?? (await ensureItemFolder(id))?.id ?? null;
   const item = await Item.create({ ...bindEquipment(found.entry, node, id), folder });
   // acks-equipment owns the RAW annotation layer (container capacities, the
@@ -1696,25 +1823,73 @@ export async function repairEquipmentAbilities() {
   return wrong.length;
 }
 
+/**
+ * Remove `item`-typed documents that should now be ANIMAL ACTORS.
+ *
+ * Before animals imported as actors, the ten priced animals became inventory
+ * items — a war dog filed next to the rope. A world that ran the old import
+ * holds those, and an item's type cannot be changed in place, so they are
+ * deleted here and re-created as actors by the equipment import. Exactly the
+ * repairEquipmentAbilities pattern: only OUR generated documents are touched
+ * (the `generated` flag + a `def.equip.` cookbook id whose entry is an animal),
+ * so a hand-made "War Dog" item a table wrote themselves is never deleted.
+ *
+ * A no-op when acks-lib is absent — without the animal sub-type the items are
+ * still the best available representation, so removing them would delete data
+ * with nothing to replace it.
+ *
+ * @returns {Promise<number>} how many were removed
+ */
+export async function repairAnimalItems() {
+  if (!canImportAnimals()) return 0;
+  const animalIds = new Set(
+    [...data.content.values()]
+      .flatMap((cb) => Object.entries(cb.entries))
+      .filter(([, e]) => e.kind === "kind.equipment" && e.meta?.group === "animal")
+      .map(([id]) => id),
+  );
+  const wrong = game.items.filter(
+    (i) => i.getFlag(MODULE_ID, "generated") && animalIds.has(i.getFlag(MODULE_ID, "cookbook")?.id),
+  );
+  if (!wrong.length) return 0;
+  await Item.deleteDocuments(wrong.map((i) => i.id));
+  console.warn(`${MODULE_ID} | removed ${wrong.length} animal(s) mis-imported as items; re-import to recreate them as actors.`);
+  return wrong.length;
+}
+
 /** Bulk import: every equipment entry, shared folder, dedup via importEquipment. */
 export async function importAllEquipment() {
   const repaired = await repairEquipmentAbilities();
+  // A world imported by an earlier version holds animals as items; drop them so
+  // the loop below recreates them as actors (no-op without acks-lib).
+  const repairedAnimals = await repairAnimalItems();
   const ids = cookbookEquipmentIds();
   const bar = progressBar(game.i18n.localize(`${LANG_PREFIX}.ui.progressEquipment`), ids.length);
   let created = 0;
+  let animals = 0;
   try {
     await prepareItemShelves();
     const folder = null; // per-id shelf
     for (const id of ids) {
-      const before = game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id);
-      const item = await importEquipment(id, folder);
-      if (item && !before) created++;
-      bar.step(cookbookEntry(id)?.entry?.name ?? id);
+      const entry = cookbookEntry(id)?.entry;
+      // An animal lands in the ACTOR collection, so "was it already here?" has
+      // to be asked of the collection it actually goes to — asked of items, an
+      // imported animal looks new on every run and the count lies.
+      const asActor = isAnimalEntry(entry) && canImportAnimals();
+      const collection = asActor ? game.actors : game.items;
+      const before = collection.find((d) => d.getFlag(MODULE_ID, "cookbook")?.id === id);
+
+      const doc = await importEquipment(id, folder);
+      if (doc && !before) {
+        created++;
+        if (asActor) animals++;
+      }
+      bar.step(entry?.name ?? id);
     }
   } finally {
     bar.finish();
   }
-  return { total: ids.length, created, repaired };
+  return { total: ids.length, created, animals, repaired, repairedAnimals };
 }
 
 /* -------------------------------------------- */

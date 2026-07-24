@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.40.0
+
+**Equipment imports as what it is.**
+
+- **Animals import as ACTORS, not inventory.** The RR equipment chapter prices
+  ten animals — camel, hunting and war dog, donkey, four horses, mule, ox —
+  because you buy them in a shop, so they imported as items. A war dog was
+  filed next to the rope: it could not be attacked, could not fight, had no
+  morale and could not be ridden. They now become `acks-lib.animal` actors,
+  whose combat block uses the system's own monster field paths.
+  Needs **acks-lib ≥ 0.10.0** (newly recommended); without it they fall back to
+  items rather than failing the import.
+- **Equipment binds to the right core item type.** `bindEquipment` hardcoded
+  `type: "item"`, so a sword would have imported as a sack — no damage, no
+  attack, and not equippable at all, since `equipped` exists only on `weapon`
+  and `armor`. The type now follows the register's group. Type-specific page
+  values (damage, AC, ranges) materialize only when a locator read them from
+  the seat's own book; what the type buys unconditionally is the *behaviour*.
+
+- **Existing animal-items are repaired on re-import.** A world imported by an
+  earlier version holds the ten animals as inventory items. "Import ALL
+  Equipment" now removes those first — only OUR generated documents, never a
+  hand-made "War Dog" a table wrote themselves — and recreates them as actors,
+  the same delete-and-recreate the module already does for the v0.26.0
+  ability/equipment mixup. A no-op without acks-lib, since there would be
+  nothing to replace them with.
+
+Note: the register does not yet carry weapon or armour entries — extraction
+starts at RR p.144, after the weapon and armour descriptor blocks — so the
+dispatch has nothing to act on until those pages are harvested. Animals work
+immediately.
+
 ## 0.39.0
 
 **Imported abilities carry every roll, unflattened.**
