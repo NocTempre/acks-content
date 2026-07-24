@@ -44,7 +44,7 @@ export function rowsByY(items, tol = 3) {
  * threshold is a recipe's own number rather than a constant here: it is page
  * geometry, like every other bound in a recipe.
  */
-const joinRuns = (runs, gapMin = null) => {
+export const joinRuns = (runs, gapMin = null) => {
   if (gapMin == null) return runs.map((r) => r.str).join("").replace(/\s+/g, " ").trim();
   let out = "";
   let prev = null;
@@ -55,6 +55,28 @@ const joinRuns = (runs, gapMin = null) => {
   }
   return out.replace(/\s+/g, " ").trim();
 };
+
+/**
+ * Stable camelCase key for a printed row/column label, shared by the grid
+ * executor, the template compiler and the importer so the same label always
+ * yields the same key. Parentheticals carrying digits or no letters are
+ * dropped ("Old (101-200 years)" → "old", "Poison (*)" → "poison"); purely
+ * alphabetic ones are kept ("Speed (Land)" → "speedLand", which must not
+ * collide with "Speed (Fly)"). Trailing colons and XP-star marks never
+ * contribute ("8*****" → "8").
+ */
+export function slugLabel(label) {
+  let s = String(label ?? "").trim().replace(/:\s*$/, "");
+  // Parentheticals that are ANNOTATION drop (roll bands "(101-200 years)",
+  // cost marks "(*)", "(1/2)", "(varies)", "(* or more)"); purely alphabetic
+  // qualifiers stay ("Speed (Land)" must not collide with "Speed (Fly)").
+  s = s.replace(/\(([^)]*)\)/g, (_, inner) => {
+    const t = inner.trim();
+    return /\d/.test(t) || !/[a-z]/i.test(t) || /varies/i.test(t) || /^[^a-z]/i.test(t) ? " " : ` ${t} `;
+  });
+  const words = s.split(/[^a-zA-Z0-9]+/).filter(Boolean);
+  return words.map((w, i) => (i === 0 ? w.toLowerCase() : w[0].toUpperCase() + w.slice(1).toLowerCase())).join("");
+}
 
 /** Apply a cell pattern to a joined string. Patterns are a fixed library. */
 export function applyCellPattern(text, pattern = "raw") {

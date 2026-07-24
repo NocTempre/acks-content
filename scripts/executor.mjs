@@ -13,8 +13,14 @@
  * Runs identically in the browser (Foundry binding) and Node (verify harness).
  */
 import { pageItems, pageArtInfo } from "./extract.mjs";
+import { rowsByY, applyCellPattern, slugLabel, joinRuns as joinCellRuns } from "./table-extract.mjs";
 
-export const COOKBOOK_SCHEMA = "acks-cookbook/1";
+/**
+ * Schema v2 (2026-07-24) is v1 plus the `grid` instruction — nothing existing
+ * changed, so every v1 cookbook keeps executing under this executor forever.
+ */
+export const COOKBOOK_SCHEMAS = ["acks-cookbook/1", "acks-cookbook/2"];
+export const COOKBOOK_SCHEMA = "acks-cookbook/2";
 
 /* -------------------------------------------- */
 /*  Mechanical helpers (fixed, part of v1)      */
@@ -1171,6 +1177,91 @@ async function execInstruction(instr, ctx) {
         modes: outModes,
       };
     }
+    /**
+     * `grid` (schema v2): a printed table read by authored geometry — the MM's
+     * "characteristics by rank/age/tier" pages. The recipe ships the data-row
+     * band, the row-label span and the column spans with cell patterns; the
+     * values materialize here from the reader's own page, exactly like a
+     * monster's hit dice. Rows whose cells nearly all fail to parse (column
+     * headers caught inside the band) are dropped but stay claimed.
+     *
+     * `transpose` reads a sideways table (properties as rows, options as
+     * columns — the elemental by-element page): one output row per COLUMN,
+     * cells keyed by the slugged property labels.
+     */
+    case "grid": {
+      const runs = runsIn(pd, { box: instr.box });
+      claim(runs, ctx.field);
+      const yRows = rowsByY(runs, instr.rowTol ?? 3);
+      const spanItems = (items, x0, x1) => items.filter((it) => it.x >= x0 && it.x <= x1);
+      const spanRaw = (items, x0, x1) => spanItems(items, x0, x1).map((it) => it.str).join("");
+      // Gap-aware joining (authored gapMin, page geometry like every bound):
+      // small-caps runs need blind joins, but a wide gap is a word space the
+      // text layer does not carry ("1d4 + CON drain" arrives as 4 runs).
+      const spanText = (items, x0, x1) => clean(joinCellRuns(spanItems(items, x0, x1), instr.gapMin ?? null));
+      const cellValue = (text, col, rawText) => {
+        if (col.pattern === "glyphs") {
+          // Each PUA glyph char maps through a shipped table (damage-type
+          // marks). Read from the RAW join — clean() strips PUA chars.
+          const hits = [];
+          for (const ch of rawText ?? "") {
+            const row = registers?.tables?.[col.table ?? "damageGlyph"]?.[ch];
+            if (row) hits.push({ text: ch, ...row });
+          }
+          return hits.length ? hits : null;
+        }
+        const v = applyCellPattern(text, col.pattern ?? "raw");
+        if (v == null || v === "") return null;
+        if (col.table && typeof v === "string") {
+          const row = registers?.tables?.[col.table]?.[v];
+          return row ? { text: v, ...row } : { text: v };
+        }
+        return v;
+      };
+      const rows = [];
+      if (instr.transpose) {
+        // Property labels come from the label span of every y-row; each
+        // authored column becomes one output row (an option). A sideways table
+        // mixes value shapes BY ROW (speeds are text, damage type is glyphs),
+        // so `props[slug]` may override the column pattern per property.
+        const props = yRows
+          .map((r) => ({ y: r.y, label: spanText(r.items, instr.label.x0, instr.label.x1), items: r.items }))
+          .filter((r) => r.label);
+        for (const col of instr.cols ?? []) {
+          const cells = {};
+          for (const p of props) {
+            const slug = slugLabel(p.label);
+            if (instr.dropRows?.includes(slug)) continue; // claimed header/title row
+            const eff = instr.props?.[slug] ? { ...col, ...instr.props[slug] } : col;
+            const v = cellValue(spanText(p.items, col.x0, col.x1), eff, spanRaw(p.items, col.x0, col.x1));
+            if (v != null) cells[slug] = v;
+          }
+          if (Object.keys(cells).length) rows.push({ key: col.key, label: col.label ?? col.key, cells });
+        }
+      } else {
+        for (const r of yRows) {
+          const label = spanText(r.items, instr.label.x0, instr.label.x1);
+          if (!label) continue;
+          if (instr.dropRows?.includes(slugLabel(label))) continue; // claimed header row
+          const cells = {};
+          let parsed = 0;
+          for (const col of instr.cols ?? []) {
+            const v = cellValue(spanText(r.items, col.x0, col.x1), col, spanRaw(r.items, col.x0, col.x1));
+            if (v != null) {
+              cells[col.key] = v;
+              parsed++;
+            }
+          }
+          // A header row's cells are labels, not values — almost nothing parses.
+          if (parsed >= (instr.minCells ?? 1)) rows.push({ key: slugLabel(label), label, cells });
+        }
+      }
+      if (!rows.length) {
+        misses.push({ field: ctx.field, error: "grid matched no rows" });
+        return null;
+      }
+      return { rows };
+    }
     case "art": {
       const infos = await pageArtInfo(doc, instr.page).catch(() => []);
       const chosen = selectArt(infos, instr.select, instr.name);
@@ -1194,7 +1285,7 @@ async function execInstruction(instr, ctx) {
  */
 export async function executeEntry(doc, bookCookbook, registers, entryId, opts = {}) {
   const entry = bookCookbook?.entries?.[entryId];
-  if (!entry || bookCookbook.schema !== COOKBOOK_SCHEMA) {
+  if (!entry || !COOKBOOK_SCHEMAS.includes(bookCookbook.schema)) {
     return { id: entryId, ok: false, reason: !entry ? "unknown-entry" : "schema-mismatch", fields: {} };
   }
   const pageCache = opts.pageCache ?? new Map();

@@ -7,9 +7,11 @@ paths, no UI concepts), **no prose**, and **no values read from a page** — onl
 structure, pointers, and extraction assists. See `docs/RECIPES.md` for the
 pipeline that produces it and `docs/BINDING-FOUNDRY.md` for the first consumer.
 
-Schema id: `"acks-cookbook/1"`. A binding declares which schema versions it
+Schema id: `"acks-cookbook/2"`. A binding declares which schema versions it
 consumes; the instruction set below is **frozen per schema version** — old
-cookbooks must keep executing forever.
+cookbooks must keep executing forever. v2 (2026-07-24) is v1 plus the `grid`
+instruction and the `kind.monsterTemplate` entry shape (a `template` wiring
+block beside `fields`); nothing in v1 changed, so the executor accepts both.
 
 ## Files
 
@@ -85,6 +87,7 @@ mechanically; every judgment already happened at compile time.
 | `value` | `box`, `pattern`, `table?`, `split?` | typed value(s) | join the runs in `box`, apply `pattern` (below); if `split`, divide first and apply per segment; if `table`, map each token through `tables[table]` → `{text, key, ref?}` (miss ⇒ `{text}` only). |
 | `attacks` | `attacksBox`, `damageBox`, `glyphTable`, `colors?`, `colorTable?` | attack **modes** | parse Attacks + Damage live; both split on top-level `" or "` into aligned MODES (alternatives like "1 weapon OR 2 claws + bite"); within a mode, damage segments zip 1:1 with expanded attack names (stemmed to natural-weapon keys). Per segment: glyph → damage type via `glyphTable`; quality from the shipped per-segment **color annotation** (`colors[i]` over global segment order, e.g. `"#ff2e17"`) mapped through `colorTable`. Output: `{ text, throw, alternatives, modes:[{ count, throw, segments:[{name,naturalWeapon,damage,damageType,quality}] }] }`. |
 | `art` | `select: {minW,minH,maxW,maxRatio}`, `name?` | image pointer | pick the page's illustration by the shipped criteria (or exact XObject `name`); the binding decides upload/usage. The image itself is seat-extracted. |
+| `grid` *(v2)* | `box`, `label: {x0,x1}`, `cols: [{key,x0,x1,pattern?,table?}]`, `transpose?`, `rowTol?`, `minCells?` | `{rows: [{key,label,cells}]}` | a printed TABLE read by authored geometry — the MM's "characteristics by rank/age/tier" pages. Rows cluster by y; the label span names each row (key = `slugLabel`, shared with the binding); each column span parses through the cell-pattern library (`raw`/`int`/`num`/`dice`/`dashNull`/`intDash`/`rollBand`, plus `glyphs` mapping PUA damage-marks through a shipped table). `transpose` reads a sideways table (properties as rows, options as columns): one output row per COLUMN, cells keyed by slugged property labels. Header rows caught in the band parse almost no cells and are dropped but stay claimed. Values materialize from the seat's page, like every stat. |
 
 **Defenses are materialized, never baked.** Immunities / resistances /
 susceptibilities are not shipped per creature. The executor scans each

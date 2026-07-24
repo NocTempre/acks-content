@@ -18,6 +18,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { openBook, pageItems, listHeadings, detectColumns, colOf, glyphColorRuns, pageArtPlacements } from "../scripts/extract.mjs";
 import { runsIn, joinRuns, attackModel } from "../scripts/executor.mjs";
+import { rowsByY, slugLabel } from "../scripts/table-extract.mjs";
 import { BOOKS, fingerprintWarning } from "../scripts/books.mjs";
 import { FILES } from "./reference-lib.mjs";
 
@@ -170,7 +171,7 @@ function compileRegisters(refs) {
       nodes[id] = { role, ...node };
     }
   }
-  return { schema: "acks-cookbook/1", tables, nodes, derive: DERIVE_PATTERNS };
+  return { schema: "acks-cookbook/2", tables, nodes, derive: DERIVE_PATTERNS };
 }
 
 /**
@@ -641,6 +642,271 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
     fields,
     ...(unmapped.length ? { _unmappedLabels: unmapped } : {}),
     ...(marginBoxes.length ? { _skips: { [page]: marginBoxes } } : {}),
+  };
+}
+
+/* -------------------------------------------- */
+/*  Monster-template compilation                */
+/* -------------------------------------------- */
+
+/**
+ * kind.monsterTemplate — the MM's table-statted creatures (dragon, cacodemon,
+ * elemental) and modifier creatures (vampire thrall).
+ *
+ * The register entry's `template` block is CHEF-AUTHORED: grid geometry
+ * (data-row band, label span, column spans + patterns — never values), axis
+ * wiring, the menu's d100 bands (structure, like roll-table ranges), and a
+ * nameFormat. This compiler (a) validates each grid live against the reference
+ * PDF and emits it as a v2 `grid` instruction, (b) claims the printed
+ * "varies by …" stat column raw, (c) flows the DESCRIPTION across every listed
+ * page — column by column, sections carried across pages from the run-in
+ * headings, slugged with the same slugLabel the executor and binding use — and
+ * (d) passes the axis/menu wiring through with its references checked.
+ */
+async function compileMonsterTemplate(doc, entry) {
+  const t = entry.template ?? {};
+  const pages = entry.pages;
+  const page = pages[0];
+  const fields = {};
+  const gridBoxesByPage = {};
+
+  /* --- anchor / name --- */
+  const pd0 = await pageItems(doc, page);
+  const cols0 = detectColumns(pd0.items);
+  const anchors0 = listHeadings(pd0).filter((a) => a.mode === "display");
+  const anchor = anchors0.find((a) => a.text.toLowerCase().startsWith(entry.anchor.display.toLowerCase()));
+  if (!anchor) throw new Error(`display anchor "${entry.anchor.display}" not found on p.${page}`);
+  const colX = cols0[anchor.col];
+  const nextX = cols0[anchor.col + 1];
+  fields.name = {
+    op: "expect", page,
+    box: { x0: colX - 5, x1: nextX ? nextX - 6 : pd0.width, y0: anchor.y - 16, y1: anchor.y + 6 },
+    text: entry.anchor.display,
+  };
+
+  /* --- authored grids, validated live --- */
+  for (const [gname, g] of Object.entries(t.grids ?? {})) {
+    const gpd = await pageItems(doc, g.page);
+    const inBox = gpd.items.filter((it) => it.x >= g.box.x0 && it.x <= g.box.x1 && it.y >= g.box.y0 && it.y <= g.box.y1);
+    const yRows = rowsByY(inBox, g.rowTol ?? 3).length;
+    if (yRows < (g.expectRows ?? 2)) {
+      throw new Error(`grid "${gname}": ${yRows} y-row(s) in box on p.${g.page} (expected >= ${g.expectRows ?? 2})`);
+    }
+    (gridBoxesByPage[g.page] ??= []).push(g.box);
+    fields[`grids.${gname}`] = {
+      op: "grid", page: g.page, box: g.box, label: g.label, cols: g.cols,
+      ...(g.transpose ? { transpose: true } : {}),
+      ...(g.props ? { props: g.props } : {}),
+      ...(g.dropRows ? { dropRows: g.dropRows } : {}),
+      ...(g.gapMin != null ? { gapMin: g.gapMin } : {}),
+      ...(g.rowTol ? { rowTol: g.rowTol } : {}),
+      ...(g.minCells ? { minCells: g.minCells } : {}),
+    };
+  }
+
+  /* --- the printed "varies by …" stat column, claimed raw --- */
+  const labelItems = pd0.items.filter((it) => it.h < HEADING_MIN_H && LABEL_RE.test(it.str.trim()));
+  const byCol = new Map();
+  for (const it of labelItems) {
+    const c = colOf(it.x, cols0);
+    byCol.set(c, [...(byCol.get(c) ?? []), it]);
+  }
+  const statColIdx = [...byCol.entries()].sort((a, b) => b[1].length - a[1].length)[0]?.[0];
+  let statBox = null;
+  if (statColIdx != null && byCol.get(statColIdx).length >= 8) {
+    const labels = byCol.get(statColIdx).sort((a, b) => a.y - b.y);
+    // Bounds from the AUTHORED prose columns when present: detectColumns sees
+    // the value sub-column ("varies by …" starts at its own x) as a column of
+    // its own and would cut the box mid-stat.
+    const proseCols = t.prose?.[String(page)] ?? null;
+    let x0, x1;
+    if (proseCols) {
+      const pi = proseCols.findLastIndex((c) => c <= labels[0].x + 2);
+      // pi === -1: the stat block sits LEFT of every prose column (mirrored
+      // pages print stats on the outer half) — span from the body's left edge
+      // to the first prose column.
+      x0 = pi >= 0 ? proseCols[pi] - 8 : 42;
+      x1 = pi >= 0 ? (proseCols[pi + 1] ? proseCols[pi + 1] - 6 : pd0.width - 45) : proseCols[0] - 6;
+    } else {
+      x0 = cols0[statColIdx] - 5;
+      x1 = cols0[statColIdx + 1] ? cols0[statColIdx + 1] - 6 : pd0.width - 45;
+    }
+    // Values trail below the last label (the divider mini-headings ride along —
+    // this field is claimed for residue honesty, never bound).
+    const colItems = pd0.items
+      .filter((it) => it.h < HEADING_MIN_H && it.x >= x0 && it.x <= x1 && it.y > labels[0].y - 12)
+      .sort((a, b) => a.y - b.y);
+    let end = labels[labels.length - 1].y + 3;
+    for (const it of colItems) {
+      if (it.y <= labels[labels.length - 1].y) continue;
+      if (it.y - end > 18) break;
+      end = Math.max(end, it.y + 3);
+    }
+    // The "<Name> Primary Characteristics" divider prints just ABOVE the first
+    // label — walk upward over divider-shaped lines only (never into prose).
+    let top = labels[0].y - 12;
+    const above = toLines(
+      pd0.items.filter((it) => it.h < HEADING_MIN_H && it.x >= x0 && it.x <= x1 && it.y < labels[0].y - 2)
+    ).sort((a, b) => b.y - a.y);
+    for (const line of above) {
+      if (top - line.y > 22) break;
+      const text = line.items.map((i) => i.str).join("").replace(/\s+/g, "").toLowerCase();
+      if (!/(primary|secondary)characteristics$|encounters$/.test(text)) break;
+      top = line.y - 3;
+    }
+    statBox = { x0, x1, y0: top, y1: end };
+    fields.statsPrinted = { op: "value", page, pattern: "raw", box: statBox };
+  }
+
+  /* --- description: every page, column by column, sections flowed --- */
+  const inAnyBox = (it, boxes) => boxes.some((b) => it.x >= b.x0 && it.x <= b.x1 && it.y >= b.y0 && it.y <= b.y1);
+  const paras = [];
+  let current = "overview";
+  const sectionSlugs = new Set(["overview"]);
+  for (const p of pages) {
+    const pd = p === page ? pd0 : await pageItems(doc, p);
+    // detectColumns is tuned for the two-column monster spreads and misfires
+    // on table-heavy template pages (p.325 reads a table's value column as a
+    // prose column and shears every line at it) — an authored per-page
+    // override (template.prose[page] = [x…]) wins when present.
+    const cols = t.prose?.[String(p)] ?? detectColumns(pd.items);
+    const excluded = [...(gridBoxesByPage[p] ?? []), ...(p === page && statBox ? [statBox] : [])];
+    const body = pd.items.filter(
+      (it) =>
+        it.h < HEADING_MIN_H &&
+        it.y > 50 && it.x >= 45 && it.x <= pd.width - 45 &&
+        !inAnyBox(it, excluded)
+    );
+    // Run-in section headings, per AUTHORED column (listHeadings would
+    // re-detect its own columns, and a page-wide line spans columns so the
+    // right column's run-ins are never line-leading globally). Menu pages hang
+    // their ability run-ins right of a die-band column — template.runinX[page]
+    // adds those anchor x's for detection without making them paragraph
+    // columns. A run-in may SPLIT across runs ("Horrific" + "Stench:"), so
+    // accumulate a line's leading runs until one closes with the colon.
+    const runinAnchors = [...cols, ...(t.runinX?.[String(p)] ?? [])];
+    const runinRe = /^[A-Z][^:]{1,42}:$/;
+    for (const [ci, cx] of cols.entries()) {
+      const colX0 = cx - 5;
+      const colX1 = cols[ci + 1] ? cols[ci + 1] - 6 : pd.width - 45;
+      const colItems = body.filter((it) => colOf(it.x, cols) === ci);
+      if (!colItems.length) continue;
+      const colLines = toLines(colItems);
+      const boxes = paragraphBoxes(colLines, colX0, colX1);
+      const colRunins = [];
+      for (const line of colLines) {
+        // A one-line menu ability shares its line with the die band
+        // ("05 Berserk (##): …") — skip one leading band-shaped run.
+        let items = line.items;
+        if (items.length > 1 && /^\d+(?:\s*[–-]\s*\d+)?$/.test(items[0].str.trim())) items = items.slice(1);
+        const first = items[0];
+        if (!first || !runinAnchors.some((c) => Math.abs(first.x - c) < 15)) continue;
+        let acc = "";
+        for (const it of items.slice(0, 3)) {
+          // The closing colon may OPEN the next run (": The dragon can…") —
+          // that colon ends the run-in; the rest of the run is body text.
+          if (acc && it.str.startsWith(":")) {
+            const t2 = `${acc.trim().replace(/\s+/g, " ")}:`;
+            if (runinRe.test(t2)) colRunins.push({ text: t2, y: first.y });
+            break;
+          }
+          acc += (acc ? " " : "") + it.str;
+          const t2 = acc.trim().replace(/\s+/g, " ");
+          if (t2.endsWith(":")) {
+            if (runinRe.test(t2)) colRunins.push({ text: t2, y: first.y });
+            break;
+          }
+          if (t2.length > 44) break;
+        }
+      }
+      colRunins.sort((a, b) => a.y - b.y);
+      // Tight-leading pages (the ability menus) fuse a whole column into ONE
+      // paragraph, so an interior run-in would never head a para and its
+      // section would be lost — split every box at the run-ins inside it.
+      const split = [];
+      for (const b of boxes.sort((a, c) => a.box.y0 - c.box.y0)) {
+        const inside = colRunins.filter((r) => r.y > b.box.y0 + 8 && r.y < b.box.y1 - 2);
+        let top = b.box.y0;
+        for (const r of inside) {
+          split.push({ box: { ...b.box, y0: top, y1: r.y - 4 } });
+          top = r.y - 4;
+        }
+        split.push({ box: { ...b.box, y0: top, y1: b.box.y1 } });
+      }
+      for (const b of split) {
+        const above = [...colRunins].reverse().find((r) => r.y <= b.box.y0 + 8);
+        if (above) {
+          current = slugLabel(above.text);
+          sectionSlugs.add(current);
+        }
+        paras.push(withFixes({ ...b, page: p, section: current }, pd));
+      }
+    }
+  }
+  fields.description = { op: "text", page, paras };
+
+  /* --- art (per the monster kind's criteria) --- */
+  if (!entry.assists?.noArt) {
+    fields.art = { op: "art", page, select: { minW: 200, minH: 200, maxW: 1500, maxRatio: 3 } };
+  }
+
+  /* --- template wiring passthrough, references checked --- */
+  const gridNames = new Set(Object.keys(t.grids ?? {}));
+  for (const axis of t.axes ?? []) {
+    for (const g of axis.grids ?? []) {
+      if (!gridNames.has(g)) throw new Error(`axis "${axis.key}" references unknown grid "${g}"`);
+    }
+  }
+  for (const cell of t.cells ?? []) {
+    if (cell.grid && !gridNames.has(cell.grid)) throw new Error(`cells block references unknown grid "${cell.grid}"`);
+  }
+  for (const row of t.menu?.rows ?? []) {
+    if (row.section && !sectionSlugs.has(row.section)) {
+      warn(`${entry.id}: menu row "${row.label}" section "${row.section}" not among description sections`);
+    }
+  }
+  const template = {
+    ...(t.nameFormat ? { nameFormat: t.nameFormat } : {}),
+    ...(t.axes ? { axes: t.axes } : {}),
+    ...(t.cells ? { cells: t.cells } : {}),
+    ...(t.menu ? { menu: t.menu } : {}),
+  };
+
+  /* --- residue triage on every touched page (compileMonster's rule) --- */
+  const skips = {};
+  for (const p of pages) {
+    const pd = p === page ? pd0 : await pageItems(doc, p);
+    const claimed = new Set();
+    for (const instr of Object.values(fields)) {
+      if (instr.op === "text") {
+        for (const para of instr.paras) {
+          if ((para.page ?? instr.page) !== p) continue;
+          for (const r of runsIn(pd, para)) claimed.add(r);
+        }
+      } else if (instr.page === p && (instr.box || instr.boxes)) {
+        for (const r of runsIn(pd, instr)) claimed.add(r);
+      }
+    }
+    const residual = pd.items.filter((it) => it.h < HEADING_MIN_H && !claimed.has(it));
+    const boxes = [];
+    if (residual.some((it) => it.x < 45)) boxes.push({ x0: 0, x1: 45, y0: 0, y1: pd.height, reason: "margin-furniture" });
+    if (residual.some((it) => it.x > pd.width - 45)) boxes.push({ x0: pd.width - 45, x1: pd.width, y0: 0, y1: pd.height, reason: "margin-furniture" });
+    if (residual.some((it) => it.y < 50)) boxes.push({ x0: 0, x1: pd.width, y0: 0, y1: 50, reason: "running-head" });
+    const leftover = residual.filter((it) => !inAnyBox(it, boxes));
+    if (leftover.length) {
+      warn(`${entry.id}: ${leftover.length} unclaimed body item(s) on p.${p} e.g. ${leftover.slice(0, 3).map((i) => JSON.stringify(i.str.slice(0, 24))).join(" ")}`);
+    }
+    if (boxes.length) skips[p] = boxes;
+  }
+
+  return {
+    kind: entry.kind,
+    name: entry.name,
+    cite: `${BOOKS[entry.book].short} p.${page}`,
+    pages,
+    fields,
+    ...(Object.keys(template).length ? { template } : {}),
+    ...(Object.keys(skips).length ? { _skips: skips } : {}),
   };
 }
 
@@ -1560,6 +1826,7 @@ const AX_COMPILERS = {
   "kind.npc": compileNpc,
   "kind.rolltable": compileRollTable,
   "kind.monsterLegacy": compileLegacyMonster,
+  "kind.monsterTemplate": compileMonsterTemplate,
 };
 
 /* -------------------------------------------- */
@@ -2231,7 +2498,7 @@ async function main() {
     if (fw) warn(fw);
 
     const out = {
-      schema: "acks-cookbook/1",
+      schema: "acks-cookbook/2",
       book: {
         id: bookId, label: BOOKS[bookId].label, short: BOOKS[bookId].short,
         pages: BOOKS[bookId].pages, titleRe: BOOKS[bookId].titleRe.source,
@@ -2264,7 +2531,7 @@ async function main() {
         }
         try {
           const compiled = await compileDefinition(doc, entry, kindRow);
-          (contentOut[content] ??= { schema: "acks-cookbook/1", content, entries: {} }).entries[entry.id] = compiled;
+          (contentOut[content] ??= { schema: "acks-cookbook/2", content, entries: {} }).entries[entry.id] = compiled;
           console.error(`OK   ${entry.id}: ${compiled.fields.description.paras.length} para(s) [${content}]`);
         } catch (err) {
           warn(`${entry.id}: ${err.message}`);

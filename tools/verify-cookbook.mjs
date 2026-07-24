@@ -176,6 +176,21 @@ for (const file of bookFiles) {
       console.log(`OK   ${id}: ${rows.length} row-paras roll=${f.roll ?? "(derive)"} ranges=${ranges[0]}..${ranges[ranges.length - 1]} descWords=${words}`);
       continue;
     }
+    if (kind === "kind.monsterTemplate") {
+      // A template has NO stat block on purpose ("varies by rank/age/tier") —
+      // its mechanics are the grids. Pass = anchor + prose + every grid rows.
+      const grids = Object.entries(f.grids ?? {});
+      const bad = grids.filter(([, g]) => !g?.rows?.length).map(([n]) => n);
+      if (!nameOk || !words || !grids.length || bad.length) {
+        fail(`descWords=${words} grids=${grids.length}${bad.length ? ` empty=[${bad.join(",")}]` : ""}`);
+        continue;
+      }
+      console.log(
+        `OK   ${id}: ${f.description.length} paras/${words}w ` +
+          `grids[${grids.map(([n, g]) => `${n}:${g.rows.length}`).join(" ")}]`,
+      );
+      continue;
+    }
     if (!nameOk || !words || !statCount) {
       fail(`descWords=${words} stats=${statCount}`);
       continue;

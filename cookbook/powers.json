@@ -1,5 +1,5 @@
 {
-  "schema": "acks-cookbook/1",
+  "schema": "acks-cookbook/2",
   "content": "powers",
   "entries": {
     "def.power.abominableMutation": {

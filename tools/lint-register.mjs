@@ -23,8 +23,11 @@ const COMPOSITE_ID = /^[a-z][a-z0-9]{1,3}\.[A-Za-z0-9-]+$/; // book ids may carr
 const DEF_ID = /^def\.[a-z]+\.[A-Za-z0-9-]+$/;
 const KIND_ID = /^kind\.[a-z][A-Za-z0-9]*$/;
 const SHAPES = new Set(["open", "descriptor", "keyword", "table"]);
-const OPS = new Set(["expect", "text", "value", "attacks", "art", "effects", "progression", "rolls"]);
+const OPS = new Set(["expect", "text", "value", "attacks", "art", "effects", "progression", "rolls", "grid"]);
 const PATTERNS = new Set(["raw", "statValue", "int", "dice", "refList", "parenSplit", "spoilList", "statline"]);
+// Grid cell patterns come from table-extract's applyCellPattern library (plus
+// "glyphs", the executor's PUA-char damage-mark map).
+const GRID_PATTERNS = new Set(["raw", "int", "num", "dice", "dashNull", "intDash", "rollBand", "glyphs"]);
 
 const errors = [];
 const err = (s) => errors.push(s);
@@ -194,12 +197,20 @@ if (fs.existsSync(COOKBOOK)) {
     const label = `cookbook/${f}`;
     const cb = readJson(path.join(COOKBOOK, f), label);
     if (!cb) continue;
-    if (cb.schema !== "acks-cookbook/1") err(`${label}: bad schema "${cb.schema}"`);
+    if (!["acks-cookbook/1", "acks-cookbook/2"].includes(cb.schema)) err(`${label}: bad schema "${cb.schema}"`);
     capStrings(cb, label);
     for (const [id, e] of Object.entries(cb.entries ?? {})) {
       for (const [field, instr] of Object.entries(e.fields ?? {})) {
         if (!OPS.has(instr.op)) err(`${label}: ${id}.${field} unknown op "${instr.op}"`);
         if (instr.pattern && !PATTERNS.has(instr.pattern)) err(`${label}: ${id}.${field} unknown pattern "${instr.pattern}"`);
+        if (instr.op === "grid") {
+          for (const col of instr.cols ?? []) {
+            if (col.pattern && !GRID_PATTERNS.has(col.pattern)) err(`${label}: ${id}.${field} col "${col.key}" unknown grid pattern "${col.pattern}"`);
+          }
+          for (const [prop, over] of Object.entries(instr.props ?? {})) {
+            if (over.pattern && !GRID_PATTERNS.has(over.pattern)) err(`${label}: ${id}.${field} prop "${prop}" unknown grid pattern "${over.pattern}"`);
+          }
+        }
       }
     }
   }

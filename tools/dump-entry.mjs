@@ -35,7 +35,7 @@ const books = new Map();
 for (const f of fs.readdirSync(COOKBOOK)) {
   if (f.endsWith(".json") && f !== "registers.json") {
     const cb = JSON.parse(fs.readFileSync(path.join(COOKBOOK, f), "utf8"));
-    books.set(cb.book.id, cb);
+    if (cb.book?.id) books.set(cb.book.id, cb); // content-type cookbooks have no book
   }
 }
 
@@ -91,6 +91,10 @@ for (const id of ids) {
   console.log(`defenses: ${JSON.stringify(f.defenses ?? null)}`);
   console.log(`spoils: ${JSON.stringify(f.spoils ?? null)}`);
   console.log(`art: ${JSON.stringify(f.art ?? null)}`);
+  for (const [g, out] of Object.entries(f.grids ?? {})) {
+    console.log(`grid ${g}: ${out ? out.rows.length + " row(s)" : "null"}`);
+    for (const r of out?.rows ?? []) console.log(`  [${r.key}] ${JSON.stringify(r.cells).slice(0, 220)}`);
+  }
   console.log(`description (${(f.description ?? []).length} paras):`);
   (f.description ?? []).forEach((p, i) => console.log(`  [${i}] ${p.text}`));
   if (res.misses.length) console.log(`misses: ${JSON.stringify(res.misses)}`);
