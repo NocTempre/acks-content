@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.43.0
+
+**Leader roles for every family; graceful failure everywhere.**
+
+- **The prose-leader pass is now general** (framework where it pays): every
+  family's members are scanned for the MM's formulaic leader sentences —
+  champions, sub-chieftains, chieftains, drudges/whelps, shamans, witch
+  doctors — and a Role axis appears wherever at least one matches. Graceful
+  by design: a family without leader prose (golems) simply has no Role axis;
+  a member without a chieftain sentence lacks that one cell. Bespoke
+  per-family one-offs still layer AFTER the general pass.
+- **Hardening:** one unreadable member costs one variant, never the family
+  (per-member try/catch); a failing enrichment costs its extras, never the
+  import; without acks-lib installed, family members import FLAT exactly as
+  they did before 0.42 (no silently missing monsters).
+- Needs acks-lib ≥ 0.18.0 (relative `{"$add": n}` merge leaves — the
+  primitive modifier templates like aging effects will build on).
+
 ## 0.42.0
 
 **Sibling entries collapse into family generators.**

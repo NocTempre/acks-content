@@ -1013,19 +1013,17 @@ function templateOption(ax, row, cells, { id, cite, sections }) {
 }
 
 /**
- * ONE-OFF family enrichments (deliberately not a framework — the container
- * relationship is the general part; each complicated family gets plain code).
- *
- * mm.familyBeastman: the ROLE variants each breed's own prose describes —
- * champions, sub-chieftains, chieftains, drudges/whelps, shamans, witch
- * doctors — become a second axis. The sentences are formulaic ("led by a
- * champion with 3 AC, 1 HD, and 7 hp"), so the regexes here are shipped
- * LOCATORS in the defense-scan tradition; every number is read at import
- * from THIS seat's own extracted prose, per breed. A breed whose prose does
- * not match simply lacks that role's cell.
+ * PROSE LEADER ROLES — the general pass, run for EVERY family: the ROLE
+ * variants a member's own prose describes (champions, sub-chieftains,
+ * chieftains, drudges/whelps, shamans, witch doctors) become a second axis.
+ * The MM's sentences are formulaic ("led by a champion with 3 AC, 1 HD, and
+ * 7 hp"), so the regexes are shipped LOCATORS in the defense-scan tradition;
+ * every number is read at import from THIS seat's own extracted prose, per
+ * member. GRACEFUL BY DESIGN: prose that matches nothing adds nothing — a
+ * family without leader sentences simply has no Role axis, a member without
+ * a chieftain sentence lacks that one cell.
  */
-const FAMILY_ONE_OFFS = {
-  "mm.familyBeastman": ({ options, memberText, axes, cells, out }) => {
+const proseLeaderRoles = ({ options, memberText, axes, cells, out }) => {
     const RX = {
       champion: /led by a champion with (\d+) AC,? (\d+(?:[+-]\d+)?) HD,? and (\d+) hp/i,
       subChieftain: /led by a sub-?chieftain with (\d+) AC,? (\d+(?:[+-]\d+)?) HD,? (\d+) hp(?:,? and a ([+-]\d+) damage bonus)?/i,
@@ -1101,8 +1099,15 @@ const FAMILY_ONE_OFFS = {
       ],
     });
     out.nameFormat = "{variant} {role}";
-  },
 };
+
+/**
+ * ONE-OFF family enrichments, layered AFTER the general prose-leader pass —
+ * bespoke shapes a specific family needs (framework where it pays, plain
+ * code where a one-off is faster). Each runs inside the same try/catch: a
+ * failing enrichment costs its extras, never the family.
+ */
+const FAMILY_ONE_OFFS = {};
 
 /**
  * kind.monsterFamily -> ONE `acks-lib.template` generator whose variant axis
@@ -1129,6 +1134,7 @@ async function importFamily(bookId, famId, folderId) {
   const memberText = new Map();
   let img = "";
   for (const member of fam.members) {
+    try {
     const entry = cb.entries[member.id];
     if (!entry) continue;
     const node = await executeEntry(session.doc, cb, data.registers, member.id);
@@ -1184,6 +1190,10 @@ async function importFamily(bookId, famId, folderId) {
       },
       token: prototypeToken ?? {},
     });
+    } catch (err) {
+      // One unreadable member costs one variant, never the family.
+      console.warn(`${MODULE_ID} | ${famId}: member ${member.id} failed — variant skipped.`, err);
+    }
   }
   if (!options.length) {
     ui.notifications.warn(`acks-content | ${fam.name}: no family member could be read — skipped.`);
@@ -1193,10 +1203,17 @@ async function importFamily(bookId, famId, folderId) {
   const axes = [{ key: "variant", label: "Variant", roll: "", derive: { from: "", max: null }, options }];
   const cells = [];
   const out = { nameFormat: fam.nameFormat ?? "{variant}" };
+  // General prose-leader pass first, then any bespoke one-off; either failing
+  // costs its enrichment, never the family import.
+  try {
+    proseLeaderRoles({ fam, options, memberText, axes, cells, out });
+  } catch (err) {
+    console.warn(`${MODULE_ID} | ${famId}: prose-role pass failed — importing without roles.`, err);
+  }
   try {
     FAMILY_ONE_OFFS[famId]?.({ fam, options, memberText, axes, cells, out });
   } catch (err) {
-    console.warn(`${MODULE_ID} | ${famId}: one-off enrichment failed — importing plain family.`, err);
+    console.warn(`${MODULE_ID} | ${famId}: one-off enrichment failed — importing without its extras.`, err);
   }
 
   const actor = await Actor.create({
@@ -3112,8 +3129,9 @@ export async function cookbookImportMonsters() {
   }
   // Family MEMBERS don't import individually here — their family's generator
   // template covers them (baseline + select the special case). The dialog
-  // still offers members one at a time.
-  const members = familyMemberIds();
+  // still offers members one at a time. GRACEFUL: without acks-lib there is
+  // no template type, so members import flat exactly as they always did.
+  const members = globalThis.acksLib?.TEMPLATE_TYPE ? familyMemberIds() : new Set();
   const ids = actorEntriesAcrossBooks().rows.map((r) => r.id).filter((id) => !members.has(id));
   const present = importedMonsterIds();
   const todo = ids.filter((id) => !present.has(id));
