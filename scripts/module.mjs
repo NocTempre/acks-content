@@ -36,7 +36,7 @@ import {
   cookbookFillCompanions, cookbookPruneAbilities, registerAbilityDirectoryButtons, importAbility, cookbookDebug, cookbookStub,
   cookbookCanReveal, cookbookProse, cookbookCount, refillMonster, resolveAbilities,
   importEquipment, importAllEquipment, cookbookEquipmentIds, repairEquipmentAbilities,
-  importWeapons,
+  importWeapons, importArmor,
   cookbookImportJournals, cookbookImportRollTables, cookbookOrganize,
 } from "./cookbook.mjs";
 import { registerGettingStartedSettings, showGettingStarted } from "./getting-started.mjs";
@@ -1038,7 +1038,7 @@ Hooks.once("ready", async () => {
     cookbookImportTables,
     cookbookImportJournals, cookbookImportRollTables, cookbookOrganize,
     importEquipment, importAllEquipment, cookbookEquipmentIds, repairEquipmentAbilities,
-    importWeapons,
+    importWeapons, importArmor,
     gettingStarted: showGettingStarted,
     RECIPES, BOOKS,
   };

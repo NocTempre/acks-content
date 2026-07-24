@@ -18,6 +18,7 @@ import { executeEntry, materializeEffects, attackModel, convertName } from "./ex
 import { slugLabel } from "./table-extract.mjs";
 import { pageItems } from "./extract.mjs";
 import { WEAPON_TABLE, extractWeaponsFromDoc, bindWeaponRow } from "./weapon-tables.mjs";
+import { ARMOR_TABLE, extractArmorFromDoc, bindArmorRow } from "./armor-tables.mjs";
 import { savesForLevel } from "./stats.mjs";
 import { progressBar } from "./progress.mjs";
 
@@ -2204,6 +2205,7 @@ const ITEM_SHELF = {
   "def.skill": "Skills",
   "def.equip": "Equipment",
   "def.weapon": "Weapons",
+  "def.armor": "Armor",
 };
 const itemShelfFor = (id) => {
   const key = String(id ?? "").split(".").slice(0, 2).join(".");
@@ -2610,7 +2612,8 @@ export async function importAllEquipment() {
     bar.finish();
   }
   const weapons = await importWeapons();
-  return { total: ids.length, created, animals, repaired, repairedAnimals, weapons };
+  const armor = await importArmor();
+  return { total: ids.length, created, animals, repaired, repairedAnimals, weapons, armor };
 }
 
 /* -------------------------------------------- */
@@ -2647,6 +2650,40 @@ export async function importWeapons(folderId) {
     if (game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id)) continue;
     const cite = `${BOOKS[WEAPON_TABLE.book]?.short ?? "RR"} p. ${WEAPON_TABLE.page}`;
     await Item.create({ ...bindWeaponRow(row, id, cite), folder });
+    created++;
+  }
+  return { table: rows.length, created };
+}
+
+/** camelCase cookbook id for a table-materialized armour item. */
+const armorId = (name) => `def.armor.${slugLabel(name).replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase())}`;
+
+/**
+ * Materialize the RR armour TABLE (suits, shields, helmets, barding) into
+ * `armor` items from the reader's own book — the sibling of importWeapons.
+ * AC, encumbrance and cost come from the seat's page; a bookless seat gets
+ * nothing (a grid has no lazy prose). Deduped by cookbook id, into ACKS
+ * Cookbook / Armor.
+ * @returns {Promise<{table:number, created:number}>}
+ */
+export async function importArmor(folderId) {
+  const session = ctx.sessionDocs.get(ARMOR_TABLE.book);
+  if (!session?.doc) return { table: 0, created: 0, reason: "book not connected" };
+  let rows;
+  try {
+    rows = await extractArmorFromDoc(session.doc, pageItems);
+  } catch (err) {
+    console.error(`${MODULE_ID} | armour-table extraction failed`, err);
+    return { table: 0, created: 0, reason: "extraction error" };
+  }
+  if (!rows.length) return { table: 0, created: 0, reason: "table not found in book" };
+  const folder = folderId ?? (await ensureFolderPath("Item", [FOLDER_NAME, ITEM_SHELF["def.armor"]]))?.id ?? null;
+  let created = 0;
+  for (const row of rows) {
+    const id = armorId(row.name);
+    if (game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id)) continue;
+    const cite = `${BOOKS[ARMOR_TABLE.book]?.short ?? "RR"} p. ${ARMOR_TABLE.page}`;
+    await Item.create({ ...bindArmorRow(row, id, cite), folder });
     created++;
   }
   return { table: rows.length, created };

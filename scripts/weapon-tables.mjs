@@ -108,7 +108,7 @@ export const WEAPON_NAMES = [
 const SIDE_TAB = /^(equipment|equ|ipme|nt|ip|m|ent|[eqiupment])$/i;
 
 /** Drop side-tab glyphs and lone footnote marks that y-merge into a row. */
-function stripNoise(items) {
+export function stripNoise(items) {
   return items.filter((it) => {
     const s = String(it.str ?? "").trim();
     if (!s) return false;
@@ -122,7 +122,7 @@ function stripNoise(items) {
  * Bind a y-row's runs to declared columns by nearest-x (windowed columns join).
  * @returns {Record<string,string>} raw cell text per column key
  */
-function bindRowCells(runs, columns) {
+export function bindRowCells(runs, columns) {
   const point = {};
   const windows = {};
   for (const run of runs) {
