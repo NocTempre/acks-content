@@ -764,27 +764,37 @@ async function loadHeadings(bookId, page, pageData, picked, kindChoice) {
  *  art. NOTE the deliberate asymmetry with prose: art must render on every
  *  client's canvas, so it uploads into world data (acks-content-art/) — a
  *  world asset sourced from the GM's own book, like a scan the GM saved. */
+/**
+ * Extract + upload a page illustration WITHOUT touching an actor — returns
+ * `{path, width, height}` or null. The path-only half exists for the family
+ * importer, whose art belongs to a template OPTION rather than the actor.
+ * Name-first: with the wasm decoders shipped, the placed XObject itself
+ * extracts cleanly (the AX books' art is JPEG2000). The placement-box
+ * page-render crop stays as a fallback for a seat whose decoders fail.
+ */
+async function uploadPageArt(doc, recipe) {
+  const art =
+    (await extractPageArt(doc, recipe.page, recipe.name ?? null)) ??
+    (recipe.box ? await extractPageArtRegion(doc, recipe.page, recipe.box) : null);
+  if (!art) return null;
+  const FP = foundry.applications?.apps?.FilePicker?.implementation ?? globalThis.FilePicker;
+  const dir = "acks-content-art";
+  await FP.createDirectory("data", dir).catch(() => {});
+  const filename = `${recipe.id.replaceAll(".", "-")}.png`;
+  const file = new File([art.blob], filename, { type: "image/png" });
+  const res = await FP.upload("data", dir, file, {}, { notify: false });
+  return res?.path ? { path: res.path, width: art.width, height: art.height } : null;
+}
+
 async function importArt(actor, doc, recipe) {
   try {
-    // Name-first: with the wasm decoders shipped, the placed XObject itself
-    // extracts cleanly (the AX books' art is JPEG2000). The placement-box
-    // page-render crop stays as a fallback for a seat whose decoders fail.
-    const art =
-      (await extractPageArt(doc, recipe.page, recipe.name ?? null)) ??
-      (recipe.box ? await extractPageArtRegion(doc, recipe.page, recipe.box) : null);
-    if (!art) {
+    const up = await uploadPageArt(doc, recipe);
+    if (!up) {
       console.log(`${MODULE_ID} | ${actor.name}: no suitable illustration found on PDF p. ${recipe.page}.`);
       return false;
     }
-    const FP = foundry.applications?.apps?.FilePicker?.implementation ?? globalThis.FilePicker;
-    const dir = "acks-content-art";
-    await FP.createDirectory("data", dir).catch(() => {});
-    const filename = `${recipe.id.replaceAll(".", "-")}.png`;
-    const file = new File([art.blob], filename, { type: "image/png" });
-    const res = await FP.upload("data", dir, file, {}, { notify: false });
-    if (!res?.path) return false;
-    await actor.update({ img: res.path, "prototypeToken.texture.src": res.path });
-    console.log(`${MODULE_ID} | ${actor.name}: art imported (${art.width}x${art.height}) -> ${res.path}`);
+    await actor.update({ img: up.path, "prototypeToken.texture.src": up.path });
+    console.log(`${MODULE_ID} | ${actor.name}: art imported (${up.width}x${up.height}) -> ${up.path}`);
     return true;
   } catch (err) {
     console.warn(`${MODULE_ID} | ${actor.name}: art import failed`, err);
@@ -1015,7 +1025,7 @@ Hooks.once("ready", async () => {
   }
 
   document.body.addEventListener("click", onRevealClick);
-  initCookbook({ sessionDocs, proseMem, importArtForPage: importArt });
+  initCookbook({ sessionDocs, proseMem, importArtForPage: importArt, uploadPageArt });
   registerAbilityDirectoryButtons();
   await loadCookbook();
   const api = {

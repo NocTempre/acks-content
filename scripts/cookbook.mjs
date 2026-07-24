@@ -15,6 +15,7 @@
 import { MODULE_ID, LANG_PREFIX } from "./constants.mjs";
 import { BOOKS } from "./books.mjs";
 import { executeEntry, materializeEffects, attackModel } from "./executor.mjs";
+import { slugLabel } from "./table-extract.mjs";
 import { savesForLevel } from "./stats.mjs";
 import { progressBar } from "./progress.mjs";
 
@@ -92,6 +93,18 @@ export const cookbookEntry = (fullId) => {
   const { id } = splitId(fullId);
   for (const cb of data.books.values()) if (cb.entries[id]) return { cb, entry: cb.entries[id], id };
   for (const cb of data.content.values()) if (cb.entries[id]) return { cb, entry: cb.entries[id], id };
+  // A FAMILY id resolves to a synthesized entry so every consumer (folders,
+  // dialogs, importMany's book resolution) treats it like any other entry.
+  for (const cb of data.books.values()) {
+    const fam = cb.families?.[id];
+    if (fam) {
+      return {
+        cb,
+        id,
+        entry: { kind: "kind.monsterFamily", name: fam.name, cite: fam.cite, pages: fam.pages, family: fam },
+      };
+    }
+  }
   return null;
 };
 
@@ -683,6 +696,31 @@ const importedMonsterIds = () =>
  * worker's queue, trading one bottleneck for a worse one. 4 keeps each resource
  * busy without oversubscribing any.
  */
+/**
+ * The two prose channels every imported monster gets: the lazy `@PdfText` tag
+ * builder, and the Full Monster Sheet extras (description sections routed
+ * onto its fields + the classification/senses/defenses block). Shared by
+ * importOne and the family importer so a family variant is byte-for-byte the
+ * same creature a direct import produces.
+ */
+function monsterProseChannels(node, id, cite) {
+  const paras = node.fields.description ?? [];
+  const tag = (section) => `<p>@PdfText[${id}${section ? `#${section}` : ""}]{${cite}}</p>`;
+  const ROUTE = {
+    appearance: "appearance", combat: "combat", ecology: "ecology",
+    encounter: "encounterText", lair: "encounterText",
+    lore: "lore", specialRules: "notes", behavior: "notes",
+  };
+  const description = {};
+  for (const sec of [...new Set(paras.map((p) => p.section ?? "appearance"))]) {
+    const field = ROUTE[sec] ?? "notes";
+    description[field] = (description[field] ?? "") + tag(sec);
+  }
+  if (!Object.keys(description).length) description.appearance = tag(null);
+  const fmsFlags = { "acks-monsters": { extras: { ...buildExtras(node), description } } };
+  return { tag, fmsFlags };
+}
+
 const IMPORT_CONCURRENCY = 4;
 
 /**
@@ -733,12 +771,27 @@ function actorEntriesAcrossBooks() {
   const openBooks = [...data.books.keys()].filter((b) => ctx.sessionDocs.has(b));
   const rows = [];
   for (const bookId of openBooks) {
-    for (const [id, e] of Object.entries(data.books.get(bookId).entries)) {
+    const cb = data.books.get(bookId);
+    for (const [id, e] of Object.entries(cb.entries)) {
       if (actorKindOf(e)) rows.push({ id, entry: e, bookId });
+    }
+    // Families ride the same list as synthesized rows (one generator template
+    // per family); their members stay listed too, for direct import.
+    for (const id of Object.keys(cb.families ?? {})) {
+      rows.push({ id, entry: cookbookEntry(id).entry, bookId });
     }
   }
   rows.sort((a, b) => a.bookId.localeCompare(b.bookId) || a.entry.pages[0] - b.entry.pages[0] || a.id.localeCompare(b.id));
   return { openBooks, rows };
+}
+
+/** Every entry id that is a MEMBER of some family in the given cookbook set. */
+function familyMemberIds() {
+  const members = new Set();
+  for (const cb of data.books.values()) {
+    for (const fam of Object.values(cb.families ?? {})) for (const m of fam.members) members.add(m.id);
+  }
+  return members;
 }
 
 /** Report an import run, naming what was skipped as already present. */
@@ -756,6 +809,7 @@ async function importOne(bookId, id, folderId) {
   const kind = found?.entry?.kind;
   if (kind === "kind.npc" || kind === "kind.monsterLegacy") return importAdventureActor(bookId, id, folderId);
   if (kind === "kind.monsterTemplate") return importTemplate(bookId, id, folderId);
+  if (kind === "kind.monsterFamily") return importFamily(bookId, id, folderId);
   if (kind && kind !== "kind.monster") return null;
   const session = ctx.sessionDocs.get(bookId);
   const node = await executeEntry(session.doc, found.cb, data.registers, id);
@@ -769,30 +823,9 @@ async function importOne(bookId, id, folderId) {
   // seat. Cache this GM's extraction in session memory for instant reveal.
   const paras = node.fields.description ?? [];
   cookbookCacheParas(bookId, id, paras);
-  const tag = (section) => `<p>@PdfText[${id}${section ? `#${section}` : ""}]{${found.entry.cite}}</p>`;
+  const { tag, fmsFlags } = monsterProseChannels(node, id, found.entry.cite);
   const fmsActive = game.modules.get("acks-monsters")?.active;
   if (!fmsActive) system.details = { ...(system.details ?? {}), biography: tag(null) };
-
-  // Full Monster Sheet: route description SECTIONS onto its fields; each field
-  // gets its own section-scoped lazy tag, unrouted sections -> notes. Built up
-  // front so the extras ride along in the single create below.
-  let fmsFlags = null;
-  if (fmsActive) {
-    const ROUTE = {
-      appearance: "appearance", combat: "combat", ecology: "ecology",
-      encounter: "encounterText", lair: "encounterText",
-      lore: "lore", specialRules: "notes", behavior: "notes",
-    };
-    const description = {};
-    for (const sec of [...new Set(paras.map((p) => p.section ?? "appearance"))]) {
-      const field = ROUTE[sec] ?? "notes";
-      description[field] = (description[field] ?? "") + tag(sec);
-    }
-    if (!Object.keys(description).length) description.appearance = tag(null);
-    // Classification / saves / vision / movement / ecology / defenses extras
-    // mapped from the same executed node (see buildExtras).
-    fmsFlags = { "acks-monsters": { extras: { ...buildExtras(node), description } } };
-  }
 
   // ONE write, not four. create/update/createEmbeddedDocuments/setFlag were each
   // a separate socket round-trip a bulk import paid per monster; fold the
@@ -814,7 +847,7 @@ async function importOne(bookId, id, folderId) {
     flags: {
       ...(flags ?? {}),
       [MODULE_ID]: { ...((flags ?? {})[MODULE_ID] ?? {}), cookbook: { id, cite: found.entry.cite } },
-      ...(fmsFlags ?? {}),
+      ...(fmsActive ? fmsFlags : {}),
     },
   });
   // Foundry REPORTS a schema-validation failure and returns undefined rather
@@ -977,6 +1010,212 @@ function templateOption(ax, row, cells, { id, cite, sections }) {
     items,
     html,
   };
+}
+
+/**
+ * ONE-OFF family enrichments (deliberately not a framework — the container
+ * relationship is the general part; each complicated family gets plain code).
+ *
+ * mm.familyBeastman: the ROLE variants each breed's own prose describes —
+ * champions, sub-chieftains, chieftains, drudges/whelps, shamans, witch
+ * doctors — become a second axis. The sentences are formulaic ("led by a
+ * champion with 3 AC, 1 HD, and 7 hp"), so the regexes here are shipped
+ * LOCATORS in the defense-scan tradition; every number is read at import
+ * from THIS seat's own extracted prose, per breed. A breed whose prose does
+ * not match simply lacks that role's cell.
+ */
+const FAMILY_ONE_OFFS = {
+  "mm.familyBeastman": ({ options, memberText, axes, cells, out }) => {
+    const RX = {
+      champion: /led by a champion with (\d+) AC,? (\d+(?:[+-]\d+)?) HD,? and (\d+) hp/i,
+      subChieftain: /led by a sub-?chieftain with (\d+) AC,? (\d+(?:[+-]\d+)?) HD,? (\d+) hp(?:,? and a ([+-]\d+) damage bonus)?/i,
+      chieftain: /(?:lair|village) will be led by a chieftain with (\d+) AC,? (\d+(?:[+-]\d+)?) HD,? (\d+) hp(?:,? and a ([+-]\d+) damage bonus)?/i,
+      drudgeWhelp: /drudges and whelps have Spd (\d+)['’]?,? AC (\d+),? (\d+) hp,? ML (-?\d+)/i,
+      shaman: /shaman is equivalent to a (champion|sub-?chieftain|chieftain) statistically,? but has (\w+) abilities at level (\d+d\d+|\d+)/i,
+      witchDoctor: /witch doctor is equivalent to a (champion|sub-?chieftain|chieftain) statistically,? but has (\w+) abilities at level (\d+d\d+|\d+)/i,
+    };
+    const statPatch = (option, [ac, hd, hp, dmg], note) => {
+      const hdInt = parseInt(hd, 10);
+      const bonus = /([+-]\d+)/.exec(hd)?.[1] ?? "";
+      const bio = option.merge?.details?.biography ?? "";
+      const notes = [note, dmg ? `${dmg} damage bonus` : ""].filter(Boolean);
+      return {
+        aac: { value: parseInt(ac, 10) },
+        hp: { hd: `${hdInt}d8${bonus}`, value: parseInt(hp, 10), max: parseInt(hp, 10) },
+        thac0: { throw: monsterThrowForHd(hdInt) },
+        ...(notes.length ? { details: { biography: `${bio}<p><em>${notes.join("; ")}</em></p>` } } : {}),
+      };
+    };
+    const roleKeys = [];
+    for (const option of options) {
+      const text = memberText.get(option.key) ?? "";
+      const matched = {};
+      for (const role of ["champion", "subChieftain", "chieftain", "drudgeWhelp"]) {
+        const m = RX[role].exec(text);
+        if (!m) continue;
+        matched[role] =
+          role === "drudgeWhelp"
+            ? {
+                movement: { base: parseInt(m[1], 10) },
+                aac: { value: parseInt(m[2], 10) },
+                hp: { hd: "1d8", value: parseInt(m[3], 10), max: parseInt(m[3], 10) },
+                details: {
+                  morale: parseInt(m[4], 10),
+                  biography: `${option.merge?.details?.biography ?? ""}<p><em>does not fight</em></p>`,
+                },
+                attacks: "none (does not fight)",
+              }
+            : statPatch(option, m.slice(1), "");
+      }
+      // Casters wear another role's stat block plus a class-ability note.
+      for (const role of ["shaman", "witchDoctor"]) {
+        const m = RX[role].exec(text);
+        if (!m) continue;
+        const asKey = /sub/i.test(m[1]) ? "subChieftain" : m[1].toLowerCase();
+        const base = matched[asKey];
+        if (!base) continue;
+        const bio = base.details?.biography ?? option.merge?.details?.biography ?? "";
+        matched[role] = {
+          ...structuredClone(base),
+          details: { ...(base.details ?? {}), biography: `${bio}<p><em>${m[2]} abilities at level ${m[3]}</em></p>` },
+        };
+      }
+      for (const [role, merge] of Object.entries(matched)) {
+        if (!roleKeys.includes(role)) roleKeys.push(role);
+        cells.push({ by: ["variant", "role"], key: `${option.key}|${role}`, merge, items: [] });
+      }
+    }
+    if (!roleKeys.length) return;
+    const LABELS = {
+      champion: "Champion", subChieftain: "Sub-Chieftain", chieftain: "Chieftain",
+      drudgeWhelp: "Drudge / Whelp", shaman: "Shaman", witchDoctor: "Witch Doctor",
+    };
+    axes.push({
+      key: "role",
+      label: "Role",
+      roll: "",
+      derive: { from: "", max: null },
+      options: [
+        { key: "standard", label: "Standard", nameLabel: "" },
+        ...roleKeys.map((k) => ({ key: k, label: LABELS[k], nameLabel: LABELS[k] })),
+      ],
+    });
+    out.nameFormat = "{variant} {role}";
+  },
+};
+
+/**
+ * kind.monsterFamily -> ONE `acks-lib.template` generator whose variant axis
+ * options are the family's member creatures, each a COMPLETE preset: the same
+ * bindMonster output a direct import produces (system, weapons, abilities,
+ * FMS extras, token size, per-variant art), packed as engine-ready patches.
+ * "Start with a baseline and select the special case" instead of N top-level
+ * actors; a member can still be imported directly from the dialog. Families
+ * with description-variant prose get ONE-OFF role axes (FAMILY_ONE_OFFS).
+ */
+async function importFamily(bookId, famId, folderId) {
+  const TEMPLATE_TYPE = globalThis.acksLib?.TEMPLATE_TYPE;
+  if (!TEMPLATE_TYPE) {
+    ui.notifications.warn(`acks-content | ${famId}: needs acks-lib 0.17+ (template actor type) — skipped.`);
+    return null;
+  }
+  const found = cookbookEntry(famId);
+  const fam = found?.entry?.family;
+  if (!fam) return null;
+  const session = ctx.sessionDocs.get(bookId);
+  const cb = found.cb;
+
+  const options = [];
+  const memberText = new Map();
+  let img = "";
+  for (const member of fam.members) {
+    const entry = cb.entries[member.id];
+    if (!entry) continue;
+    const node = await executeEntry(session.doc, cb, data.registers, member.id);
+    if (!node.ok) {
+      ui.notifications.warn(`acks-content | ${entry.name}: page did not match the cookbook — variant skipped.`);
+      continue;
+    }
+    const { system, items, flags, prototypeToken } = bindMonster(node);
+    cookbookCacheParas(bookId, member.id, node.fields.description ?? []);
+    memberText.set(slugLabel(member.variant), (node.fields.description ?? []).map((p) => p.text).join(" "));
+    const { tag, fmsFlags } = monsterProseChannels(node, member.id, entry.cite);
+    // Both prose channels ship on the option: biography for the core sheet,
+    // extras flags for the Full Monster Sheet — whichever is active at
+    // GENERATE time uses its own; the other is inert.
+    system.details = { ...(system.details ?? {}), biography: tag(null) };
+
+    let art = "";
+    if (node.fields.art && ctx.uploadPageArt) {
+      // Hard-bounded, per the render-timeout doctrine: one undecodable image
+      // must cost this variant its portrait, never hang the family import.
+      const artInstr = entry.fields?.art ?? {};
+      const up = await Promise.race([
+        ctx
+          .uploadPageArt(session.doc, {
+            id: member.id,
+            page: artInstr.page ?? entry.pages[0],
+            name: artInstr.name ?? node.fields.art.name ?? null,
+            box: artInstr.box ?? null,
+          })
+          .catch(() => null),
+        new Promise((r) => setTimeout(() => r(null), 30000)),
+      ]);
+      if (up?.path) art = up.path;
+      if (art && !img) img = art;
+      if (!up) console.warn(`${MODULE_ID} | ${entry.name}: variant art skipped (timeout or extraction failure).`);
+    }
+
+    options.push({
+      key: slugLabel(member.variant),
+      label: member.variant,
+      nameLabel: entry.name, // the generated actor is named exactly as a direct import
+      art,
+      merge: system,
+      items: items.map((i) => ({
+        ...i,
+        flags: { ...(i.flags ?? {}), [MODULE_ID]: { ...(i.flags?.[MODULE_ID] ?? {}), generated: true } },
+      })),
+      html: "",
+      flags: {
+        ...(flags ?? {}),
+        [MODULE_ID]: { ...((flags ?? {})[MODULE_ID] ?? {}), cookbook: { id: member.id, cite: entry.cite } },
+        ...fmsFlags,
+      },
+      token: prototypeToken ?? {},
+    });
+  }
+  if (!options.length) {
+    ui.notifications.warn(`acks-content | ${fam.name}: no family member could be read — skipped.`);
+    return null;
+  }
+
+  const axes = [{ key: "variant", label: "Variant", roll: "", derive: { from: "", max: null }, options }];
+  const cells = [];
+  const out = { nameFormat: fam.nameFormat ?? "{variant}" };
+  try {
+    FAMILY_ONE_OFFS[famId]?.({ fam, options, memberText, axes, cells, out });
+  } catch (err) {
+    console.warn(`${MODULE_ID} | ${famId}: one-off enrichment failed — importing plain family.`, err);
+  }
+
+  const actor = await Actor.create({
+    name: fam.name,
+    type: TEMPLATE_TYPE,
+    folder: folderId,
+    ...(img ? { img } : {}),
+    system: {
+      output: { actorType: "monster", nameFormat: out.nameFormat },
+      axes,
+      cells,
+    },
+    flags: { [MODULE_ID]: { cookbook: { id: famId, cite: fam.cite } } },
+  });
+  if (!actor) {
+    ui.notifications.warn(`acks-content | ${fam.name}: the system rejected the family template — skipped (see console).`);
+    return null;
+  }
+  return actor;
 }
 
 /**
@@ -1146,7 +1385,7 @@ export async function refillMonster(actor) {
 /*  RollTable, npc / monsterLegacy -> Actor     */
 /* -------------------------------------------- */
 
-const ACTOR_KINDS = new Set(["kind.monster", "kind.monsterLegacy", "kind.npc", "kind.monsterTemplate"]);
+const ACTOR_KINDS = new Set(["kind.monster", "kind.monsterLegacy", "kind.npc", "kind.monsterTemplate", "kind.monsterFamily"]);
 /** kinds an actor-import flow may enumerate (unknown/absent kind = MM-era monster). */
 const actorKindOf = (e) => !e.kind || ACTOR_KINDS.has(e.kind);
 const ALIGN_WORD = { L: "Lawful", N: "Neutral", C: "Chaotic" };
@@ -2871,7 +3110,11 @@ export async function cookbookImportMonsters() {
       `acks-content | no cookbook book is open this session — connect one first (PoC 2 / unlock dialog).`,
     );
   }
-  const ids = actorEntriesAcrossBooks().rows.map((r) => r.id);
+  // Family MEMBERS don't import individually here — their family's generator
+  // template covers them (baseline + select the special case). The dialog
+  // still offers members one at a time.
+  const members = familyMemberIds();
+  const ids = actorEntriesAcrossBooks().rows.map((r) => r.id).filter((id) => !members.has(id));
   const present = importedMonsterIds();
   const todo = ids.filter((id) => !present.has(id));
   if (!todo.length) {

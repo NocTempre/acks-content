@@ -2566,6 +2566,49 @@ async function main() {
         warn(`${entry.id}: ${err.message}`);
       }
     }
+    // FAMILIES, from the book's own comma naming ("Cat, Lion"; "Golem, Amber"):
+    // monster entries sharing a comma base are one creature statted several
+    // ways, and the binding collapses them into ONE generator template whose
+    // variant options are the members (baseline + special case, not N
+    // top-level actors). An overview entry whose display EQUALS the base name
+    // ("Beastman", "Lycanthrope") folds in as the family's first option.
+    // Derived, not authored — it stays in step with the register mechanically.
+    {
+      const groups = {};
+      for (const entry of list) {
+        if (entry.kind !== "kind.monster" || !out.entries[entry.id]) continue;
+        const m = /^([^,]+),\s*(.+)$/.exec(entry.anchor?.display ?? "");
+        if (m) (groups[m[1].trim()] ??= []).push({ id: entry.id, variant: m[2].trim(), page: entry.pages[0] });
+      }
+      const families = {};
+      for (const [base, members] of Object.entries(groups)) {
+        if (members.length < 2) continue;
+        const overview = list.find(
+          (entry) =>
+            entry.kind === "kind.monster" &&
+            out.entries[entry.id] &&
+            (entry.anchor?.display ?? "").trim().toLowerCase() === base.toLowerCase()
+        );
+        const ordered = [
+          ...(overview ? [{ id: overview.id, variant: base, page: overview.pages[0] }] : []),
+          ...members.sort((a, b) => a.page - b.page),
+        ];
+        const famId = `${bookId}.family${base.replace(/[^A-Za-z0-9]+/g, "")}`;
+        families[famId] = {
+          name: base,
+          nameFormat: "{variant}",
+          cite: `${BOOKS[bookId].short} p.${ordered[0].page}`,
+          pages: [ordered[0].page],
+          members: ordered.map((x) => ({ id: x.id, variant: x.variant })),
+        };
+      }
+      if (Object.keys(families).length) {
+        out.families = families;
+        console.error(
+          `families: ${Object.keys(families).length} (${Object.values(families).reduce((n, f) => n + f.members.length, 0)} member entr(ies))`
+        );
+      }
+    }
     if (Object.keys(out.entries).length) {
       const outPath = path.join(COOKBOOK, `${bookId}.json`);
       fs.writeFileSync(outPath, JSON.stringify(out, null, 2) + "\n");

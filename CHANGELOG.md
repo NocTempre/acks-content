@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.42.0
+
+**Sibling entries collapse into family generators.**
+
+- **41 families derived from the book's own comma naming** ("Cat, Lion";
+  "Golem, Amber") — 158 member entries. Importing a family creates ONE
+  `acks-lib.template` generator whose variant options are the members, each a
+  COMPLETE preset (the same bindMonster output a direct import produces:
+  stats, weapons, abilities, Full Monster Sheet extras, token size, and
+  per-variant art). Overview entries ("Beastman", "Lycanthrope") fold in as
+  the first option. "Import all monsters" now imports family templates
+  instead of every member; the dialog still offers members individually.
+- **Beastman roles (one-off):** each breed's own prose describes its
+  champions, sub-chieftains, chieftains, drudges/whelps, shamans, and witch
+  doctors — those become a second Role axis. The sentences are formulaic, so
+  shipped locator regexes read every number from THIS seat's extracted prose
+  per breed at import; generated names read "Beastman, Goblin Chieftain".
+- **Family art is hard-bounded** (30s per variant): one undecodable image
+  costs that variant its portrait, never the import.
+- Needs acks-lib ≥ 0.17.0 (option flags/token channels, multi-select axes,
+  base-seeded stacking, the capture-from-actor editor).
+
 ## 0.41.0
 
 **The four table-template monsters import — as generators.**

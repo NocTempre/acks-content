@@ -218402,5 +218402,1049 @@
         "reason": "running-head"
       }
     ]
+  },
+  "families": {
+    "mm.familyAttercop": {
+      "name": "Attercop",
+      "nameFormat": "{variant}",
+      "cite": "MM p.30",
+      "pages": [
+        30
+      ],
+      "members": [
+        {
+          "id": "mm.attercopDemonic",
+          "variant": "Demonic"
+        },
+        {
+          "id": "mm.attercopFoul",
+          "variant": "Foul"
+        },
+        {
+          "id": "mm.attercopHideous",
+          "variant": "Hideous"
+        },
+        {
+          "id": "mm.attercopMonstrous",
+          "variant": "Monstrous"
+        }
+      ]
+    },
+    "mm.familyBarghest": {
+      "name": "Barghest",
+      "nameFormat": "{variant}",
+      "cite": "MM p.38",
+      "pages": [
+        38
+      ],
+      "members": [
+        {
+          "id": "mm.barghestGreater",
+          "variant": "Greater"
+        },
+        {
+          "id": "mm.barghestLesser",
+          "variant": "Lesser"
+        }
+      ]
+    },
+    "mm.familyBasilisk": {
+      "name": "Basilisk",
+      "nameFormat": "{variant}",
+      "cite": "MM p.40",
+      "pages": [
+        40
+      ],
+      "members": [
+        {
+          "id": "mm.basiliskNoxious",
+          "variant": "Noxious"
+        },
+        {
+          "id": "mm.basiliskPetrifying",
+          "variant": "Petrifying"
+        }
+      ]
+    },
+    "mm.familyBat": {
+      "name": "Bat",
+      "nameFormat": "{variant}",
+      "cite": "MM p.42",
+      "pages": [
+        42
+      ],
+      "members": [
+        {
+          "id": "mm.batCommon",
+          "variant": "Common"
+        },
+        {
+          "id": "mm.batGiant",
+          "variant": "Giant"
+        },
+        {
+          "id": "mm.batGiantVampire",
+          "variant": "Giant Vampire"
+        }
+      ]
+    },
+    "mm.familyBear": {
+      "name": "Bear",
+      "nameFormat": "{variant}",
+      "cite": "MM p.45",
+      "pages": [
+        45
+      ],
+      "members": [
+        {
+          "id": "mm.bearBlack",
+          "variant": "Black"
+        },
+        {
+          "id": "mm.bearBrown",
+          "variant": "Brown"
+        },
+        {
+          "id": "mm.bearCave",
+          "variant": "Cave"
+        },
+        {
+          "id": "mm.bearPolar",
+          "variant": "Polar"
+        }
+      ]
+    },
+    "mm.familyBeastman": {
+      "name": "Beastman",
+      "nameFormat": "{variant}",
+      "cite": "MM p.49",
+      "pages": [
+        49
+      ],
+      "members": [
+        {
+          "id": "mm.beastman",
+          "variant": "Beastman"
+        },
+        {
+          "id": "mm.beastmanBugbear",
+          "variant": "Bugbear"
+        },
+        {
+          "id": "mm.beastmanGnoll",
+          "variant": "Gnoll"
+        },
+        {
+          "id": "mm.beastmanGoblin",
+          "variant": "Goblin"
+        },
+        {
+          "id": "mm.beastmanHobgoblin",
+          "variant": "Hobgoblin"
+        },
+        {
+          "id": "mm.beastmanKobold",
+          "variant": "Kobold"
+        },
+        {
+          "id": "mm.beastmanOrc",
+          "variant": "Orc"
+        }
+      ]
+    },
+    "mm.familyBeetle": {
+      "name": "Beetle",
+      "nameFormat": "{variant}",
+      "cite": "MM p.62",
+      "pages": [
+        62
+      ],
+      "members": [
+        {
+          "id": "mm.beetleGiantBombardier",
+          "variant": "Giant Bombardier"
+        },
+        {
+          "id": "mm.beetleGiantLuminous",
+          "variant": "Giant Luminous"
+        },
+        {
+          "id": "mm.beetleGiantTiger",
+          "variant": "Giant Tiger"
+        }
+      ]
+    },
+    "mm.familyBoar": {
+      "name": "Boar",
+      "nameFormat": "{variant}",
+      "cite": "MM p.67",
+      "pages": [
+        67
+      ],
+      "members": [
+        {
+          "id": "mm.boarCommon",
+          "variant": "Common"
+        },
+        {
+          "id": "mm.boarGiant",
+          "variant": "Giant"
+        }
+      ]
+    },
+    "mm.familyCat": {
+      "name": "Cat",
+      "nameFormat": "{variant}",
+      "cite": "MM p.79",
+      "pages": [
+        79
+      ],
+      "members": [
+        {
+          "id": "mm.catCatamount",
+          "variant": "Catamount"
+        },
+        {
+          "id": "mm.catCheetah",
+          "variant": "Cheetah"
+        },
+        {
+          "id": "mm.catLeopard",
+          "variant": "Leopard"
+        },
+        {
+          "id": "mm.catLion",
+          "variant": "Lion"
+        },
+        {
+          "id": "mm.catLynx",
+          "variant": "Lynx"
+        },
+        {
+          "id": "mm.catSaberTooth",
+          "variant": "Saber-Tooth"
+        },
+        {
+          "id": "mm.catTiger",
+          "variant": "Tiger"
+        }
+      ]
+    },
+    "mm.familyCrocodile": {
+      "name": "Crocodile",
+      "nameFormat": "{variant}",
+      "cite": "MM p.93",
+      "pages": [
+        93
+      ],
+      "members": [
+        {
+          "id": "mm.crocodileCommon",
+          "variant": "Common"
+        },
+        {
+          "id": "mm.crocodileGiant",
+          "variant": "Giant"
+        },
+        {
+          "id": "mm.crocodileLarge",
+          "variant": "Large"
+        }
+      ]
+    },
+    "mm.familyDakhanavar": {
+      "name": "Dakhanavar",
+      "nameFormat": "{variant}",
+      "cite": "MM p.97",
+      "pages": [
+        97
+      ],
+      "members": [
+        {
+          "id": "mm.dakhanavarGreater",
+          "variant": "Greater"
+        },
+        {
+          "id": "mm.dakhanavarLesser",
+          "variant": "Lesser"
+        }
+      ]
+    },
+    "mm.familyDog": {
+      "name": "Dog",
+      "nameFormat": "{variant}",
+      "cite": "MM p.103",
+      "pages": [
+        103
+      ],
+      "members": [
+        {
+          "id": "mm.dogHunting",
+          "variant": "Hunting"
+        },
+        {
+          "id": "mm.dogWar",
+          "variant": "War"
+        }
+      ]
+    },
+    "mm.familyEquine": {
+      "name": "Equine",
+      "nameFormat": "{variant}",
+      "cite": "MM p.123",
+      "pages": [
+        123
+      ],
+      "members": [
+        {
+          "id": "mm.equineDonkey",
+          "variant": "Donkey"
+        },
+        {
+          "id": "mm.equineHeavyHorse",
+          "variant": "Heavy Horse"
+        },
+        {
+          "id": "mm.equineLightHorse",
+          "variant": "Light Horse"
+        },
+        {
+          "id": "mm.equineMediumHorse",
+          "variant": "Medium Horse"
+        },
+        {
+          "id": "mm.equineMule",
+          "variant": "Mule"
+        },
+        {
+          "id": "mm.equineSteppeHorse",
+          "variant": "Steppe Horse"
+        }
+      ]
+    },
+    "mm.familyFaerie": {
+      "name": "Faerie",
+      "nameFormat": "{variant}",
+      "cite": "MM p.130",
+      "pages": [
+        130
+      ],
+      "members": [
+        {
+          "id": "mm.faerieBrownieBoggart",
+          "variant": "Brownie (Boggart)"
+        },
+        {
+          "id": "mm.faerieKnocker",
+          "variant": "Knocker"
+        },
+        {
+          "id": "mm.faerieNixie",
+          "variant": "Nixie"
+        },
+        {
+          "id": "mm.faeriePiskie",
+          "variant": "Piskie"
+        },
+        {
+          "id": "mm.faeriePixie",
+          "variant": "Pixie"
+        },
+        {
+          "id": "mm.faerieRedcap",
+          "variant": "Redcap"
+        },
+        {
+          "id": "mm.faerieSpriggan",
+          "variant": "Spriggan"
+        },
+        {
+          "id": "mm.faerieSprite",
+          "variant": "Sprite"
+        }
+      ]
+    },
+    "mm.familyFish": {
+      "name": "Fish",
+      "nameFormat": "{variant}",
+      "cite": "MM p.139",
+      "pages": [
+        139
+      ],
+      "members": [
+        {
+          "id": "mm.fishGiantCatfish",
+          "variant": "Giant Catfish"
+        },
+        {
+          "id": "mm.fishGiantPiranha",
+          "variant": "Giant Piranha"
+        },
+        {
+          "id": "mm.fishGiantRockfish",
+          "variant": "Giant Rockfish"
+        },
+        {
+          "id": "mm.fishGiantSturgeon",
+          "variant": "Giant Sturgeon"
+        }
+      ]
+    },
+    "mm.familyFungus": {
+      "name": "Fungus",
+      "nameFormat": "{variant}",
+      "cite": "MM p.146",
+      "pages": [
+        146
+      ],
+      "members": [
+        {
+          "id": "mm.fungusShrieking",
+          "variant": "Shrieking"
+        },
+        {
+          "id": "mm.fungusViolet",
+          "variant": "Violet"
+        }
+      ]
+    },
+    "mm.familyGenie": {
+      "name": "Genie",
+      "nameFormat": "{variant}",
+      "cite": "MM p.150",
+      "pages": [
+        150
+      ],
+      "members": [
+        {
+          "id": "mm.genieEfreet",
+          "variant": "Efreet"
+        },
+        {
+          "id": "mm.genieHafar",
+          "variant": "Hafar"
+        },
+        {
+          "id": "mm.genieJann",
+          "variant": "Jann"
+        },
+        {
+          "id": "mm.genieMarid",
+          "variant": "Marid"
+        }
+      ]
+    },
+    "mm.familyGhoul": {
+      "name": "Ghoul",
+      "nameFormat": "{variant}",
+      "cite": "MM p.154",
+      "pages": [
+        154
+      ],
+      "members": [
+        {
+          "id": "mm.ghoulDesert",
+          "variant": "Desert"
+        },
+        {
+          "id": "mm.ghoulGrave",
+          "variant": "Grave"
+        },
+        {
+          "id": "mm.ghoulMarsh",
+          "variant": "Marsh"
+        }
+      ]
+    },
+    "mm.familyGiant": {
+      "name": "Giant",
+      "nameFormat": "{variant}",
+      "cite": "MM p.157",
+      "pages": [
+        157
+      ],
+      "members": [
+        {
+          "id": "mm.giantFire",
+          "variant": "Fire"
+        },
+        {
+          "id": "mm.giantFrost",
+          "variant": "Frost"
+        },
+        {
+          "id": "mm.giantHill",
+          "variant": "Hill"
+        },
+        {
+          "id": "mm.giantStone",
+          "variant": "Stone"
+        }
+      ]
+    },
+    "mm.familyGolem": {
+      "name": "Golem",
+      "nameFormat": "{variant}",
+      "cite": "MM p.162",
+      "pages": [
+        162
+      ],
+      "members": [
+        {
+          "id": "mm.golemAmber",
+          "variant": "Amber"
+        },
+        {
+          "id": "mm.golemBone",
+          "variant": "Bone"
+        },
+        {
+          "id": "mm.golemBronze",
+          "variant": "Bronze"
+        },
+        {
+          "id": "mm.golemIron",
+          "variant": "Iron"
+        },
+        {
+          "id": "mm.golemStone",
+          "variant": "Stone"
+        },
+        {
+          "id": "mm.golemWood",
+          "variant": "Wood"
+        }
+      ]
+    },
+    "mm.familyHellhound": {
+      "name": "Hellhound",
+      "nameFormat": "{variant}",
+      "cite": "MM p.179",
+      "pages": [
+        179
+      ],
+      "members": [
+        {
+          "id": "mm.hellhoundGreater",
+          "variant": "Greater"
+        },
+        {
+          "id": "mm.hellhoundLesser",
+          "variant": "Lesser"
+        }
+      ]
+    },
+    "mm.familyHyena": {
+      "name": "Hyena",
+      "nameFormat": "{variant}",
+      "cite": "MM p.190",
+      "pages": [
+        190
+      ],
+      "members": [
+        {
+          "id": "mm.hyenaCommon",
+          "variant": "Common"
+        },
+        {
+          "id": "mm.hyenaGiant",
+          "variant": "Giant"
+        }
+      ]
+    },
+    "mm.familyLizard": {
+      "name": "Lizard",
+      "nameFormat": "{variant}",
+      "cite": "MM p.205",
+      "pages": [
+        205
+      ],
+      "members": [
+        {
+          "id": "mm.lizardGiantDraco",
+          "variant": "Giant Draco"
+        },
+        {
+          "id": "mm.lizardGiantGecko",
+          "variant": "Giant Gecko"
+        },
+        {
+          "id": "mm.lizardGiantHornedChameleon",
+          "variant": "Giant Horned Chameleon"
+        },
+        {
+          "id": "mm.lizardGiantTuatara",
+          "variant": "Giant Tuatara"
+        }
+      ]
+    },
+    "mm.familyLycanthrope": {
+      "name": "Lycanthrope",
+      "nameFormat": "{variant}",
+      "cite": "MM p.211",
+      "pages": [
+        211
+      ],
+      "members": [
+        {
+          "id": "mm.lycanthrope",
+          "variant": "Lycanthrope"
+        },
+        {
+          "id": "mm.lycanthropeWerebear",
+          "variant": "Werebear"
+        },
+        {
+          "id": "mm.lycanthropeWereboar",
+          "variant": "Wereboar"
+        },
+        {
+          "id": "mm.lycanthropeWererat",
+          "variant": "Wererat"
+        },
+        {
+          "id": "mm.lycanthropeWeretiger",
+          "variant": "Weretiger"
+        },
+        {
+          "id": "mm.lycanthropeWerewolf",
+          "variant": "Werewolf"
+        }
+      ]
+    },
+    "mm.familyMan": {
+      "name": "Man",
+      "nameFormat": "{variant}",
+      "cite": "MM p.219",
+      "pages": [
+        219
+      ],
+      "members": [
+        {
+          "id": "mm.manBandit",
+          "variant": "Bandit"
+        },
+        {
+          "id": "mm.manBerserker",
+          "variant": "Berserker"
+        },
+        {
+          "id": "mm.manBrigand",
+          "variant": "Brigand"
+        },
+        {
+          "id": "mm.manCommoner",
+          "variant": "Commoner"
+        },
+        {
+          "id": "mm.manMerchant",
+          "variant": "Merchant"
+        },
+        {
+          "id": "mm.manMerchantMariner",
+          "variant": "Merchant Mariner"
+        },
+        {
+          "id": "mm.manNavalMariner",
+          "variant": "Naval Mariner"
+        },
+        {
+          "id": "mm.manNomad",
+          "variant": "Nomad"
+        },
+        {
+          "id": "mm.manPatroller",
+          "variant": "Patroller"
+        },
+        {
+          "id": "mm.manPilgrim",
+          "variant": "Pilgrim"
+        },
+        {
+          "id": "mm.manPirate",
+          "variant": "Pirate"
+        },
+        {
+          "id": "mm.manRaider",
+          "variant": "Raider"
+        },
+        {
+          "id": "mm.manTribalWarrior",
+          "variant": "Tribal Warrior"
+        }
+      ]
+    },
+    "mm.familyNymph": {
+      "name": "Nymph",
+      "nameFormat": "{variant}",
+      "cite": "MM p.248",
+      "pages": [
+        248
+      ],
+      "members": [
+        {
+          "id": "mm.nymphDryad",
+          "variant": "Dryad"
+        },
+        {
+          "id": "mm.nymphNaiad",
+          "variant": "Naiad"
+        },
+        {
+          "id": "mm.nymphOread",
+          "variant": "Oread"
+        }
+      ]
+    },
+    "mm.familyOstrich": {
+      "name": "Ostrich",
+      "nameFormat": "{variant}",
+      "cite": "MM p.254",
+      "pages": [
+        254
+      ],
+      "members": [
+        {
+          "id": "mm.ostrichCommon",
+          "variant": "Common"
+        },
+        {
+          "id": "mm.ostrichGiant",
+          "variant": "Giant"
+        }
+      ]
+    },
+    "mm.familyRaptor": {
+      "name": "Raptor",
+      "nameFormat": "{variant}",
+      "cite": "MM p.260",
+      "pages": [
+        260
+      ],
+      "members": [
+        {
+          "id": "mm.raptorGiant",
+          "variant": "Giant"
+        },
+        {
+          "id": "mm.raptorLarge",
+          "variant": "Large"
+        },
+        {
+          "id": "mm.raptorMedium",
+          "variant": "Medium"
+        },
+        {
+          "id": "mm.raptorSmall",
+          "variant": "Small"
+        }
+      ]
+    },
+    "mm.familyRhinoceros": {
+      "name": "Rhinoceros",
+      "nameFormat": "{variant}",
+      "cite": "MM p.264",
+      "pages": [
+        264
+      ],
+      "members": [
+        {
+          "id": "mm.rhinocerosCommon",
+          "variant": "Common"
+        },
+        {
+          "id": "mm.rhinocerosWoolly",
+          "variant": "Woolly"
+        }
+      ]
+    },
+    "mm.familyRoc": {
+      "name": "Roc",
+      "nameFormat": "{variant}",
+      "cite": "MM p.266",
+      "pages": [
+        266
+      ],
+      "members": [
+        {
+          "id": "mm.rocGiant",
+          "variant": "Giant"
+        },
+        {
+          "id": "mm.rocLarge",
+          "variant": "Large"
+        },
+        {
+          "id": "mm.rocSmall",
+          "variant": "Small"
+        }
+      ]
+    },
+    "mm.familySalamander": {
+      "name": "Salamander",
+      "nameFormat": "{variant}",
+      "cite": "MM p.270",
+      "pages": [
+        270
+      ],
+      "members": [
+        {
+          "id": "mm.salamanderFlame",
+          "variant": "Flame"
+        },
+        {
+          "id": "mm.salamanderFrost",
+          "variant": "Frost"
+        }
+      ]
+    },
+    "mm.familyShark": {
+      "name": "Shark",
+      "nameFormat": "{variant}",
+      "cite": "MM p.277",
+      "pages": [
+        277
+      ],
+      "members": [
+        {
+          "id": "mm.sharkBull",
+          "variant": "Bull"
+        },
+        {
+          "id": "mm.sharkGreatWhite",
+          "variant": "Great White"
+        },
+        {
+          "id": "mm.sharkMako",
+          "variant": "Mako"
+        }
+      ]
+    },
+    "mm.familySnake": {
+      "name": "Snake",
+      "nameFormat": "{variant}",
+      "cite": "MM p.286",
+      "pages": [
+        286
+      ],
+      "members": [
+        {
+          "id": "mm.snakeGiantConstrictingViper",
+          "variant": "Giant Constricting Viper"
+        },
+        {
+          "id": "mm.snakeKingCobra",
+          "variant": "King Cobra"
+        },
+        {
+          "id": "mm.snakePython",
+          "variant": "Python"
+        },
+        {
+          "id": "mm.snakeSeaSnake",
+          "variant": "Sea Snake"
+        },
+        {
+          "id": "mm.snakeSpittingCobra",
+          "variant": "Spitting Cobra"
+        },
+        {
+          "id": "mm.snakeViper",
+          "variant": "Viper"
+        }
+      ]
+    },
+    "mm.familySpider": {
+      "name": "Spider",
+      "nameFormat": "{variant}",
+      "cite": "MM p.295",
+      "pages": [
+        295
+      ],
+      "members": [
+        {
+          "id": "mm.spiderGiantBlackWidow",
+          "variant": "Giant Black Widow"
+        },
+        {
+          "id": "mm.spiderGiantCrab",
+          "variant": "Giant Crab"
+        },
+        {
+          "id": "mm.spiderGiantTarantula",
+          "variant": "Giant Tarantula"
+        }
+      ]
+    },
+    "mm.familyStatue": {
+      "name": "Statue",
+      "nameFormat": "{variant}",
+      "cite": "MM p.299",
+      "pages": [
+        299
+      ],
+      "members": [
+        {
+          "id": "mm.statueAnimatedBronze",
+          "variant": "Animated Bronze"
+        },
+        {
+          "id": "mm.statueAnimatedChryselephantine",
+          "variant": "Animated Chryselephantine"
+        },
+        {
+          "id": "mm.statueAnimatedCrystal",
+          "variant": "Animated Crystal"
+        },
+        {
+          "id": "mm.statueAnimatedIron",
+          "variant": "Animated Iron"
+        },
+        {
+          "id": "mm.statueAnimatedStone",
+          "variant": "Animated Stone"
+        }
+      ]
+    },
+    "mm.familySwarm": {
+      "name": "Swarm",
+      "nameFormat": "{variant}",
+      "cite": "MM p.306",
+      "pages": [
+        306
+      ],
+      "members": [
+        {
+          "id": "mm.swarmBat",
+          "variant": "Bat"
+        },
+        {
+          "id": "mm.swarmFish",
+          "variant": "Fish"
+        },
+        {
+          "id": "mm.swarmInsect",
+          "variant": "Insect"
+        },
+        {
+          "id": "mm.swarmRat",
+          "variant": "Rat"
+        }
+      ]
+    },
+    "mm.familyTitan": {
+      "name": "Titan",
+      "nameFormat": "{variant}",
+      "cite": "MM p.313",
+      "pages": [
+        313
+      ],
+      "members": [
+        {
+          "id": "mm.titanGreater",
+          "variant": "Greater"
+        },
+        {
+          "id": "mm.titanLesser",
+          "variant": "Lesser"
+        }
+      ]
+    },
+    "mm.familyVarmint": {
+      "name": "Varmint",
+      "nameFormat": "{variant}",
+      "cite": "MM p.326",
+      "pages": [
+        326
+      ],
+      "members": [
+        {
+          "id": "mm.varmintGiantFerret",
+          "variant": "Giant Ferret"
+        },
+        {
+          "id": "mm.varmintGiantRat",
+          "variant": "Giant Rat"
+        },
+        {
+          "id": "mm.varmintGiantShrew",
+          "variant": "Giant Shrew"
+        },
+        {
+          "id": "mm.varmintGiantWeasel",
+          "variant": "Giant Weasel"
+        }
+      ]
+    },
+    "mm.familyWhale": {
+      "name": "Whale",
+      "nameFormat": "{variant}",
+      "cite": "MM p.332",
+      "pages": [
+        332
+      ],
+      "members": [
+        {
+          "id": "mm.whaleKiller",
+          "variant": "Killer"
+        },
+        {
+          "id": "mm.whaleNarwhal",
+          "variant": "Narwhal"
+        },
+        {
+          "id": "mm.whaleSperm",
+          "variant": "Sperm"
+        }
+      ]
+    },
+    "mm.familyWolf": {
+      "name": "Wolf",
+      "nameFormat": "{variant}",
+      "cite": "MM p.338",
+      "pages": [
+        338
+      ],
+      "members": [
+        {
+          "id": "mm.wolfCommon",
+          "variant": "Common"
+        },
+        {
+          "id": "mm.wolfDire",
+          "variant": "Dire"
+        },
+        {
+          "id": "mm.wolfWarg",
+          "variant": "Warg"
+        }
+      ]
+    },
+    "mm.familyWorm": {
+      "name": "Worm",
+      "nameFormat": "{variant}",
+      "cite": "MM p.341",
+      "pages": [
+        341
+      ],
+      "members": [
+        {
+          "id": "mm.wormGiantOverview",
+          "variant": "Giant (Overview)"
+        },
+        {
+          "id": "mm.wormGiantBlack",
+          "variant": "Giant Black"
+        },
+        {
+          "id": "mm.wormGiantGrey",
+          "variant": "Giant Grey"
+        },
+        {
+          "id": "mm.wormGreatIce",
+          "variant": "Great Ice"
+        }
+      ]
+    }
   }
 }
