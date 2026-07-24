@@ -1,0 +1,20 @@
+{
+  "_id": "ackscMacReconn00",
+  "_key": "!macros!ackscMacReconn00",
+  "name": "Reconnect Remembered Books (this seat)",
+  "type": "script",
+  "img": "icons/svg/paralysis.svg",
+  "scope": "global",
+  "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\nif (!api.reconnectBooks) return ui.notifications.warn(\"acks-content | reconnecting needs a newer module build.\");\napi.reconnectBooks();",
+  "folder": "ackscFldSetup000",
+  "sort": 105,
+  "ownership": {
+    "default": 2
+  },
+  "flags": {},
+  "_stats": {
+    "coreVersion": "14",
+    "createdTime": 1784332800000,
+    "modifiedTime": 1784332800000
+  }
+}

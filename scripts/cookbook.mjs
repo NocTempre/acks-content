@@ -16,6 +16,7 @@ import { MODULE_ID, LANG_PREFIX } from "./constants.mjs";
 import { BOOKS } from "./books.mjs";
 import { executeEntry, materializeEffects } from "./executor.mjs";
 import { savesForLevel } from "./stats.mjs";
+import { progressBar } from "./progress.mjs";
 
 const FOLDER_NAME = "ACKS Cookbook";
 
@@ -683,30 +684,32 @@ const IMPORT_CONCURRENCY = 4;
  * a slow entry never blocks a free worker from starting the next.
  */
 async function importMany(ids, label) {
-  const bar = ui.notifications.info(label, { progress: true });
   const total = ids.length;
+  const bar = progressBar(label, total);
   let done = 0;
-  let finished = 0;
-  // Every id names its OWN book (a batch may span every connected book) and its
-  // own destination folder; the tree is built up front so the workers below
-  // only ever read the cache.
-  await prepareFolders("Actor", ids);
-  const it = ids[Symbol.iterator]();
-  const worker = async () => {
-    for (let n = it.next(); !n.done; n = it.next()) {
-      const id = n.value;
-      const found = cookbookEntry(id);
-      const bookId = bookOf(found);
-      const folder = await targetFolder("Actor", bookId, found?.entry?.meta?.group);
-      const actor = await importOne(bookId, id, folder?.id ?? null).catch(
-        (err) => (console.error(`${MODULE_ID} | import ${id}`, err), null),
-      );
-      if (actor) done++;
-      bar?.update?.({ pct: ++finished / total, message: `${label} ${finished}/${total}` });
-    }
-  };
-  await Promise.all(Array.from({ length: Math.min(IMPORT_CONCURRENCY, total || 1) }, worker));
-  bar?.update?.({ pct: 1, message: label });
+  try {
+    // Every id names its OWN book (a batch may span every connected book) and its
+    // own destination folder; the tree is built up front so the workers below
+    // only ever read the cache.
+    await prepareFolders("Actor", ids);
+    const it = ids[Symbol.iterator]();
+    const worker = async () => {
+      for (let n = it.next(); !n.done; n = it.next()) {
+        const id = n.value;
+        const found = cookbookEntry(id);
+        const bookId = bookOf(found);
+        const folder = await targetFolder("Actor", bookId, found?.entry?.meta?.group);
+        const actor = await importOne(bookId, id, folder?.id ?? null).catch(
+          (err) => (console.error(`${MODULE_ID} | import ${id}`, err), null),
+        );
+        if (actor) done++;
+        bar.step(found?.entry?.name ?? id);
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(IMPORT_CONCURRENCY, total || 1) }, worker));
+  } finally {
+    bar.finish(label);
+  }
   return done;
 }
 
@@ -1055,66 +1058,78 @@ export async function cookbookImportJournals() {
   const openBooks = [...data.books.keys()].filter((b) => ctx.sessionDocs.has(b));
   let made = 0;
   let updated = 0;
-  for (const bookId of openBooks) {
-    const cb = data.books.get(bookId);
-    const session = ctx.sessionDocs.get(bookId);
-    const locs = Object.entries(cb.entries).filter(([, e]) => e.kind === "kind.location");
-    if (!locs.length) continue;
-    // The BOOK is the folder now, so the journal itself is named by its group
-    // alone ("A. Entrance Caves") rather than repeating the book on every row.
-    const folder = await ensureFolderPath("JournalEntry", [FOLDER_NAME, bookFolderName(bookId)]);
-    const groups = new Map();
-    for (const [id, e] of locs) {
-      const g = e.meta?.group ?? BOOKS[bookId]?.label ?? bookId;
-      if (!groups.has(g)) groups.set(g, []);
-      groups.get(g).push([id, e]);
-    }
-    for (const [group, list] of groups) {
-      let journal = game.journal.find((j) => j.getFlag(MODULE_ID, "cookbook")?.group === group && j.getFlag(MODULE_ID, "cookbook")?.book === bookId);
-      if (journal) {
-        // Re-file (and re-title) a journal made by an earlier release.
-        const move = {};
-        if (journal.name !== group) move.name = group;
-        if ((journal.folder?.id ?? null) !== folder.id) move.folder = folder.id;
-        if (Object.keys(move).length) await journal.update(move);
-      } else {
-        journal = await JournalEntry.create({
-          name: group,
-          folder: folder.id,
-          flags: { [MODULE_ID]: { cookbook: { book: bookId, group } } },
-        });
+  // Every page is a fresh extraction from the seat's PDF, so a book's worth of
+  // districts is minutes of work — counted up front so the bar can say how far
+  // through them it is rather than only that it is busy.
+  const bar = progressBar(
+    game.i18n.localize(`${LANG_PREFIX}.ui.progressJournals`),
+    openBooks.reduce((n, b) => n + Object.values(data.books.get(b).entries).filter((e) => e.kind === "kind.location").length, 0),
+  );
+  try {
+    for (const bookId of openBooks) {
+      const cb = data.books.get(bookId);
+      const session = ctx.sessionDocs.get(bookId);
+      const locs = Object.entries(cb.entries).filter(([, e]) => e.kind === "kind.location");
+      if (!locs.length) continue;
+      // The BOOK is the folder now, so the journal itself is named by its group
+      // alone ("A. Entrance Caves") rather than repeating the book on every row.
+      const folder = await ensureFolderPath("JournalEntry", [FOLDER_NAME, bookFolderName(bookId)]);
+      const groups = new Map();
+      for (const [id, e] of locs) {
+        const g = e.meta?.group ?? BOOKS[bookId]?.label ?? bookId;
+        if (!groups.has(g)) groups.set(g, []);
+        groups.get(g).push([id, e]);
       }
-      list.sort((a, b) => (a[1].pages[0] - b[1].pages[0]) || a[0].localeCompare(b[0]));
-      let sort = 0;
-      for (const [id, e] of list) {
-        sort += 100;
-        const node = await executeEntry(session.doc, cb, data.registers, id).catch(() => null);
-        if (node?.ok) cookbookCacheParas(bookId, id, node.fields.description ?? []);
-        const creatures = Object.values(node?.fields?.creatures ?? {}).filter((c) => c && (c.ref || c.text));
-        const creatureHtml = creatures.length
-          ? `<p><strong>Creatures:</strong> ${creatures
-              .map((c) => (c.ref ? `@PdfText[${c.ref}]{${c.text}}` : c.text))
-              .join(" · ")}</p>`
-          : "";
-        const content = pdfTag(id, e.cite) + creatureHtml;
-        const existing = journal.pages.find((p) => p.getFlag(MODULE_ID, "cookbook")?.id === id);
-        if (existing) {
-          await existing.update({ "text.content": content, sort });
-          updated++;
+      for (const [group, list] of groups) {
+        let journal = game.journal.find((j) => j.getFlag(MODULE_ID, "cookbook")?.group === group && j.getFlag(MODULE_ID, "cookbook")?.book === bookId);
+        if (journal) {
+          // Re-file (and re-title) a journal made by an earlier release.
+          const move = {};
+          if (journal.name !== group) move.name = group;
+          if ((journal.folder?.id ?? null) !== folder.id) move.folder = folder.id;
+          if (Object.keys(move).length) await journal.update(move);
         } else {
-          await journal.createEmbeddedDocuments("JournalEntryPage", [
-            {
-              name: e.name,
-              type: "text",
-              sort,
-              text: { content, format: CONST.JOURNAL_ENTRY_PAGE_FORMATS.HTML },
-              flags: { [MODULE_ID]: { cookbook: { id, book: bookId } } },
-            },
-          ]);
-          made++;
+          journal = await JournalEntry.create({
+            name: group,
+            folder: folder.id,
+            flags: { [MODULE_ID]: { cookbook: { book: bookId, group } } },
+          });
+        }
+        list.sort((a, b) => (a[1].pages[0] - b[1].pages[0]) || a[0].localeCompare(b[0]));
+        let sort = 0;
+        for (const [id, e] of list) {
+          sort += 100;
+          const node = await executeEntry(session.doc, cb, data.registers, id).catch(() => null);
+          if (node?.ok) cookbookCacheParas(bookId, id, node.fields.description ?? []);
+          const creatures = Object.values(node?.fields?.creatures ?? {}).filter((c) => c && (c.ref || c.text));
+          const creatureHtml = creatures.length
+            ? `<p><strong>Creatures:</strong> ${creatures
+                .map((c) => (c.ref ? `@PdfText[${c.ref}]{${c.text}}` : c.text))
+                .join(" · ")}</p>`
+            : "";
+          const content = pdfTag(id, e.cite) + creatureHtml;
+          const existing = journal.pages.find((p) => p.getFlag(MODULE_ID, "cookbook")?.id === id);
+          if (existing) {
+            await existing.update({ "text.content": content, sort });
+            updated++;
+          } else {
+            await journal.createEmbeddedDocuments("JournalEntryPage", [
+              {
+                name: e.name,
+                type: "text",
+                sort,
+                text: { content, format: CONST.JOURNAL_ENTRY_PAGE_FORMATS.HTML },
+                flags: { [MODULE_ID]: { cookbook: { id, book: bookId } } },
+              },
+            ]);
+            made++;
+          }
+          bar.step(e.name);
         }
       }
     }
+  } finally {
+    bar.finish();
   }
   if (!made && !updated) return ui.notifications.warn("acks-content | no location entries in any open book — connect AX2/AX3 first.");
   ui.notifications.info(`acks-content | location journals: ${made} page(s) created, ${updated} refreshed, in "${FOLDER_NAME}".`);
@@ -1134,60 +1149,72 @@ export async function cookbookImportRollTables() {
   const present = new Set(game.tables.map((t) => t.getFlag(MODULE_ID, "cookbook")?.id).filter(Boolean));
   let made = 0;
   let skipped = 0;
-  for (const bookId of openBooks) {
-    const cb = data.books.get(bookId);
-    const session = ctx.sessionDocs.get(bookId);
-    const tables = Object.entries(cb.entries).filter(([, e]) => e.kind === "kind.rolltable");
-    if (!tables.length) continue;
-    for (const [id, e] of tables) {
-      if (present.has(id)) {
-        skipped++;
-        continue;
-      }
-      const node = await executeEntry(session.doc, cb, data.registers, id).catch(() => null);
-      if (!node?.ok) {
-        ui.notifications.warn(`acks-content | ${e.name}: page did not match the cookbook — skipped.`);
-        continue;
-      }
-      const folder = await targetFolder("RollTable", bookId, e.meta?.group);
-      // Rows arrive as section-labelled paragraphs; a row that wrapped columns
-      // has several paras under one section, joined here in order.
-      const rowText = new Map();
-      for (const p of node.fields.rows ?? []) {
-        const key = p.section ?? "";
-        rowText.set(key, rowText.has(key) ? `${rowText.get(key)} ${p.text}` : p.text);
-      }
-      const results = [];
-      for (const [sec, text] of rowText) {
-        const m = /^r([\d,-]+)$/.exec(sec);
-        if (!m) continue;
-        // A section may carry several ranges ("r6,7,16" — one printed truth
-        // covering several rumor rolls); each becomes its own result row.
-        for (const part of m[1].split(",")) {
-          const g = /^(\d+)(?:-(\d+))?$/.exec(part);
-          if (!g) continue;
-          const lo = parseInt(g[1], 10);
-          const hi = g[2] ? parseInt(g[2], 10) : lo;
-          results.push({ type: CONST.TABLE_RESULT_TYPES.TEXT, text, range: [lo, hi] });
+  const bar = progressBar(
+    game.i18n.localize(`${LANG_PREFIX}.ui.progressRollTables`),
+    openBooks.reduce((n, b) => n + Object.values(data.books.get(b).entries).filter((e) => e.kind === "kind.rolltable").length, 0),
+  );
+  try {
+    for (const bookId of openBooks) {
+      const cb = data.books.get(bookId);
+      const session = ctx.sessionDocs.get(bookId);
+      const tables = Object.entries(cb.entries).filter(([, e]) => e.kind === "kind.rolltable");
+      if (!tables.length) continue;
+      for (const [id, e] of tables) {
+        // Stepped at the top, not per outcome: every branch below either creates
+        // the table or explains why it could not, and all of them consumed a unit
+        // of the work the bar is measuring.
+        bar.step(e.name);
+        if (present.has(id)) {
+          skipped++;
+          continue;
         }
+        const node = await executeEntry(session.doc, cb, data.registers, id).catch(() => null);
+        if (!node?.ok) {
+          ui.notifications.warn(`acks-content | ${e.name}: page did not match the cookbook — skipped.`);
+          continue;
+        }
+        const folder = await targetFolder("RollTable", bookId, e.meta?.group);
+        // Rows arrive as section-labelled paragraphs; a row that wrapped columns
+        // has several paras under one section, joined here in order.
+        const rowText = new Map();
+        for (const p of node.fields.rows ?? []) {
+          const key = p.section ?? "";
+          rowText.set(key, rowText.has(key) ? `${rowText.get(key)} ${p.text}` : p.text);
+        }
+        const results = [];
+        for (const [sec, text] of rowText) {
+          const m = /^r([\d,-]+)$/.exec(sec);
+          if (!m) continue;
+          // A section may carry several ranges ("r6,7,16" — one printed truth
+          // covering several rumor rolls); each becomes its own result row.
+          for (const part of m[1].split(",")) {
+            const g = /^(\d+)(?:-(\d+))?$/.exec(part);
+            if (!g) continue;
+            const lo = parseInt(g[1], 10);
+            const hi = g[2] ? parseInt(g[2], 10) : lo;
+            results.push({ type: CONST.TABLE_RESULT_TYPES.TEXT, text, range: [lo, hi] });
+          }
+        }
+        if (!results.length) continue;
+        results.sort((a, b) => a.range[0] - b.range[0]);
+        const lows = results.map((r) => r.range[0]);
+        const his = results.map((r) => r.range[1]);
+        const formula =
+          (typeof node.fields.roll === "string" && node.fields.roll) ||
+          (Math.min(...lows) === 1 ? `1d${Math.max(...his)}` : "");
+        await RollTable.create({
+          name: e.name,
+          folder: folder?.id ?? null,
+          formula,
+          description: pdfTag(id, e.cite),
+          results,
+          flags: { [MODULE_ID]: { cookbook: { id, book: bookId } } },
+        });
+        made++;
       }
-      if (!results.length) continue;
-      results.sort((a, b) => a.range[0] - b.range[0]);
-      const lows = results.map((r) => r.range[0]);
-      const his = results.map((r) => r.range[1]);
-      const formula =
-        (typeof node.fields.roll === "string" && node.fields.roll) ||
-        (Math.min(...lows) === 1 ? `1d${Math.max(...his)}` : "");
-      await RollTable.create({
-        name: e.name,
-        folder: folder?.id ?? null,
-        formula,
-        description: pdfTag(id, e.cite),
-        results,
-        flags: { [MODULE_ID]: { cookbook: { id, book: bookId } } },
-      });
-      made++;
     }
+  } finally {
+    bar.finish();
   }
   if (!made && !skipped) return ui.notifications.warn("acks-content | no roll-table entries in any open book — connect AX2/AX3 first.");
   ui.notifications.info(`acks-content | roll tables: ${made} created, ${skipped} already present, in "${FOLDER_NAME}".`);
@@ -1205,47 +1232,66 @@ export async function cookbookOrganize() {
   if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only (moves documents).");
   const moved = { Actor: 0, JournalEntry: 0, RollTable: 0, Item: 0 };
 
+  // Every candidate is collected before anything moves, so the bar can measure
+  // the whole job — a world that imported several books has hundreds of them
+  // (572 moved here on the 0.35.0 release), one document write each.
   const actors = game.actors.filter((a) => a.getFlag(MODULE_ID, "cookbook")?.id);
-  await prepareFolders("Actor", actors.map((a) => a.getFlag(MODULE_ID, "cookbook").id));
-  for (const a of actors) {
-    const id = a.getFlag(MODULE_ID, "cookbook").id;
-    const found = cookbookEntry(id);
-    const folder = await targetFolder("Actor", bookOf(found) ?? a.getFlag(MODULE_ID, "cookbook").book, found?.entry?.meta?.group);
-    if (folder && (a.folder?.id ?? null) !== folder.id) {
-      await a.update({ folder: folder.id });
-      moved.Actor++;
-    }
-  }
+  const journals = game.journal.filter((x) => x.getFlag(MODULE_ID, "cookbook")?.group);
+  const tables = game.tables.filter((x) => x.getFlag(MODULE_ID, "cookbook")?.id);
+  const items = game.items.filter((x) => x.getFlag(MODULE_ID, "cookbook")?.id);
+  const bar = progressBar(
+    game.i18n.localize(`${LANG_PREFIX}.ui.progressOrganize`),
+    actors.length + journals.length + tables.length + items.length,
+  );
 
-  for (const j of game.journal.filter((x) => x.getFlag(MODULE_ID, "cookbook")?.group)) {
-    const { book, group } = j.getFlag(MODULE_ID, "cookbook");
-    const folder = await ensureFolderPath("JournalEntry", [FOLDER_NAME, bookFolderName(book)]);
-    const patch = {};
-    if (folder && (j.folder?.id ?? null) !== folder.id) patch.folder = folder.id;
-    if (j.name !== group) patch.name = group;
-    if (Object.keys(patch).length) {
-      await j.update(patch);
-      moved.JournalEntry++;
+  try {
+    await prepareFolders("Actor", actors.map((a) => a.getFlag(MODULE_ID, "cookbook").id));
+    for (const a of actors) {
+      bar.step(a.name);
+      const id = a.getFlag(MODULE_ID, "cookbook").id;
+      const found = cookbookEntry(id);
+      const folder = await targetFolder("Actor", bookOf(found) ?? a.getFlag(MODULE_ID, "cookbook").book, found?.entry?.meta?.group);
+      if (folder && (a.folder?.id ?? null) !== folder.id) {
+        await a.update({ folder: folder.id });
+        moved.Actor++;
+      }
     }
-  }
 
-  for (const t of game.tables.filter((x) => x.getFlag(MODULE_ID, "cookbook")?.id)) {
-    const { id, book } = t.getFlag(MODULE_ID, "cookbook");
-    const found = cookbookEntry(id);
-    const folder = await targetFolder("RollTable", bookOf(found) ?? book, found?.entry?.meta?.group);
-    if (folder && (t.folder?.id ?? null) !== folder.id) {
-      await t.update({ folder: folder.id });
-      moved.RollTable++;
+    for (const j of journals) {
+      bar.step(j.name);
+      const { book, group } = j.getFlag(MODULE_ID, "cookbook");
+      const folder = await ensureFolderPath("JournalEntry", [FOLDER_NAME, bookFolderName(book)]);
+      const patch = {};
+      if (folder && (j.folder?.id ?? null) !== folder.id) patch.folder = folder.id;
+      if (j.name !== group) patch.name = group;
+      if (Object.keys(patch).length) {
+        await j.update(patch);
+        moved.JournalEntry++;
+      }
     }
-  }
 
-  await prepareItemShelves();
-  for (const i of game.items.filter((x) => x.getFlag(MODULE_ID, "cookbook")?.id)) {
-    const folder = await ensureItemFolder(i.getFlag(MODULE_ID, "cookbook").id);
-    if (folder && (i.folder?.id ?? null) !== folder.id) {
-      await i.update({ folder: folder.id });
-      moved.Item++;
+    for (const t of tables) {
+      bar.step(t.name);
+      const { id, book } = t.getFlag(MODULE_ID, "cookbook");
+      const found = cookbookEntry(id);
+      const folder = await targetFolder("RollTable", bookOf(found) ?? book, found?.entry?.meta?.group);
+      if (folder && (t.folder?.id ?? null) !== folder.id) {
+        await t.update({ folder: folder.id });
+        moved.RollTable++;
+      }
     }
+
+    await prepareItemShelves();
+    for (const i of items) {
+      bar.step(i.name);
+      const folder = await ensureItemFolder(i.getFlag(MODULE_ID, "cookbook").id);
+      if (folder && (i.folder?.id ?? null) !== folder.id) {
+        await i.update({ folder: folder.id });
+        moved.Item++;
+      }
+    }
+  } finally {
+    bar.finish();
   }
 
   const total = Object.values(moved).reduce((a, b) => a + b, 0);
@@ -1652,13 +1698,19 @@ export async function repairEquipmentAbilities() {
 export async function importAllEquipment() {
   const repaired = await repairEquipmentAbilities();
   const ids = cookbookEquipmentIds();
-  await prepareItemShelves();
-  const folder = null; // per-id shelf
+  const bar = progressBar(game.i18n.localize(`${LANG_PREFIX}.ui.progressEquipment`), ids.length);
   let created = 0;
-  for (const id of ids) {
-    const before = game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id);
-    const item = await importEquipment(id, folder);
-    if (item && !before) created++;
+  try {
+    await prepareItemShelves();
+    const folder = null; // per-id shelf
+    for (const id of ids) {
+      const before = game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id);
+      const item = await importEquipment(id, folder);
+      if (item && !before) created++;
+      bar.step(cookbookEntry(id)?.entry?.name ?? id);
+    }
+  } finally {
+    bar.finish();
   }
   return { total: ids.length, created, repaired };
 }
@@ -1708,11 +1760,20 @@ async function resolveCompanions(effects) {
 export async function cookbookFillCompanions() {
   if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only.");
   let filled = 0;
-  for (const { doc, extras } of eachAbility()) {
-    const effects = await resolveCompanions(extras.effects);
-    if (effects === extras.effects) continue;
-    await doc.update({ [`flags.acks-abilities.extras.effects`]: effects });
-    filled += effects.filter((e, i) => e.actorUuid && !extras.effects[i]?.actorUuid).length;
+  // A slot that resolves IMPORTS the creature from the seat's book, so this is
+  // an actor import wearing a different name — same page extraction, same wait.
+  const all = [...eachAbility()];
+  const bar = progressBar(game.i18n.localize(`${LANG_PREFIX}.ui.progressCompanions`), all.length);
+  try {
+    for (const { doc, extras } of all) {
+      bar.step(doc.name);
+      const effects = await resolveCompanions(extras.effects);
+      if (effects === extras.effects) continue;
+      await doc.update({ [`flags.acks-abilities.extras.effects`]: effects });
+      filled += effects.filter((e, i) => e.actorUuid && !extras.effects[i]?.actorUuid).length;
+    }
+  } finally {
+    bar.finish();
   }
   ui.notifications.info(`acks-content | companions: ${filled} slot(s) linked to an actor.`);
   return filled;
@@ -1920,11 +1981,17 @@ export async function cookbookImportAbilitiesDialog() {
       callback: async (event, button) => {
         const picked = [...button.form.querySelectorAll('input[name="sel"]:checked')].map((el) => el.value);
         if (!picked.length) return ui.notifications.warn("acks-content | nothing selected.");
-        await prepareItemShelves();
-        const folder = null; // per-id shelf
+        const bar = progressBar(game.i18n.localize(`${LANG_PREFIX}.ui.progressAbilities`), picked.length);
         let done = 0;
-        for (const id of picked) {
-          if (await importAbility(id, folder).catch((err) => (console.error(`${MODULE_ID} | import ${id}`, err), null))) done++;
+        try {
+          await prepareItemShelves();
+          const folder = null; // per-id shelf
+          for (const id of picked) {
+            if (await importAbility(id, folder).catch((err) => (console.error(`${MODULE_ID} | import ${id}`, err), null))) done++;
+            bar.step(cookbookEntry(id)?.entry?.name ?? id);
+          }
+        } finally {
+          bar.finish();
         }
         ui.notifications.info(game.i18n.format(`${LANG_PREFIX}.ui.abilDone`, { done, picked: picked.length, folder: FOLDER_NAME }));
       },
@@ -1937,14 +2004,20 @@ export async function cookbookImportAbilities() {
   if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only.");
   const ids = cookbookAbilityIds();
   if (!ids.length) return ui.notifications.warn("acks-content | no abilities in the shipped cookbook.");
-  await prepareItemShelves();
-  const folder = null; // per-id shelf
+  const bar = progressBar(game.i18n.localize(`${LANG_PREFIX}.ui.progressAbilities`), ids.length);
   let made = 0;
   let reused = 0;
-  for (const id of ids) {
-    if (game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id)) reused++;
-    else made++;
-    await importAbility(id, folder).catch((err) => console.error(`${MODULE_ID} | import ${id}`, err));
+  try {
+    await prepareItemShelves();
+    const folder = null; // per-id shelf
+    for (const id of ids) {
+      if (game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id)) reused++;
+      else made++;
+      await importAbility(id, folder).catch((err) => console.error(`${MODULE_ID} | import ${id}`, err));
+      bar.step(cookbookEntry(id)?.entry?.name ?? id);
+    }
+  } finally {
+    bar.finish();
   }
   ui.notifications.info(`acks-content | abilities: ${made} imported, ${reused} already present.`);
   return { made, reused };
@@ -1974,44 +2047,54 @@ export async function cookbookUpdateAbilities() {
   let onActors = 0;
   let guessed = 0;
   let skipped = 0;
-  for (const { doc, extras, on } of eachAbility()) {
-    const flagged = doc.getFlag(MODULE_ID, "cookbook")?.id;
-    const guess = flagged ? null : idForName(index, doc.name, present);
-    const id = flagged ?? guess?.id;
-    if (!id || !cookbookEntry(id)) {
-      skipped++;
-      continue;
-    }
-    if (guess?.ambiguous) {
-      guessed++;
-      console.warn(`${MODULE_ID} | "${doc.name}" matches several definitions; adopted ${id}.`);
-    }
-    const found = cookbookEntry(id);
-    // Re-extract once per definition, not once per copy of it.
-    if (!nodeCache.has(id)) {
-      const session = ctx.sessionDocs.get(bookOf(found));
-      let node = null;
-      if (session) {
-        node = await executeEntry(session.doc, found.cb, data.registers, id).catch(() => null);
-        if (node?.ok) cookbookCacheParas(bookOf(found), id, node.fields.description ?? []);
-        else node = null;
+  // Counted first: this walks every ability in the world, actors included, and
+  // re-extracts each definition it has not seen — hundreds of items on a world
+  // that imported the whole corpus.
+  const all = [...eachAbility()];
+  const bar = progressBar(game.i18n.localize(`${LANG_PREFIX}.ui.progressUpdate`), all.length);
+  try {
+    for (const { doc, extras, on } of all) {
+      bar.step(doc.name);
+      const flagged = doc.getFlag(MODULE_ID, "cookbook")?.id;
+      const guess = flagged ? null : idForName(index, doc.name, present);
+      const id = flagged ?? guess?.id;
+      if (!id || !cookbookEntry(id)) {
+        skipped++;
+        continue;
       }
-      nodeCache.set(id, node);
+      if (guess?.ambiguous) {
+        guessed++;
+        console.warn(`${MODULE_ID} | "${doc.name}" matches several definitions; adopted ${id}.`);
+      }
+      const found = cookbookEntry(id);
+      // Re-extract once per definition, not once per copy of it.
+      if (!nodeCache.has(id)) {
+        const session = ctx.sessionDocs.get(bookOf(found));
+        let node = null;
+        if (session) {
+          node = await executeEntry(session.doc, found.cb, data.registers, id).catch(() => null);
+          if (node?.ok) cookbookCacheParas(bookOf(found), id, node.fields.description ?? []);
+          else node = null;
+        }
+        nodeCache.set(id, node);
+      }
+      const built = bindAbility(found.entry, nodeCache.get(id), id, {
+        // A copy that recorded arriving under an older name keeps saying so.
+        ...(extras.conversionStatus ? { conversionStatus: extras.conversionStatus } : {}),
+        ...(extras.conversionFrom ? { conversionFrom: extras.conversionFrom } : {}),
+      });
+      built.flags["acks-abilities"].extras.effects = await resolveCompanions(built.flags["acks-abilities"].extras.effects);
+      await doc.update({
+        "system.description": built.system.description,
+        [`flags.${MODULE_ID}.cookbook`]: built.flags[MODULE_ID].cookbook,
+        "flags.acks-abilities.extras": built.flags["acks-abilities"].extras,
+      });
+      updated++;
+      if (!flagged) adopted++;
+      if (on) onActors++;
     }
-    const built = bindAbility(found.entry, nodeCache.get(id), id, {
-      // A copy that recorded arriving under an older name keeps saying so.
-      ...(extras.conversionStatus ? { conversionStatus: extras.conversionStatus } : {}),
-      ...(extras.conversionFrom ? { conversionFrom: extras.conversionFrom } : {}),
-    });
-    built.flags["acks-abilities"].extras.effects = await resolveCompanions(built.flags["acks-abilities"].extras.effects);
-    await doc.update({
-      "system.description": built.system.description,
-      [`flags.${MODULE_ID}.cookbook`]: built.flags[MODULE_ID].cookbook,
-      "flags.acks-abilities.extras": built.flags["acks-abilities"].extras,
-    });
-    updated++;
-    if (!flagged) adopted++;
-    if (on) onActors++;
+  } finally {
+    bar.finish();
   }
   const stale = danglingAbilities().length;
   ui.notifications.info(

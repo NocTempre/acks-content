@@ -120,3 +120,36 @@
   opacity: 0.75;
   font-size: var(--font-size-12, 12px);
 }
+
+/* Reconnect dialog: one row per book that could not reopen itself. A row is
+   either a line of explanation (handle/url) or a file picker (the browsers
+   that cannot reopen a file at all), so the rule set has to suit both. */
+.acks-content-reconnect-row {
+  padding: 3px 0;
+  border-top: 1px solid var(--color-border-light-tertiary, #999);
+}
+
+.acks-content-reconnect-row .notes {
+  margin: 2px 0 0;
+  font-size: var(--font-size-12, 12px);
+  opacity: 0.8;
+}
+
+.acks-content-reconnect-head {
+  display: flex;
+  gap: 0.5em;
+  align-items: center;
+}
+
+.acks-content-reconnect-head strong {
+  flex: 1;
+}
+
+.acks-content-reconnect-head button {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.acks-content-reconnect-done {
+  opacity: 0.6;
+}

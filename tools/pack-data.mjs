@@ -77,6 +77,16 @@ function buildMacros() {
 
     /* --- 1 · Your Book: what a new seat does first. --- */
     macro("ackscMacConnect0", "Connect Your Book (this seat)", "icons/svg/book.svg", GUARD + `api.connectBook();`, 100, FOLDERS.setup),
+    macro(
+      "ackscMacReconn00",
+      "Reconnect Remembered Books (this seat)",
+      "icons/svg/paralysis.svg",
+      GUARD +
+        `if (!api.reconnectBooks) return ui.notifications.warn("acks-content | reconnecting needs a newer module build.");
+api.reconnectBooks();`,
+      105,
+      FOLDERS.setup,
+    ),
     macro("ackscMacStatus00", "Book Status (this seat)", "icons/svg/chest.svg", GUARD + `api.bookStatus();`, 110, FOLDERS.setup),
     macro("ackscMacClear000", "Forget Books (this seat)", "icons/svg/blind.svg", GUARD + `api.forgetBooks();`, 120, FOLDERS.setup),
 

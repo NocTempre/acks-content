@@ -40,10 +40,22 @@ async function locatePage(doc, recipe) {
 }
 
 /**
+ * How many table recipes a full run works through — the denominator a caller
+ * needs to draw a progress bar, without it having to know the recipe shape.
+ */
+export const tableRecipeCount = () =>
+  Object.values(TABLE_RECIPES).reduce((n, doc) => n + Object.keys(doc.tables).length, 0);
+
+/**
  * @param {Map} sessionDocs - bookId → { doc } for connected books
+ * @param {object} [options]
+ * @param {number} [options.priority] - acksLib table priority (default WORLD)
+ * @param {(name: string) => void} [options.onProgress] - called once per recipe,
+ *        found or not: locating a table scans pages until it hits, so a full run
+ *        is minutes and the caller is the one holding the progress bar.
  * @returns {Promise<{imported, missingBooks, missingTables}>}
  */
-export async function importTables(sessionDocs, { priority } = {}) {
+export async function importTables(sessionDocs, { priority, onProgress } = {}) {
   const lib = globalThis.acksLib;
   const svc = lib?.services?.get?.("ruledata-import");
   if (!svc) {
@@ -109,37 +121,44 @@ export async function importTables(sessionDocs, { priority } = {}) {
   for (const [docId, docRec] of Object.entries(TABLE_RECIPES)) {
     const fresh = {};
     for (const [tableId, recipe] of Object.entries(docRec.tables)) {
-      if (recipe.valueBlocks) {
-        const out = await runValueBlocks(recipe);
-        if (out && Object.keys(out.classes ?? out).length) fresh[tableId] = out;
-        continue;
-      }
-      if (recipe.blocks) {
-        const out = await runBlocks(recipe);
-        if (Object.keys(out.list).length) fresh[tableId] = out;
-        continue;
-      }
-      if (recipe.subTables) {
-        const out = await runSubTables(recipe);
-        if (out && Object.keys(out.categories).length) fresh[tableId] = out;
-        continue;
-      }
-      const session = sessionDocs.get(recipe.book);
-      if (!session?.doc) {
-        report.missingBooks.add(recipe.book);
-        continue;
-      }
+      // Every path out of this body — imported, book missing, page not found,
+      // extraction threw — has consumed one recipe's worth of the run, so the
+      // report fires from a `finally` rather than being repeated at each exit.
       try {
-        const items = await locatePage(session.doc, recipe);
-        if (!items) {
-          report.missingTables.push(`${docId}.${tableId} (page not found)`);
+        if (recipe.valueBlocks) {
+          const out = await runValueBlocks(recipe);
+          if (out && Object.keys(out.classes ?? out).length) fresh[tableId] = out;
           continue;
         }
-        fresh[tableId] = recipe.pageSpan
-          ? Object.assign({}, ...items.map((pg) => extractTable(pg, recipe)))
-          : extractTable(items, recipe);
-      } catch (err) {
-        report.missingTables.push(`${docId}.${tableId} (${err.message})`);
+        if (recipe.blocks) {
+          const out = await runBlocks(recipe);
+          if (Object.keys(out.list).length) fresh[tableId] = out;
+          continue;
+        }
+        if (recipe.subTables) {
+          const out = await runSubTables(recipe);
+          if (out && Object.keys(out.categories).length) fresh[tableId] = out;
+          continue;
+        }
+        const session = sessionDocs.get(recipe.book);
+        if (!session?.doc) {
+          report.missingBooks.add(recipe.book);
+          continue;
+        }
+        try {
+          const items = await locatePage(session.doc, recipe);
+          if (!items) {
+            report.missingTables.push(`${docId}.${tableId} (page not found)`);
+            continue;
+          }
+          fresh[tableId] = recipe.pageSpan
+            ? Object.assign({}, ...items.map((pg) => extractTable(pg, recipe)))
+            : extractTable(items, recipe);
+        } catch (err) {
+          report.missingTables.push(`${docId}.${tableId} (${err.message})`);
+        }
+      } finally {
+        onProgress?.(`${docId}.${tableId}`);
       }
     }
     if (!Object.keys(fresh).length) continue;

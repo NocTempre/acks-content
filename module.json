@@ -2,7 +2,7 @@
   "id": "acks-content",
   "title": "ACKS II — Content Streamer (PoC)",
   "description": "Streams book prose from the user's own ACKS II PDFs into Foundry at render time — per-client, bring-your-own-book. PoC.",
-  "version": "0.36.0",
+  "version": "0.37.0",
   "authors": [
     {
       "name": "NocTempre"

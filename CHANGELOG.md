@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.37.0
+
+Say how far along an import is, and stop losing track of where the books are.
+
+### Every long job now has a progress bar
+
+Imports read the seat's own PDF page by page, so a book-sized run is minutes
+in which the client used to look hung. Each one now reports what it is doing
+and how much is left — the monster import already did, and the rest have
+caught up: location journals, adventure roll tables, rules tables, abilities
+(the picker and "import all"), equipment, `Update Abilities`, `Fill Companion
+Slots`, `Organize Cookbook Documents`, and opening a book itself. Bars name the
+entry in flight ("Updating abilities… 423/749 — Theology"), tolerate being
+dismissed, and always clear — including when the job throws part way.
+
+### Book locations survive the session properly
+
+- **Reconnect on join, per book.** Remembered books reopen themselves where the
+  browser allows it; the rest are listed in a **Reconnect your books** dialog
+  with one control each. One button for the lot could never work: re-granting
+  file permission consumes the click that authorized it, so a three-book seat
+  unlocked its first book and silently gave up on the other two.
+- **Seats that could not remember anything now can.** The File System Access
+  API is missing on any insecure origin (a GM on `http://` over the LAN) and on
+  Firefox, and those seats stored nothing at all. They now remember the file's
+  *name*, and the reconnect dialog offers a picker with that name spelled out.
+- **`connectBookUrl()` is remembered too** — a seat pointed at a staged copy
+  reopens it on every future join with no gesture at all. Pass
+  `{ remember: false }` for a one-off read.
+- **A remembered book location survived an upgrade that would have dropped it.**
+  `FileSystemHandle.kind` is the string `"file"`, which collided with the new
+  record shape and made every previously-remembered handle read as "re-pick
+  this by hand". Handles are now identified by behaviour, before anything else.
+- `Book Status` names the remembered location (`[url: …]`, `[handle: mm.pdf]`),
+  so a moved or renamed file is visible instead of merely "not open".
+- New macro: **Reconnect Remembered Books (this seat)**, for a seat that
+  dismissed the join-time offer. Dismissing it is now an answer, not an error
+  thrown out of the `ready` hook.
+
 ## 0.35.0
 
 Multi-book imports, and a place for everything.

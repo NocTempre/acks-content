@@ -64,6 +64,15 @@ in this browser only, never uploaded). Re-open a sheet afterwards and its
 description gains "📖 Show book text". `Book Status` says which books this seat
 can read; `Forget Books` drops the remembered locations and this session's prose.
 
+Where each book lives is remembered **on this device**, so joining again offers
+them back: books that can reopen themselves do, silently, and anything else is
+listed in a **Reconnect your books** dialog — one control per book, because
+browsers grant file permission one file at a time. `Reconnect Remembered Books`
+runs that pass again if you dismissed it. On browsers that cannot reopen a file
+at all (Firefox, or any seat on an insecure `http://` origin), the file's *name*
+is what gets remembered, and the dialog offers a picker with that name beside
+it. The prose itself is never stored, on any path.
+
 **Import content.** `Cookbook — Import Monsters` and `Cookbook — Browse & Import
 Abilities` open pickers; `Import ALL Abilities` takes the lot. Abilities import
 **with or without a connected book** — without one you get the name,

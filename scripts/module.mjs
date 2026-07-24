@@ -2,18 +2,21 @@
  * acks-content — bring-your-own-book content streamer (PoC).
  *
  * POSSESSION MODEL: what persists across sessions is the LOCATION of each
- * seat's book (a FileSystemFileHandle in IndexedDB) — never the prose. Every
- * session re-reads descriptions from the actual file; lose the file, lose the
- * prose (stubs + citations remain). Mechanical data (stats, attacks, spoils)
- * is imported into world documents and persists like hand-entered data.
+ * seat's book (in IndexedDB, per seat) — never the prose. Every session
+ * re-reads descriptions from the actual file; lose the file, lose the prose
+ * (stubs + citations remain). Mechanical data (stats, attacks, spoils) is
+ * imported into world documents and persists like hand-entered data.
  *
  * Persisted documents carry only @PdfText[recipe-id]{citation} tags, resolved
  * per viewing seat at render time from that seat's in-memory extraction.
- * Browsers without the File System Access API (e.g. Firefox players) fall
- * back to re-picking the file each session — same enforcement, more clicks.
+ * A location is a file handle, a fetchable path, or — where the browser allows
+ * neither — the remembered NAME of the file, which the join-time reconnect
+ * dialog offers back with a picker beside it. Same enforcement throughout;
+ * only the number of clicks changes.
  *
  * PoC api (globalThis.acksContent / game.modules.get("acks-content").api):
  *   connectBook()    pick a book + your local PDF (location remembered)
+ *   reconnectBooks() reopen this seat's remembered books (runs on join too)
  *   browseAndLoad()  GM: pick a page, choose headings, load actors/items
  *   applyStats()     fill monster actors from the connected book
  *   bookStatus()     which books are open / remembered / absent on this seat
@@ -26,7 +29,8 @@ import { openBook, pageItems, extractRecipe, extractDisplay, extractRunin, extra
 import { extractStatPairs } from "./stats.mjs";
 import { mapPairs } from "./stats-map.mjs";
 import { createDocFor } from "./poc.mjs";
-import { importTables } from "./tables-binding.mjs";
+import { importTables, tableRecipeCount } from "./tables-binding.mjs";
+import { progressBar } from "./progress.mjs";
 import {
   initCookbook, loadCookbook, cookbookImport, cookbookImportMonsters, cookbookImportAbilities, cookbookImportAbilitiesDialog, cookbookUpdateAbilities,
   cookbookFillCompanions, cookbookPruneAbilities, registerAbilityDirectoryButtons, importAbility, cookbookDebug, cookbookStub,
@@ -47,7 +51,30 @@ const proseMem = new Map();
 /*  Remembered book locations (IndexedDB)       */
 /* -------------------------------------------- */
 
-const IDB_STORE = "bookHandles";
+/**
+ * Where each book lives ON THIS SEAT, so the next session can offer to reopen
+ * it. The LOCATION persists; the book's text still never does.
+ *
+ * Three kinds, because the three ways a seat can reach its own PDF have three
+ * different reconnect stories:
+ *
+ *   handle  a FileSystemFileHandle (Chromium on a secure origin). Reopens
+ *           itself after the one permission click browsers insist on per page
+ *           load — the original, and still the best case.
+ *   url     a path this seat can fetch (a copy staged on the host). The only
+ *           kind that reconnects with NO gesture at all.
+ *   file    the IDENTITY of a file picked through <input type="file"> — name,
+ *           size, mtime. No browser will reopen that from storage, so this is
+ *           a reminder rather than a location: on join we can name the exact
+ *           file and put a picker in front of it, which is the difference
+ *           between "reconnect Monstrous Manual.pdf?" and a seat that starts
+ *           blank and silent every session.
+ *
+ * `file` is not a nicety: the File System Access API is absent on any insecure
+ * origin, so a GM joining over plain http on the LAN — or anyone on Firefox —
+ * had nothing remembered at all.
+ */
+const IDB_STORE = "bookHandles"; // store name predates the record shape; renaming it would strand every already-remembered book
 
 function idb() {
   return new Promise((resolve, reject) => {
@@ -68,10 +95,65 @@ async function idbOp(mode, fn) {
   });
 }
 
-const handleSet = (bookId, handle) => idbOp("readwrite", (s) => s.put(handle, bookId));
-const handleGet = (bookId) => idbOp("readonly", (s) => s.get(bookId));
-const handleKeys = () => idbOp("readonly", (s) => s.getAllKeys());
-const handleClear = () => idbOp("readwrite", (s) => s.clear());
+const locationPut = (bookId, record) => idbOp("readwrite", (s) => s.put(record, bookId));
+const locationClear = () => idbOp("readwrite", (s) => s.clear());
+
+/** The record kinds this module writes. Anything else is not ours to read. */
+const LOCATION_KINDS = new Set(["handle", "url", "file"]);
+
+/**
+ * Records written before the shape existed are the bare handle itself. Read
+ * them as the handle they are rather than discarding them — a seat that has
+ * had its book remembered for weeks must not lose it to an upgrade.
+ *
+ * The handle is identified by BEHAVIOUR, and before anything else, because
+ * `FileSystemHandle.kind` is a real property whose value is the string "file"
+ * — the same word this module uses for a record it cannot reopen. Trusting
+ * `kind` first read every legacy handle as "re-pick this by hand", which is
+ * precisely the regression the migration exists to prevent.
+ */
+function asLocation(value) {
+  if (!value) return null;
+  if (typeof value.getFile === "function") return { kind: "handle", handle: value, name: value.name ?? null };
+  return LOCATION_KINDS.has(value.kind) ? value : null;
+}
+
+/** Every remembered location on this seat, bookId → record. */
+async function locations() {
+  let keys = [];
+  let values = [];
+  try {
+    const db = await idb();
+    [keys, values] = await new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, "readonly");
+      const store = tx.objectStore(IDB_STORE);
+      // One transaction for both, so the two arrays are guaranteed to line up.
+      const k = store.getAllKeys();
+      const v = store.getAll();
+      tx.oncomplete = () => resolve([k.result ?? [], v.result ?? []]);
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (err) {
+    console.warn(`${MODULE_ID} | could not read remembered book locations (IndexedDB)`, err);
+    return new Map();
+  }
+  const out = new Map();
+  keys.forEach((key, i) => {
+    const record = asLocation(values[i]);
+    if (record) out.set(key, record);
+  });
+  return out;
+}
+
+/** What to call a remembered location in front of a reader. */
+const describeLocation = (record) =>
+  record?.kind === "url" ? record.url : (record?.name ?? game.i18n.localize(`${LANG_PREFIX}.ui.locationUnnamed`));
+
+/** Remember a file picked through the plain input: name only, and say so. */
+const rememberFile = (bookId, file) =>
+  locationPut(bookId, { kind: "file", name: file.name, size: file.size, lastModified: file.lastModified }).catch((err) =>
+    console.warn(`${MODULE_ID} | could not remember ${file.name}`, err),
+  );
 
 /* -------------------------------------------- */
 /*  Recipe resolution (static + dynamic)        */
@@ -131,38 +213,58 @@ function rerenderPdfTextApps() {
  * Programmatic connect: read a PDF from a URL this seat can fetch (a file the
  * GM staged under the Foundry data dir, or any served path). The interactive
  * connectBook() stays the normal path; this one serves hosted copies and
- * automated live tests. Session memory only, like every connect — nothing is
- * stored or uploaded.
+ * automated live tests.
+ *
+ * The prose is session memory as always — what persists is the PATH, so the
+ * seat reconnects itself on every future join. Pass `{ remember: false }` for
+ * a one-off read that should leave nothing behind.
  */
-async function connectBookUrl(bookId, url) {
+async function connectBookUrl(bookId, url, { remember = true } = {}) {
   if (!BOOKS[bookId]) return ui.notifications.warn(`acks-content | unknown book id "${bookId}".`);
   const resp = await fetch(url);
   if (!resp.ok) return ui.notifications.warn(`acks-content | could not read ${url} (${resp.status}).`);
   const buffer = await resp.arrayBuffer();
-  return ingestBook(bookId, buffer);
+  const hits = await ingestBook(bookId, buffer);
+  // A path IS a location, and the one kind that needs no gesture to reopen, so
+  // a seat pointed at a staged copy reconnects itself on every future join.
+  if (remember) {
+    await locationPut(bookId, { kind: "url", url, name: url.split("/").pop() || url }).catch((err) =>
+      console.warn(`${MODULE_ID} | could not remember ${url}`, err),
+    );
+  }
+  return hits;
 }
 
 async function ingestBook(bookId, buffer, { silent = false } = {}) {
-  const { doc, numPages, title } = await openBook(buffer);
-  const warning = fingerprintWarning(bookId, numPages, title);
-  if (warning && !silent) ui.notifications.warn(`acks-content | ${warning}`);
-  sessionDocs.set(bookId, { doc, title });
   const recipes = recipesForBookAll(bookId);
-  const entries = proseMem.get(bookId) ?? {};
-  for (const recipe of recipes) {
-    const prose = await extractRecipe(doc, recipe).catch(() => null);
-    if (prose) entries[recipe.id] = prose;
+  // Opening a book is the one wait every seat pays, restore included: pdf.js
+  // parses the whole file, then each shipped recipe is extracted from it.
+  const bar = progressBar(game.i18n.format(`${LANG_PREFIX}.ui.progressReading`, { book: BOOKS[bookId]?.label ?? bookId }), recipes.length);
+  try {
+    bar.note(game.i18n.localize(`${LANG_PREFIX}.ui.progressOpening`));
+    const { doc, numPages, title } = await openBook(buffer);
+    const warning = fingerprintWarning(bookId, numPages, title);
+    if (warning && !silent) ui.notifications.warn(`acks-content | ${warning}`);
+    sessionDocs.set(bookId, { doc, title });
+    const entries = proseMem.get(bookId) ?? {};
+    for (const recipe of recipes) {
+      const prose = await extractRecipe(doc, recipe).catch(() => null);
+      if (prose) entries[recipe.id] = prose;
+      bar.step(recipe.name ?? recipe.id);
+    }
+    proseMem.set(bookId, entries);
+    const hits = Object.keys(entries).length;
+    // Anything already on screen still says "connect your book" until it is drawn
+    // again — the tag resolves per render, not per document.
+    const redrawn = rerenderPdfTextApps();
+    const message = `acks-content | ${BOOKS[bookId].label}: open — ${hits}/${recipes.length} descriptions readable this session (in memory only; never stored).`;
+    if (silent) console.log(message);
+    else ui.notifications.info(message);
+    if (redrawn) console.log(`${MODULE_ID} | re-rendered ${redrawn} open sheet(s) so their page references resolve.`);
+    return hits;
+  } finally {
+    bar.finish();
   }
-  proseMem.set(bookId, entries);
-  const hits = Object.keys(entries).length;
-  // Anything already on screen still says "connect your book" until it is drawn
-  // again — the tag resolves per render, not per document.
-  const redrawn = rerenderPdfTextApps();
-  const message = `acks-content | ${BOOKS[bookId].label}: open — ${hits}/${recipes.length} descriptions readable this session (in memory only; never stored).`;
-  if (silent) console.log(message);
-  else ui.notifications.info(message);
-  if (redrawn) console.log(`${MODULE_ID} | re-rendered ${redrawn} open sheet(s) so their page references resolve.`);
-  return hits;
 }
 
 /**
@@ -181,11 +283,14 @@ async function cookbookImportTables() {
     return null;
   }
   let report;
+  const bar = progressBar(game.i18n.localize(`${LANG_PREFIX}.ui.progressTables`), tableRecipeCount());
   try {
-    report = await importTables(sessionDocs);
+    report = await importTables(sessionDocs, { onProgress: (name) => bar.step(name) });
   } catch (err) {
     ui.notifications.error(`acks-content | ${err.message}`);
     return null;
+  } finally {
+    bar.finish();
   }
   const nTables = report.imported.reduce((s, d) => s + d.tables.length, 0);
   if (nTables) {
@@ -211,12 +316,12 @@ async function connectBook() {
   // Say which books this seat already has, and which it merely remembers the
   // location of. Without this the list is identical before and after connecting
   // and the only way to find out is to connect again and see what happens.
-  const remembered = new Set((await handleKeys().catch(() => [])) ?? []);
+  const remembered = await locations();
   const mark = (id) =>
     sessionDocs.has(id)
       ? ` — ${game.i18n.localize(`${LANG_PREFIX}.ui.connectOpen`)}`
       : remembered.has(id)
-        ? ` — ${game.i18n.localize(`${LANG_PREFIX}.ui.connectRemembered`)}`
+        ? ` — ${game.i18n.format(`${LANG_PREFIX}.ui.connectRemembered`, { where: describeLocation(remembered.get(id)) })}`
         : "";
   const options = Object.entries(BOOKS)
     .map(([id, b]) => `<option value="${id}">${b.label}${mark(id)}</option>`)
@@ -245,7 +350,7 @@ async function connectBook() {
               types: [{ description: "PDF", accept: { "application/pdf": [".pdf"] } }],
             });
             await ingestBook(bookId, await (await handle.getFile()).arrayBuffer());
-            await handleSet(bookId, handle);
+            await locationPut(bookId, { kind: "handle", handle, name: handle.name ?? null });
             ui.notifications.info(game.i18n.format(`${LANG_PREFIX}.ui.locationSaved`, { book: BOOKS[bookId].label }));
           } catch (err) {
             if (err?.name !== "AbortError") throw err;
@@ -254,6 +359,13 @@ async function connectBook() {
           const file = form.elements.pdf.files[0];
           if (!file) return ui.notifications.warn("acks-content | no file chosen — nothing read.");
           await ingestBook(bookId, await file.arrayBuffer());
+          // All this browser will let us keep is which file it was. That is
+          // still worth keeping: next session says the name and offers the
+          // picker instead of leaving the seat to work it out.
+          await rememberFile(bookId, file);
+          ui.notifications.info(
+            game.i18n.format(`${LANG_PREFIX}.ui.locationNameOnly`, { book: BOOKS[bookId].label, name: file.name }),
+          );
         }
       },
     },
@@ -261,83 +373,211 @@ async function connectBook() {
 }
 
 /**
- * Reopen remembered books. Non-interactive first (silently opens whatever is
- * already permitted); books needing a permission gesture are offered in an
- * unlock dialog — clicking it IS the user gesture the browser requires.
+ * Reopen ONE remembered book. Returns whether this seat can now read it.
+ *
+ * Each kind fails differently and each failure is logged as itself — "it did
+ * not reconnect" and "there was nothing to reconnect" used to be indis-
+ * tinguishable from the outside, and they are not the same problem.
+ *
+ * `interactive` is the caller promising it holds a fresh user gesture, which
+ * is the only state in which a browser will re-grant file permission.
  */
-async function restoreBooks({ interactive = false } = {}) {
-  if (!fsaAvailable()) {
-    console.log(`${MODULE_ID} | this browser has no File System Access API — books must be re-picked each session.`);
-    return [];
+async function openRemembered(bookId, record, { interactive = false } = {}) {
+  if (sessionDocs.has(bookId)) return true;
+  const label = BOOKS[bookId]?.label ?? bookId;
+
+  // A served path needs no permission and no gesture: this is the one kind
+  // that puts a seat back exactly where it was, silently, on every join.
+  if (record?.kind === "url") {
+    try {
+      const resp = await fetch(record.url);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      await ingestBook(bookId, await resp.arrayBuffer(), { silent: !interactive });
+      return true;
+    } catch (err) {
+      console.warn(`${MODULE_ID} | remembered ${label}: ${record.url} could not be read`, err);
+      return false;
+    }
   }
-  // Every step below used to swallow its failure, so "it didn't reconnect" and
-  // "there was nothing to reconnect" looked identical from the outside. They
-  // are different problems and now say so.
-  let keys;
+
+  // Identity only — no browser hands a picked file back from storage. The
+  // dialog names it and offers the picker; there is nothing to try here.
+  if (record?.kind === "file") {
+    console.log(`${MODULE_ID} | remembered ${label}: "${record.name}" must be re-picked (this browser cannot reopen it by itself).`);
+    return false;
+  }
+
+  if (!fsaAvailable() || !record?.handle?.queryPermission) {
+    console.warn(
+      `${MODULE_ID} | remembered ${label}: this browser cannot reopen a stored file location (insecure origin, or no File System Access API) — re-pick the file.`,
+    );
+    return false;
+  }
   try {
-    keys = (await handleKeys()) ?? [];
+    let perm = await record.handle.queryPermission({ mode: "read" });
+    // Expected on every reload: browsers drop file permission when the page
+    // goes away, so a remembered book is "prompt" until a user gesture
+    // re-grants it. That gesture is the reconnect dialog — this is the normal
+    // path, not a failure, and saying so stops it reading like one.
+    if (perm === "prompt" && interactive) perm = await record.handle.requestPermission({ mode: "read" });
+    if (perm !== "granted") {
+      console.log(`${MODULE_ID} | remembered ${label}: permission "${perm}" — needs the unlock gesture this session.`);
+      return false;
+    }
+    await ingestBook(bookId, await (await record.handle.getFile()).arrayBuffer(), { silent: !interactive });
+    return true;
   } catch (err) {
-    console.warn(`${MODULE_ID} | could not read remembered book locations (IndexedDB)`, err);
-    return [];
+    console.warn(`${MODULE_ID} | remembered ${label} could not be opened (moved/deleted?)`, err);
+    return false;
   }
-  if (!keys.length) {
+}
+
+/**
+ * Reopen everything this seat remembers, silently. Runs on join: whatever can
+ * be opened without asking is opened, and the rest comes back as `pending` for
+ * the reconnect dialog.
+ */
+async function restoreBooks() {
+  const records = await locations();
+  if (!records.size) {
     console.log(`${MODULE_ID} | no book locations remembered on this seat yet — connect one to have it offered next session.`);
     return [];
   }
   const pending = [];
-  for (const bookId of keys) {
-    if (sessionDocs.has(bookId)) continue;
-    let handle = null;
-    try {
-      handle = await handleGet(bookId);
-    } catch (err) {
-      console.warn(`${MODULE_ID} | remembered ${BOOKS[bookId]?.label ?? bookId}: handle unreadable`, err);
-    }
-    if (!handle?.queryPermission) {
-      console.warn(`${MODULE_ID} | remembered ${BOOKS[bookId]?.label ?? bookId}: no usable file handle — reconnect it.`);
-      pending.push(bookId);
-      continue;
-    }
-    try {
-      let perm = await handle.queryPermission({ mode: "read" });
-      // Expected on every reload: browsers drop file permission when the page
-      // goes away, so a remembered book is "prompt" until a user gesture
-      // re-grants it. That gesture is the unlock dialog — this is the normal
-      // path, not a failure, and saying so stops it reading like one.
-      if (perm === "prompt" && interactive) perm = await handle.requestPermission({ mode: "read" });
-      if (perm !== "granted") {
-        console.log(
-          `${MODULE_ID} | remembered ${BOOKS[bookId]?.label ?? bookId}: permission "${perm}" — needs the unlock gesture this session.`,
-        );
-        pending.push(bookId);
-        continue;
-      }
-      await ingestBook(bookId, await (await handle.getFile()).arrayBuffer(), { silent: !interactive });
-    } catch (err) {
-      console.warn(`${MODULE_ID} | remembered ${BOOKS[bookId]?.label ?? bookId} could not be opened (moved/deleted?)`, err);
-      pending.push(bookId);
-    }
+  for (const [bookId, record] of records) {
+    if (!(await openRemembered(bookId, record))) pending.push(bookId);
   }
   return pending;
 }
 
-async function offerUnlock(pending) {
-  const list = pending.map((id) => `<li>${BOOKS[id]?.label ?? id}</li>`).join("");
+/**
+ * The join-time offer: one row per book that could not reopen itself.
+ *
+ * One control PER BOOK, not one button for the lot, because re-granting file
+ * permission consumes the user gesture that authorized it — a single click can
+ * only ever unlock the first book, which is exactly how a three-book seat used
+ * to end up with one book open and no explanation. A row therefore carries its
+ * own Unlock (handle), Retry (path) or file picker, acts the moment it is
+ * used, and says what happened; the dialog closes itself once nothing is left.
+ */
+async function offerReconnect(pending) {
+  const records = await locations();
+  const esc = foundry.utils.escapeHTML ?? ((s) => s);
+  const control = (id, record) => {
+    if (record?.kind === "file") {
+      return `<input type="file" name="pdf-${esc(id)}" data-book="${esc(id)}" accept="application/pdf">`;
+    }
+    const key = record?.kind === "url" ? "reconnectRetry" : "reconnectGo";
+    return `<button type="button" data-book="${esc(id)}">${game.i18n.localize(`${LANG_PREFIX}.ui.${key}`)}</button>`;
+  };
+  const why = (record) => {
+    if (record?.kind === "file") return game.i18n.format(`${LANG_PREFIX}.ui.reconnectFile`, { name: esc(record.name ?? "") });
+    if (record?.kind === "url") return game.i18n.format(`${LANG_PREFIX}.ui.reconnectUrlFailed`, { where: esc(record.url) });
+    return game.i18n.format(`${LANG_PREFIX}.ui.reconnectHandle`, { where: esc(describeLocation(record)) });
+  };
+  const rows = pending
+    .map((id) => {
+      const record = records.get(id);
+      return `<div class="acks-content-reconnect-row" data-row="${esc(id)}">
+        <div class="acks-content-reconnect-head">
+          <strong>${esc(BOOKS[id]?.label ?? id)}</strong>
+          ${control(id, record)}
+        </div>
+        <p class="notes" data-status="${esc(id)}">${why(record)}</p>
+      </div>`;
+    })
+    .join("");
+
   return foundry.applications.api.DialogV2.prompt({
-    window: { title: game.i18n.localize(`${LANG_PREFIX}.ui.unlockTitle`) },
-    content: `<p>${game.i18n.localize(`${LANG_PREFIX}.ui.unlockBody`)}</p><ul>${list}</ul>`,
+    window: { title: game.i18n.localize(`${LANG_PREFIX}.ui.reconnectTitle`) },
+    position: { width: 480 },
+    content: `<p>${game.i18n.localize(`${LANG_PREFIX}.ui.reconnectBody`)}</p>${rows}`,
+    // Dismissing this is a legitimate answer ("not tonight"), not an error to
+    // throw out of the ready hook.
+    rejectClose: false,
+    render: (event, dialog) => {
+      const root = dialog.element ?? dialog;
+      const left = new Set(pending);
+      const settle = (bookId, ok, message) => {
+        const status = root.querySelector(`[data-status="${bookId}"]`);
+        if (status) status.textContent = message;
+        if (!ok) return;
+        left.delete(bookId);
+        root.querySelector(`[data-row="${bookId}"]`)?.classList.add("acks-content-reconnect-done");
+        // Nothing left to ask for: get out of the way rather than making the
+        // reader dismiss a dialog that has finished its job.
+        if (!left.size) dialog.close();
+      };
+
+      for (const button of root.querySelectorAll("button[data-book]")) {
+        button.addEventListener("click", async () => {
+          const bookId = button.dataset.book;
+          button.disabled = true;
+          // This click is the fresh gesture the browser was holding out for.
+          const ok = await openRemembered(bookId, records.get(bookId), { interactive: true }).catch((err) => {
+            console.error(`${MODULE_ID} | reconnect ${bookId}`, err);
+            return false;
+          });
+          button.disabled = ok;
+          settle(
+            bookId,
+            ok,
+            ok
+              ? game.i18n.localize(`${LANG_PREFIX}.ui.reconnectOpened`)
+              : game.i18n.localize(`${LANG_PREFIX}.ui.reconnectFailed`),
+          );
+        });
+      }
+
+      for (const input of root.querySelectorAll("input[type=file][data-book]")) {
+        input.addEventListener("change", async () => {
+          const bookId = input.dataset.book;
+          const file = input.files?.[0];
+          if (!file) return;
+          input.disabled = true;
+          try {
+            await ingestBook(bookId, await file.arrayBuffer());
+            await rememberFile(bookId, file); // may be a different copy than last time
+            settle(bookId, true, game.i18n.localize(`${LANG_PREFIX}.ui.reconnectOpened`));
+          } catch (err) {
+            console.error(`${MODULE_ID} | reconnect ${bookId}`, err);
+            input.disabled = false;
+            settle(bookId, false, game.i18n.localize(`${LANG_PREFIX}.ui.reconnectFailed`));
+          }
+        });
+      }
+    },
     ok: {
-      label: game.i18n.localize(`${LANG_PREFIX}.ui.unlockGo`),
-      callback: async () => {
-        const still = await restoreBooks({ interactive: true });
+      label: game.i18n.localize(`${LANG_PREFIX}.ui.reconnectDone`),
+      callback: () => {
+        const still = pending.filter((id) => !sessionDocs.has(id));
         if (still.length) {
           ui.notifications.warn(
-            `acks-content | still locked/missing: ${still.map((id) => BOOKS[id]?.label ?? id).join(", ")} — reconnect via PoC 2 if the file moved.`,
+            game.i18n.format(`${LANG_PREFIX}.ui.reconnectIncomplete`, {
+              books: still.map((id) => BOOKS[id]?.label ?? id).join(", "),
+            }),
           );
         }
       },
     },
   });
+}
+
+/**
+ * Reconnect on demand — the same pass that runs on join, for a seat that
+ * dismissed the dialog or plugged its drive in afterwards.
+ */
+async function reconnectBooks() {
+  const pending = await restoreBooks();
+  if (!pending.length) {
+    const open = [...sessionDocs.keys()].map((id) => BOOKS[id]?.label ?? id);
+    return ui.notifications.info(
+      open.length
+        ? game.i18n.format(`${LANG_PREFIX}.ui.reconnectAllOpen`, { books: open.join(", ") })
+        : game.i18n.localize(`${LANG_PREFIX}.ui.reconnectNothing`),
+    );
+  }
+  return offerReconnect(pending);
 }
 
 /**
@@ -352,32 +592,31 @@ async function offerUnlock(pending) {
  * asked about. What a reader wants to know is how many SHIPPED entries this
  * book's connection unlocks.
  */
-function bookStatus() {
+async function bookStatus() {
+  const records = await locations();
   const lines = [];
-  handleKeys()
-    .catch(() => [])
-    .then(async (keys) => {
-      for (const [id, book] of Object.entries(BOOKS)) {
-        const entries = cookbookCount(id);
-        const recipes = allRecipes().filter((r) => r.book === id).length;
-        const scope = [entries ? `${entries} cookbook entr${entries === 1 ? "y" : "ies"}` : "", recipes ? `${recipes} recipe(s)` : ""]
-          .filter(Boolean)
-          .join(" + ");
-        let state;
-        if (sessionDocs.has(id)) state = `OPEN this session — ${scope || "nothing shipped for it yet"} readable`;
-        else if ((keys ?? []).includes(id)) state = `location remembered — unlock this session to read ${scope || "it"}`;
-        else state = `not connected on this seat${scope ? ` — would unlock ${scope}` : ""}`;
-        lines.push(`${book.label}: ${state}`);
-      }
-      ui.notifications.info(
-        `acks-content | ${game.i18n.localize(`${LANG_PREFIX}.ui.statusNote`)} Console has per-book detail.`,
-      );
-      console.log(`${MODULE_ID} | book status (this seat):\n${lines.join("\n")}`);
-    });
+  for (const [id, book] of Object.entries(BOOKS)) {
+    const entries = cookbookCount(id);
+    const recipes = allRecipes().filter((r) => r.book === id).length;
+    const scope = [entries ? `${entries} cookbook entr${entries === 1 ? "y" : "ies"}` : "", recipes ? `${recipes} recipe(s)` : ""]
+      .filter(Boolean)
+      .join(" + ");
+    const record = records.get(id);
+    // Naming the remembered location is the whole point of remembering it: a
+    // reader who moved or renamed the file can see that from here.
+    const where = record ? ` [${record.kind}: ${describeLocation(record)}]` : "";
+    let state;
+    if (sessionDocs.has(id)) state = `OPEN this session — ${scope || "nothing shipped for it yet"} readable${where}`;
+    else if (record) state = `location remembered${where} — reconnect this session to read ${scope || "it"}`;
+    else state = `not connected on this seat${scope ? ` — would unlock ${scope}` : ""}`;
+    lines.push(`${book.label}: ${state}`);
+  }
+  ui.notifications.info(`acks-content | ${game.i18n.localize(`${LANG_PREFIX}.ui.statusNote`)} Console has per-book detail.`);
+  console.log(`${MODULE_ID} | book status (this seat):\n${lines.join("\n")}`);
 }
 
 async function forgetBooks() {
-  await handleClear().catch(() => {});
+  await locationClear().catch(() => {});
   proseMem.clear();
   sessionDocs.clear();
   ui.notifications.info("acks-content | remembered book locations dropped; in-memory prose cleared. Sheets show stubs until books reconnect.");
@@ -769,7 +1008,7 @@ Hooks.once("ready", async () => {
   registerAbilityDirectoryButtons();
   await loadCookbook();
   const api = {
-    connectBook, connectBookUrl, browseAndLoad, applyStats, bookStatus, forgetBooks,
+    connectBook, connectBookUrl, reconnectBooks, browseAndLoad, applyStats, bookStatus, forgetBooks,
     proseFor, cookbookImport, cookbookImportMonsters, cookbookImportAbilities, cookbookImportAbilitiesDialog, cookbookUpdateAbilities, cookbookFillCompanions, cookbookPruneAbilities,
     importAbility, cookbookDebug, cookbookProse, cookbookCount,
     cookbookImportTables,
@@ -791,7 +1030,7 @@ Hooks.once("ready", async () => {
     `${MODULE_ID} | ready. Macros in "ACKS Content — Macros", or: acksContent.connectBook() · acksContent.cookbookImport() · acksContent.cookbookImportAbilitiesDialog() · acksContent.cookbookUpdateAbilities() · acksContent.browseAndLoad().`,
   );
 
-  // Reopen remembered books; offer the unlock gesture for the rest.
+  // Reopen remembered books; offer the reconnect gesture for the rest.
   const pending = await restoreBooks();
-  if (pending.length) await offerUnlock(pending);
+  if (pending.length) await offerReconnect(pending);
 });
