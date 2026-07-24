@@ -96,3 +96,9 @@ with no list is not a result.
 - Design doctrine: **reuse → extend → enhance → invent** — reuse core system
   documents; extend only via `flags["acks-content"]`; enhance with alternate
   sheets/wrappers; invent nothing the system provides (see docs/MODEL.md).
+- **The `acks` system repo (`C:\Proj\foundryvtt-acks-core`) is an unmodifiable
+  reference.** Read it to learn what core already does and build on top; a
+  module task never edits system source. **Overrides or extensions of core
+  logic default to `acks-lib`** — patch core from this module only when the
+  behavior is unique to this module's domain, and record why in docs/MODEL.md.
+  One owner per wrapped core method.
