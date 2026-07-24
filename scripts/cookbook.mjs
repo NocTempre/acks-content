@@ -1303,24 +1303,13 @@ export async function cookbookOrganize() {
   return moved;
 }
 
-/**
- * Resolve a LevelValue at a level. A local copy of acks-lib's resolver, kept
- * small on purpose: acks-content does not otherwise depend on acks-lib, and a
- * runtime reaching into a sibling module would break a seat that has not
- * installed it. Only the shapes this file can encounter are handled.
+/*
+ * NOTE a local `levelValueAt()` used to sit here — a third copy of acks-lib's
+ * LevelValue resolver, needed only because an imported ability's roll target
+ * had to be FLATTENED to a first-level number to fit the core item's single
+ * `rollTarget`. Ladders now travel whole into `system.rolls` and the system
+ * resolves them against the actor, so nothing here has to resolve anything.
  */
-function levelValueAt(v, level = 1) {
-  if (v == null) return null;
-  if (typeof v === "number") return v;
-  if (typeof v !== "object") return null;
-  if (v.kind === "perLevel" && v.base != null) return v.base + (v.per ?? 0) * (Math.max(1, level) - 1);
-  if (Array.isArray(v.breakpoints) && v.breakpoints.length) {
-    let out = null;
-    for (const b of [...v.breakpoints].sort((a, c) => a.atLevel - c.atLevel)) if (level >= b.atLevel) out = b.value;
-    return out;
-  }
-  return v.flat ?? null;
-}
 
 /** "kw:sensingevil" -> "Sensing Evil"-ish, for the system's requirements field. */
 const capabilityLabel = (token) => {
@@ -1430,31 +1419,43 @@ export function bindAbility(entry, node, id, opts = {}) {
     // book would withhold something the cookbook already states. Those apply
     // either way; anything pointing at a number still waits for the book.
     effects: [...aliasEffects, ...(node?.fields?.effects ?? materializeEffects(entry.fields?.effects?.specs, []))],
-    // Each roll the ability offers, so the Rolls tab can present them
-    // individually rather than the core item's single roll standing in for all.
-    ...(node?.fields?.rolls?.length ? { rolls: node.fields.rolls } : {}),
+    // NOTE rolls are NOT in this flag. They are system data (`system.rolls`)
+    // and are written below — the flag held them only while the core item
+    // could carry a single roll.
     // Immunity-granting abilities (Divine Health, Wakefulness, Fiery
     // Resistance…) materialize defenses from the seat's OWN prose via the
     // executor's vocabulary scan — nothing about which is shipped.
     ...(node?.fields?.defenses ? { defenses: node.fields.defenses } : {}),
   };
-  // Drive the SYSTEM's own fields, not just our flag. An ability whose extract
-  // classified a proficiency throw becomes rollable natively — the core sheet
-  // already has roll / rollType / rollTarget and a rollFormula() behind them —
-  // and a prerequisite lands in the requirements field the sheet already shows.
-  // Without this the mechanics exist but nothing in the game can reach them.
-  const thrown = extras.effects.find((e) => e.type === "throw");
+  // Drive the SYSTEM's own fields. An ability whose extract classified throws
+  // becomes rollable natively — the system stores every roll in `system.rolls`
+  // and rolls them itself — and a prerequisite lands in the requirements field
+  // the sheet already shows. Without this the mechanics exist but nothing in
+  // the game can reach them.
+  //
+  // EVERY throw becomes a roll, not just the first. The recipe's own `rolls`
+  // (a chef naming each throw) wins when present; otherwise the classified
+  // `throw` effects are lifted in order. The ladder is carried WHOLE — the
+  // system resolves it against the actor's level or rank at render time, so
+  // nothing is flattened to a first-level number on the way in.
   const gate = extras.effects.filter((e) => e.type === "requires").flatMap((e) => e.refs ?? []);
-  const roll = thrown
-    ? {
-        roll: thrown.roll || "1d20",
-        rollType: thrown.rollType || "above",
-        // A level ladder is resolved at 1st level here, because a shared world
-        // item has no level. The sheet shows the whole ladder, and an actor's
-        // own level is applied when the copy lands on it.
-        rollTarget: levelValueAt(thrown.value, 1) ?? 0,
-      }
-    : {};
+  const thrown = extras.effects.filter((e) => e.type === "throw");
+  const rolls =
+    node?.fields?.rolls?.length
+      ? node.fields.rolls
+      : thrown.map((t, i) => ({
+          key: t.key || `throw${i + 1}`,
+          label: t.forWhat || "",
+          formula: t.roll || "1d20",
+          rollType: t.rollType || "above",
+          target: t.value ?? { kind: "flat", flat: 0 },
+          scale: t.value?.on || "level",
+          condition: t.condition || "",
+          blindroll: false,
+          save: "",
+          note: "",
+        }));
+
   return {
     name: entry.name,
     type: "ability",
@@ -1462,7 +1463,7 @@ export function bindAbility(entry, node, id, opts = {}) {
     system: {
       description: `<p>@PdfText[${id}]{${cite}}</p>`,
       proficiencytype: meta.general ? "general" : "class",
-      ...roll,
+      ...(rolls.length ? { rolls } : {}),
       ...(gate.length ? { requirements: gate.map(capabilityLabel).join(", ").slice(0, 120) } : {}),
     },
     flags: {

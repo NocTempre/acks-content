@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.39.0
+
+**Imported abilities carry every roll, into the system's own store.**
+
+- An ability's rolls are written to `system.rolls`, not to the acks-abilities
+  flag. The system now holds all of them; the flag held them only while the
+  core item could carry one.
+- **Every classified throw becomes a roll, not just the first.** An entry whose
+  extract found four throws used to import as one — the remaining three were
+  reachable only through the module sheet, if it was installed.
+- **Ladders are no longer flattened on import.** A rank or level progression
+  used to be resolved to its first-level number to fit the single `rollTarget`,
+  so "11+ / 7+ / 3+ by rank" arrived as a bare 11. The whole ladder now travels
+  and the system resolves it against the character. This also retires a local
+  copy of the LevelValue resolver that existed purely to do the flattening.
+
+Re-import (or re-run "Import ALL Abilities") to pick the extra rolls up on
+content imported by an earlier version.
+
 ## 0.38.0
 
 The Judge's Screen inserts are no longer a book this module asks you to
