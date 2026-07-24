@@ -1,0 +1,346 @@
+/**
+ * Weapon/armor TABLE extraction → core inventory items (the clean-break pipeline).
+ *
+ * Unlike the gear cookbook (run-in `Name:` descriptions on RR pp. 144-154), the
+ * Revised Rulebook prints weapons and armour as GRIDS (pp. 128+). There is no
+ * per-item prose to stream — the value IS the row — so this reads the seat's
+ * own page geometry and materializes each row into a `weapon` / `armor` item,
+ * the same shape core's `acks-all-equipment` ships (used only as a target-shape
+ * reference; every value here comes from the reader's book, never from core).
+ *
+ * IP posture (matches the rest of acks-content): the register/recipe ships only
+ * GEOMETRY — column x-anchors and cell patterns — never a damage die, an AC, an
+ * encumbrance or a price. All of those materialize per-seat from the connected
+ * PDF. A bookless seat gets nothing from this path (a grid has no lazy prose to
+ * reveal), which is acceptable: this exists for tables core will stop shipping.
+ *
+ * Reuses the proven table primitives (rowsByY / joinRuns) rather than the
+ * generic definition compiler, so it stays off the hot shared path other
+ * content types churn.
+ */
+import { rowsByY, joinRuns } from "./table-extract.mjs";
+import { MODULE_ID } from "./constants.mjs";
+
+/* -------------------------------------------------------------------- */
+/*  Recipes — GEOMETRY ONLY (no book values)                            */
+/* -------------------------------------------------------------------- */
+
+/**
+ * The weapons grid (RR PDF p. 128). Column x-anchors read off the page; a run
+ * binds to the nearest column within `tol`, windowed columns (`w`) join every
+ * run in [x, x+w] for multi-run cells (the Special list, the split name).
+ */
+export const WEAPON_TABLE = Object.freeze({
+  book: "rr",
+  page: 128, // the reference edition; a seat's PDF is LOCATED by anchor, not this
+  anchors: ["Weapons", "Arbalest"], // the section title AND the first row
+  labelMaxX: 158, // the name band; the type column bleeds a little into it
+  rowTol: 3,
+  // The Size/Type column is CENTERED (long "Medium Melee" starts further left
+  // than short "Missile"), so it is read as a wide window purely to detect
+  // melee/missile/ammunition — never as a value. Damage is a tight point
+  // column just right of it so the die never lands in the type window.
+  typeBand: { x0: 158, x1: 218 },
+  columns: [
+    { key: "damage", x: 225, tol: 9 }, // "1d8" — tight, right of the type band
+    { key: "enc", x: 280, tol: 11 }, // "1" | "1/6"
+    { key: "short", x: 316, tol: 13 },
+    { key: "med", x: 353, tol: 13 },
+    { key: "long", x: 389, tol: 13 },
+    { key: "cost", x: 424, tol: 13 }, // "50gp"
+    { key: "special", x: 468, w: 130 }, // "cleave 2, Handy, Slow"
+  ],
+});
+
+/**
+ * Canonical weapon names — the ROW LIST the recipe ships (names are locators,
+ * like every gear entry; the IP-sensitive VALUES stay in the book). Order is
+ * the printed table order. `re` matches the extracted label band even through
+ * the small-caps first-letter drop the PDF text layer produces ("Two-Handed"
+ * arrives as "wo-Handed"), so a clean name always attaches to the right row.
+ */
+export const WEAPON_NAMES = [
+  { name: "Arbalest", re: /arbalest/i },
+  { name: "Crossbow", re: /crossbow/i },
+  { name: "Case, 20 Bolts", re: /bolts/i },
+  { name: "Composite Bow", re: /composite/i },
+  { name: "Long Bow", re: /long ?bow/i },
+  { name: "Short Bow", re: /short ?bow/i },
+  { name: "Quiver, 20 Arrows", re: /arrows/i },
+  { name: "Silver Arrow", re: /silver arrow/i },
+  { name: "Battle Axe", re: /battle ?axe/i },
+  { name: "Great Axe", re: /great ?axe/i },
+  { name: "Hand Axe", re: /hand ?axe/i },
+  { name: "Club", re: /club/i },
+  { name: "Flail", re: /flail/i },
+  { name: "Mace", re: /mace/i },
+  { name: "Morning Star", re: /morning/i },
+  { name: "Warhammer", re: /warhammer/i },
+  { name: "Knife", re: /knife/i },
+  { name: "Dagger", re: /^dagger|[^r]dagger/i },
+  { name: "Silver Dagger", re: /silver ?dagger/i },
+  { name: "Short Sword", re: /short ?sword/i },
+  { name: "Sword", re: /(^|[^-])sword ?(medium|melee)?$|^sword/i },
+  { name: "Two-Handed Sword", re: /handed ?sword/i },
+  { name: "Dart", re: /dart/i },
+  { name: "Javelin", re: /javelin/i },
+  { name: "Lance", re: /lance/i },
+  { name: "Polearm", re: /polearm/i },
+  { name: "Spear", re: /spear/i },
+  { name: "Bola", re: /bola/i },
+  { name: "Military Oil", re: /military ?oil/i },
+  { name: "Cestus", re: /cestus/i },
+  { name: "Net", re: /^n?et ?(medium|melee|missile|$)/i }, // small-caps drops the "n"
+  { name: "Rock", re: /rock/i },
+  { name: "Sap", re: /^sap|[^a-z]sap/i },
+  { name: "Sling", re: /^sling|[^a-z]sling(?! ?stone)/i },
+  { name: "Staff Sling", re: /staff ?sling/i },
+  { name: "Sling Stones", re: /sling stone/i },
+  { name: "Staff", re: /^staff ?(medium|melee)?$|^staff[^ ]/i },
+  { name: "Whip", re: /whip/i },
+];
+
+/* -------------------------------------------------------------------- */
+/*  Extraction                                                          */
+/* -------------------------------------------------------------------- */
+
+/** The rotated "EQUIPMENT" chapter side-tab bleeds single glyphs into the grid. */
+const SIDE_TAB = /^(equipment|equ|ipme|nt|ip|m|ent|[eqiupment])$/i;
+
+/** Drop side-tab glyphs and lone footnote marks that y-merge into a row. */
+function stripNoise(items) {
+  return items.filter((it) => {
+    const s = String(it.str ?? "").trim();
+    if (!s) return false;
+    if (/^[*†‡]+$/.test(s)) return false;
+    if (s.length <= 4 && SIDE_TAB.test(s)) return false;
+    return true;
+  });
+}
+
+/**
+ * Bind a y-row's runs to declared columns by nearest-x (windowed columns join).
+ * @returns {Record<string,string>} raw cell text per column key
+ */
+function bindRowCells(runs, columns) {
+  const point = {};
+  const windows = {};
+  for (const run of runs) {
+    let best = null;
+    for (const col of columns) {
+      if (col.w != null) {
+        if (run.x >= col.x - 2 && run.x < col.x + col.w) best = { col, d: 0, win: true };
+        continue;
+      }
+      const d = Math.abs(run.x - col.x);
+      if (d <= (col.tol ?? 12) && (!best || d < best.d)) best = { col, d, win: false };
+    }
+    if (!best) continue;
+    if (best.win) (windows[best.col.key] ??= []).push(run);
+    else if (!point[best.col.key] || best.d < point[best.col.key].d) point[best.col.key] = { d: best.d, run };
+  }
+  const cells = {};
+  for (const [key, { run }] of Object.entries(point)) cells[key] = String(run.str).trim();
+  for (const [key, runs2] of Object.entries(windows)) {
+    cells[key] = runs2.sort((a, b) => a.x - b.x).map((r) => r.str).join("").replace(/\s+/g, " ").trim();
+  }
+  return cells;
+}
+
+/**
+ * Read every DATA row from the page: its label band (for matching), whether it
+ * is melee/missile (from the centered type band), and its value cells. Category
+ * sub-headers, the section title and the column-header row all fail the
+ * "carries a die/cost/type" test and are dropped.
+ * @returns {{label:string, melee:boolean, missile:boolean, ammunition:boolean, cells:object}[]}
+ */
+export function extractValueRows(items, recipe = WEAPON_TABLE) {
+  const clean = stripNoise(items);
+  const rows = rowsByY(clean, recipe.rowTol ?? 3);
+  const out = [];
+  for (const r of rows) {
+    const label = joinRuns(r.items.filter((it) => it.x < recipe.labelMaxX)).replace(/\s+/g, " ").trim();
+    if (!label) continue;
+    const typeText = joinRuns(r.items.filter((it) => it.x >= recipe.typeBand.x0 && it.x < recipe.typeBand.x1));
+    const cells = bindRowCells(r.items.filter((it) => it.x >= recipe.typeBand.x1), recipe.columns);
+    // The Size/Type column is centered, so a short-named melee weapon's type
+    // text ("Medium Melee") straddles into the name band. Read the signal from
+    // the label AND the type band together — the canonical name comes from the
+    // shipped list, so scanning the label here costs nothing.
+    const typeSignal = `${label} ${typeText}`;
+    const melee = /melee/i.test(typeSignal);
+    const missile = /missile/i.test(typeSignal);
+    const ammunition = /ammunition/i.test(typeSignal);
+    // A real row carries a die, a cost, or a type; headers/sub-headers do not.
+    if (!cells.damage && !cells.cost && !(melee || missile || ammunition)) continue;
+    out.push({ label, melee, missile, ammunition, cells });
+  }
+  return out;
+}
+
+/**
+ * Attach each canonical weapon name to the value row whose label band matches
+ * its pattern. Names are shipped (locators); values come from the seat's page.
+ * @returns {{name:string, melee:boolean, missile:boolean, cells:object}[]}
+ */
+export function extractWeapons(items, recipe = WEAPON_TABLE, names = WEAPON_NAMES) {
+  const valueRows = extractValueRows(items, recipe);
+  const used = new Set();
+  const out = [];
+  for (const spec of names) {
+    const i = valueRows.findIndex((r, idx) => !used.has(idx) && spec.re.test(r.label));
+    if (i < 0) continue; // this weapon's row was not found on the seat's page
+    used.add(i);
+    const r = valueRows[i];
+    out.push({ name: spec.name, melee: r.melee, missile: r.missile, cells: r.cells });
+  }
+  return out;
+}
+
+/** True when a page's items are the weapons-table page (both anchors present). */
+export function isWeaponPage(items, recipe = WEAPON_TABLE) {
+  const joined = items.map((i) => i.str).join(" ");
+  return (recipe.anchors ?? []).every((a) => joined.includes(a));
+}
+
+/**
+ * Locate the weapons page in a seat's PDF (by anchor, edition-independent) and
+ * extract its rows. `readPage(n) → {items}` is injected (the runtime's
+ * pageItems; a test's PDF reader) so this module carries no PDF dependency.
+ * @returns {Promise<{name,melee,missile,cells}[]>}
+ */
+export async function extractWeaponsFromDoc(doc, readPage, recipe = WEAPON_TABLE) {
+  const guess = recipe.page ?? 1;
+  const order = [];
+  for (let d = 0; d <= 14; d++) {
+    if (guess + d <= doc.numPages) order.push(guess + d);
+    if (d && guess - d >= 1) order.push(guess - d);
+  }
+  const seen = new Set(order);
+  for (let p = 1; p <= doc.numPages; p++) if (!seen.has(p)) order.push(p);
+  for (const p of order) {
+    const { items } = await readPage(doc, p);
+    if (isWeaponPage(items, recipe)) return extractWeapons(items, recipe);
+  }
+  return [];
+}
+
+/* -------------------------------------------------------------------- */
+/*  Binding — row → core-shaped `weapon` item                          */
+/* -------------------------------------------------------------------- */
+
+/** Encumbrance in stone → core weight6 (sixths of a stone). "1/6"→1, "1"→6. */
+function encToWeight6(enc) {
+  const s = String(enc ?? "").trim();
+  if (!s || s === "-") return null;
+  const frac = s.match(/^(\d+)\s*\/\s*(\d+)$/);
+  if (frac) return Math.round((Number(frac[1]) / Number(frac[2])) * 6);
+  const n = Number(s);
+  return Number.isFinite(n) ? Math.round(n * 6) : null;
+}
+
+/** "50gp" → 50; blank/"-" → null. */
+function costGp(cost) {
+  const m = String(cost ?? "").match(/(\d+(?:\.\d+)?)/);
+  return m ? Number(m[1]) : null;
+}
+
+/** '180’' / "180'" → 180; "-"/blank → null. */
+function rangeFt(v) {
+  const m = String(v ?? "").match(/(\d+)/);
+  return m ? Number(m[1]) : null;
+}
+
+/** Split the "Special" cell into core-shaped tag objects. */
+function qualityTags(special) {
+  return String(special ?? "")
+    .split(/,|;/)
+    .map((s) => s.trim())
+    .filter((s) => s && s !== "-")
+    .map((title) => ({ title, value: title }));
+}
+
+/**
+ * Build a core `weapon` item from a materialized row. Missing cells simply stay
+ * at core's defaults — a bookless or sparse row is still a valid item.
+ * @param {{name,cells}} row
+ * @param {string} id  cookbook id (def.weapon.<slug>)
+ * @param {string} cite
+ */
+/**
+ * Every damage MODE a weapon offers, structured — the thing the core
+ * compendium could not express and split into separate items instead.
+ *
+ * Two axes of "multiple roll types" the book packs into one row:
+ *   - VERSATILE damage: "1d6/1d8" is one grip die and a two-handed die. Core
+ *     shipped these as "Battle Axe, 1H" + "Battle Axe, 2H"; here they are one
+ *     weapon with two grips.
+ *   - MELEE + MISSILE: a thrown weapon (Hand Axe, Javelin) rolls to hit in
+ *     melee OR at range. Each is its own attack mode.
+ * @returns {{key:string,label:string,damage:string,attack:'melee'|'missile',grip?:string}[]}
+ */
+export function damageModes(row) {
+  const c = row.cells ?? {};
+  const dice = String(c.damage ?? "").match(/\d*d\d+/gi) ?? [];
+  const modes = [];
+  const grips = dice.length > 1 ? ["one-handed", "two-handed"] : [null];
+  // A weapon usable in melee AND at range offers each attack as its own mode.
+  const attacks = [];
+  if (row.melee) attacks.push("melee");
+  if (row.missile) attacks.push("missile");
+  if (!attacks.length) attacks.push("melee");
+  for (const attack of attacks) {
+    dice.forEach((die, i) => {
+      // The two-handed die is a melee grip only; a thrown weapon is one-handed.
+      if (attack === "missile" && grips[i] === "two-handed") return;
+      const grip = attack === "missile" ? null : grips[i];
+      modes.push({
+        key: [attack, grip].filter(Boolean).join("-").replace(/\s/g, ""),
+        label: [grip, attack].filter(Boolean).map((s) => s[0].toUpperCase() + s.slice(1)).join(" "),
+        damage: die,
+        attack,
+        ...(grip ? { grip } : {}),
+      });
+    });
+    if (!dice.length) modes.push({ key: attack, label: attack[0].toUpperCase() + attack.slice(1), damage: null, attack });
+  }
+  return modes;
+}
+
+export function bindWeaponRow(row, id, cite) {
+  const c = row.cells ?? {};
+  const melee = !!row.melee;
+  const missile = !!row.missile;
+  const tags = qualityTags(c.special);
+  if (melee) tags.unshift({ title: "Melee", value: "Melee" });
+  if (missile) tags.unshift({ title: "Missile", value: "Missile" });
+  const weight6 = encToWeight6(c.enc);
+  const cost = costGp(c.cost);
+  const modes = damageModes(row);
+  const primary = modes.find((m) => m.damage) ?? null;
+  const system = {
+    description: `<p>@PdfText[${id}]{${cite}}</p>`,
+    tags,
+    melee,
+    missile,
+    equipped: false,
+  };
+  // Core's single `damage` field holds the PRIMARY die (one-handed melee, or
+  // the missile die), so the item stays rollable in the base system; the full
+  // set of modes lives structurally in the module flag below.
+  if (primary?.damage) system.damage = primary.damage;
+  if (weight6 != null) system.weight6 = weight6;
+  if (cost != null) system.cost = cost;
+  const range = { short: rangeFt(c.short), medium: rangeFt(c.med), long: rangeFt(c.long) };
+  if (range.short || range.medium || range.long) {
+    system.range = { short: range.short ?? 0, medium: range.medium ?? 0, long: range.long ?? 0 };
+  }
+  return {
+    name: row.name,
+    type: "weapon",
+    img: "icons/svg/sword.svg",
+    system,
+    // The capture the compendium lacked: all attack/damage modes on ONE item.
+    flags: { [MODULE_ID]: { cookbook: { id, cite }, generated: true, weapon: { modes } } },
+  };
+}
