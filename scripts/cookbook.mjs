@@ -1246,6 +1246,31 @@ async function importFamily(bookId, famId, folderId) {
 }
 
 /**
+ * A GENERATION sub-roll enumerated by an ability's own prose — "roll 1d8 for
+ * the type of aura: 1, arcane; 2, acidic; …" — parsed from THIS seat's
+ * extracted text at import (values persist in world data, the hand-typed
+ * equivalence). Play-time rolls ("roll 1d20 to determine onset time…") are
+ * deliberately NOT matched: the phrase must close with a colon right after
+ * the die / "twice" / a short "for X" qualifier. Returns
+ * `{die, twice?, outcomes: [{min, max, text}]}` or null; an enumeration stops
+ * at the first non-numbered segment. Nested rolls inside an outcome stay
+ * text for the Judge.
+ */
+function subRollFromProse(text) {
+  const m = /\broll (\d*d\d+(?:[+-]\d+)?)( twice)?(?: for [^:]{0,50})?:\s*/i.exec(text ?? "");
+  if (!m) return null;
+  const rest = text.slice(m.index + m[0].length);
+  const outcomes = [];
+  for (const seg of rest.split(";")) {
+    const o = /^\s*(\d+)(?:\s*[-–]\s*(\d+))?[,.]?\s+(.+?)\s*$/.exec(seg);
+    if (!o) break;
+    outcomes.push({ min: parseInt(o[1], 10), max: parseInt(o[2] ?? o[1], 10), text: o[3].replace(/\s+/g, " ") });
+  }
+  if (outcomes.length < 2) return null; // a real enumeration, not a stray match
+  return { die: m[1].toLowerCase(), ...(m[2] ? { twice: true } : {}), outcomes };
+}
+
+/**
  * kind.monsterTemplate -> an `acks-lib.template` GENERATOR actor.
  *
  * All book-parsing intelligence happens HERE, once, at import: grid rows map
@@ -1325,19 +1350,30 @@ async function importTemplate(bookId, id, folderId) {
     }
   }
 
+  // Section-joined prose, for the sub-roll enumerations each ability may
+  // carry ("roll 1d8 for the type of aura: …" — materialized per seat).
+  const sectionText = new Map();
+  for (const p of paras) {
+    if (!p.section) continue;
+    sectionText.set(p.section, `${sectionText.get(p.section) ?? ""} ${p.text}`.trim());
+  }
   const menu = {
     die: spec.menu?.die ?? "",
     budgetAxis: spec.menu?.budgetAxis ?? "",
-    rows: (spec.menu?.rows ?? []).map((r) => ({
-      min: r.min ?? null,
-      max: r.max ?? null,
-      label: r.label ?? "",
-      cost: r.cost ?? null,
-      html:
-        r.section && sections.has(r.section)
-          ? `<p><strong>${r.label}.</strong> @PdfText[${id}#${r.section}]{${cite}}</p>`
-          : `<p><strong>${r.label}</strong> (${cite})</p>`,
-    })),
+    rows: (spec.menu?.rows ?? []).map((r) => {
+      const sub = r.section ? subRollFromProse(sectionText.get(r.section)) : null;
+      return {
+        min: r.min ?? null,
+        max: r.max ?? null,
+        label: r.label ?? "",
+        cost: r.cost ?? null,
+        html:
+          r.section && sections.has(r.section)
+            ? `<p><strong>${r.label}.</strong> @PdfText[${id}#${r.section}]{${cite}}</p>`
+            : `<p><strong>${r.label}</strong> (${cite})</p>`,
+        ...(sub ? { sub } : {}),
+      };
+    }),
   };
 
   const actor = await Actor.create({

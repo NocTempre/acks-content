@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.45.0
+
+**Menu sub-rolls auto-resolve.**
+
+- The ability menus' GENERATION rolls — "roll 1d8 for the type of aura:
+  1, arcane; 2, acidic; …" — are parsed from THIS seat's extracted prose at
+  import and resolved when the ability is rolled: a fresh cacodemon's
+  Immunity arrives as "1d12 → 3: all physical damage" on the sheet, no
+  Judge lookup needed. Eight cacodemon menus qualify (Aura, Bonus Attack,
+  Breath Weapon, Grab/Restrain, Immunity, Resistance ×2, Special Senses,
+  Paralysis duration); the dragon's limited-use/recharging breath roll
+  rides the same rail.
+- Play-time rolls ("roll 1d20 to determine onset time…") are deliberately
+  NOT matched — the phrase must close with a colon right after the die /
+  "twice" / a short "for X" qualifier. Rolled outcomes are ADVISORY notes
+  beside the lazy prose tag: the Judge's reading of the ability wins, and
+  an outcome that itself contains another roll stays text.
+- Needs acks-lib ≥ 0.19.0 (sub-roll resolution in rollMenu).
+
 ## 0.44.0
 
 **The adventure books' families too.**
