@@ -219445,6 +219445,24 @@
           "variant": "Great Ice"
         }
       ]
+    },
+    "mm.familyMummy": {
+      "name": "Mummy",
+      "nameFormat": "{variant}",
+      "cite": "MM p.241",
+      "pages": [
+        241
+      ],
+      "members": [
+        {
+          "id": "mm.mummy",
+          "variant": "Mummy"
+        },
+        {
+          "id": "mm.mummyLord",
+          "variant": "Lord"
+        }
+      ]
     }
   }
 }

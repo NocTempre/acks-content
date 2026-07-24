@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.46.0
+
+**Families merge across books; ACKS II names win.**
+
+- **Cross-book merging:** importing a family that another open book already
+  contributed creates NO twin — new variants join the existing template.
+  Identity is three signals: shared member ids (a `revisedBy` variant binds
+  the NEWER printing and lands on the revising id), a shared family suffix
+  ("mm.familyMummy" ↔ "ax2.familyMummy"), and conversion-guide name
+  equivalence. Verified both orders live: ONE "Statue" template (AX2's pair
+  deferred onto MM ids + MM's other three) and ONE "Mummy" template (8 AX2
+  animal mummies + MM's Mummy and Mummy Lord).
+- **ACKS II names win** (the conversion guide's direction): a core-book
+  family merging into an adventure-created template takes over its name and
+  id — AX2-first import order still ends at "Statue" / mm.familyStatue.
+- **Prefix families:** "Mummy" + "Mummy Lord" are one family the comma rule
+  cannot see — a tight name-prefix rule (kind.monster only, word boundary)
+  adds it; exactly one new family emerged corpus-wide, zero false positives.
+- Re-importing a family after connecting more books is the top-up gesture;
+  hand-merging via drop-to-capture still works for anything unmapped.
+
 ## 0.45.0
 
 **Menu sub-rolls auto-resolve.**

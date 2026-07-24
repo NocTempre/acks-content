@@ -2598,6 +2598,24 @@ async function main() {
           }
         }
       }
+      // PREFIX families (no comma in the book's naming): "Mummy" + "Mummy
+      // Lord" are one family the comma rule cannot see. Tight on purpose —
+      // kind.monster only (a template "Dragon" never swallows "Dragon
+      // Turtle"), word-boundary name prefix, both outside every comma group.
+      {
+        const commaIds = new Set(Object.values(groups).flat().map((m) => m.id));
+        const plain = list.filter((e) => e.kind === "kind.monster" && out.entries[e.id] && !commaIds.has(e.id));
+        for (const baseE of plain) {
+          const baseName = String(baseE.name ?? "").trim();
+          if (!baseName || baseName.includes(",")) continue;
+          const exts = plain.filter(
+            (e) => e !== baseE && String(e.name ?? "").startsWith(`${baseName} `)
+          );
+          if (!exts.length || groups[baseName]) continue;
+          push(baseName, baseName, baseE);
+          for (const e of exts) push(baseName, String(e.name).slice(baseName.length).trim(), e);
+        }
+      }
       const families = {};
       for (const [base, members] of Object.entries(groups)) {
         if (members.length < 2) continue;
@@ -2607,10 +2625,11 @@ async function main() {
             out.entries[entry.id] &&
             (entry.anchor?.display ?? "").trim().toLowerCase() === base.toLowerCase()
         );
+        const seen = new Set();
         const ordered = [
           ...(overview ? [{ id: overview.id, variant: base, page: overview.pages[0] }] : []),
           ...members.sort((a, b) => a.page - b.page),
-        ];
+        ].filter((m) => !seen.has(m.id) && seen.add(m.id));
         const famId = `${bookId}.family${base.replace(/[^A-Za-z0-9]+/g, "")}`;
         families[famId] = {
           name: base,

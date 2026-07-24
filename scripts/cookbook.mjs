@@ -14,7 +14,7 @@
  */
 import { MODULE_ID, LANG_PREFIX } from "./constants.mjs";
 import { BOOKS } from "./books.mjs";
-import { executeEntry, materializeEffects, attackModel } from "./executor.mjs";
+import { executeEntry, materializeEffects, attackModel, convertName } from "./executor.mjs";
 import { slugLabel } from "./table-extract.mjs";
 import { savesForLevel } from "./stats.mjs";
 import { progressBar } from "./progress.mjs";
@@ -1135,9 +1135,28 @@ async function importFamily(bookId, famId, folderId) {
   let img = "";
   for (const member of fam.members) {
     try {
-    const entry = cb.entries[member.id];
+    let entry = cb.entries[member.id];
     if (!entry) continue;
-    const node = await executeEntry(session.doc, cb, data.registers, member.id);
+    // CROSS-BOOK: a member reprinted in another open book binds the NEWER
+    // printing (the per-entry defer rule, applied per variant) — the option
+    // keeps this family's variant label, its stats and lazy tag come from
+    // the revising book, and its cookbook id becomes the revising id so
+    // merge/dedup sees the same creature.
+    let bindId = member.id;
+    let bindCb = cb;
+    let bindDoc = session.doc;
+    const rev = deferTarget(member.id);
+    if (rev) {
+      const revFound = cookbookEntry(rev);
+      const revDoc = ctx.sessionDocs.get(rev.split(".")[0])?.doc;
+      if (revFound && revDoc) {
+        bindId = rev;
+        entry = revFound.entry;
+        bindCb = revFound.cb;
+        bindDoc = revDoc;
+      }
+    }
+    const node = await executeEntry(bindDoc, bindCb, data.registers, bindId);
     if (!node.ok) {
       ui.notifications.warn(`acks-content | ${entry.name}: page did not match the cookbook — variant skipped.`);
       continue;
@@ -1147,13 +1166,13 @@ async function importFamily(bookId, famId, folderId) {
     // carry biography only — the same split the direct importers use.
     const legacy = entry.kind === "kind.monsterLegacy";
     const { system, items, flags, prototypeToken } = legacy ? bindLegacyMonster(node) : bindMonster(node);
-    cookbookCacheParas(bookId, member.id, node.fields.description ?? []);
+    cookbookCacheParas(bindId.split(".")[0], bindId, node.fields.description ?? []);
     memberText.set(slugLabel(member.variant), (node.fields.description ?? []).map((p) => p.text).join(" "));
     let fmsFlags = {};
     if (legacy) {
-      system.details = { ...(system.details ?? {}), biography: pdfTag(member.id, entry.cite) };
+      system.details = { ...(system.details ?? {}), biography: pdfTag(bindId, entry.cite) };
     } else {
-      const channels = monsterProseChannels(node, member.id, entry.cite);
+      const channels = monsterProseChannels(node, bindId, entry.cite);
       fmsFlags = channels.fmsFlags;
       // Both prose channels ship on the option: biography for the core sheet,
       // extras flags for the Full Monster Sheet — whichever is active at
@@ -1168,8 +1187,8 @@ async function importFamily(bookId, famId, folderId) {
       const artInstr = entry.fields?.art ?? {};
       const up = await Promise.race([
         ctx
-          .uploadPageArt(session.doc, {
-            id: member.id,
+          .uploadPageArt(bindDoc, {
+            id: bindId,
             page: artInstr.page ?? entry.pages[0],
             name: artInstr.name ?? node.fields.art.name ?? null,
             box: artInstr.box ?? null,
@@ -1195,7 +1214,7 @@ async function importFamily(bookId, famId, folderId) {
       html: "",
       flags: {
         ...(flags ?? {}),
-        [MODULE_ID]: { ...((flags ?? {})[MODULE_ID] ?? {}), cookbook: { id: member.id, cite: entry.cite } },
+        [MODULE_ID]: { ...((flags ?? {})[MODULE_ID] ?? {}), cookbook: { id: bindId, cite: entry.cite } },
         ...fmsFlags,
       },
       token: prototypeToken ?? {},
@@ -1224,6 +1243,75 @@ async function importFamily(bookId, famId, folderId) {
     FAMILY_ONE_OFFS[famId]?.({ fam, options, memberText, axes, cells, out });
   } catch (err) {
     console.warn(`${MODULE_ID} | ${famId}: one-off enrichment failed — importing without its extras.`, err);
+  }
+
+  // CROSS-BOOK MERGE: the same conceptual family already imported (from this
+  // or another book) gains this book's NEW variants instead of a twin. Two
+  // identity signals: a shared member id (revisedBy-deferred variants land on
+  // the revising id, so AX2's Animated Statues match the MM family) and a
+  // shared family suffix ("mm.familyMummy" ↔ "ax2.familyMummy").
+  const optionIdOf = (o) => o.flags?.[MODULE_ID]?.cookbook?.id ?? null;
+  const famSuffix = famId.split(".")[1] ?? famId;
+  const incomingIds = new Set(options.map(optionIdOf).filter(Boolean));
+  // ACKS II names win (the conversion guide's direction): a legacy family
+  // name the guide RENAMES matches its ACKS II family for identity.
+  const canonicalName = (n) => {
+    const conv = convertName(data.registers, String(n ?? ""));
+    return (conv?.status === "renamed" && conv.to ? conv.to : String(n ?? "")).toLowerCase();
+  };
+  const existing = game.actors.find((a) => {
+    if (a.type !== TEMPLATE_TYPE) return false;
+    const aFam = a.getFlag(MODULE_ID, "cookbook")?.id ?? "";
+    if (aFam === famId || (aFam.split(".")[1] ?? aFam) === famSuffix) return true;
+    if (aFam && canonicalName(a.name) === canonicalName(fam.name)) return true;
+    return (a.system.axes ?? []).some(
+      (ax) => ax.key === "variant" && (ax.options ?? []).some((o) => incomingIds.has(optionIdOf(o)))
+    );
+  });
+  if (existing) {
+    const exAxes = existing.system.toObject().axes;
+    const vAxis = exAxes.find((a) => a.key === "variant");
+    if (vAxis) {
+      const haveIds = new Set(vAxis.options.map(optionIdOf).filter(Boolean));
+      const haveKeys = new Set(vAxis.options.map((o) => o.key));
+      const added = options.filter((o) => !haveIds.has(optionIdOf(o)) && !haveKeys.has(o.key));
+      const addedKeys = new Set(added.map((o) => o.key));
+      // Their role cells ride along; the incoming role axis unions by key.
+      const addedCells = cells.filter((c) => addedKeys.has(String(c.key).split("|")[0]));
+      const inRole = axes.find((a) => a.key === "role");
+      const exRole = exAxes.find((a) => a.key === "role");
+      if (inRole && exRole) {
+        const roleKeys = new Set(exRole.options.map((o) => o.key));
+        exRole.options.push(...inRole.options.filter((o) => !roleKeys.has(o.key)));
+      } else if (inRole && added.length) {
+        exAxes.push(inRole);
+      }
+      // The ACKS II core printing owns the NAME: an adventure-created template
+      // a core family merges into takes the core family's name and id.
+      const CORE_BOOKS = new Set(["mm", "rr", "jj"]);
+      const exFam = existing.getFlag(MODULE_ID, "cookbook")?.id ?? "";
+      const rename =
+        CORE_BOOKS.has(bookId) && !CORE_BOOKS.has(exFam.split(".")[0] ?? "")
+          ? { name: fam.name, [`flags.${MODULE_ID}.cookbook`]: { id: famId, cite: fam.cite } }
+          : {};
+      if (added.length || Object.keys(rename).length) {
+        vAxis.options.push(...added);
+        const exCells = existing.system.toObject().cells ?? [];
+        await existing.update({
+          "system.axes": exAxes,
+          "system.cells": [...exCells, ...addedCells],
+          ...rename,
+        });
+      }
+      if (added.length) {
+        ui.notifications.info(
+          `acks-content | ${fam.name}: ${added.length} variant(s) from ${BOOKS[bookId]?.label ?? bookId} added to the existing template.`
+        );
+      } else {
+        ui.notifications.info(`acks-content | ${fam.name}: the existing template already covers this book's variants.`);
+      }
+      return existing;
+    }
   }
 
   const actor = await Actor.create({
