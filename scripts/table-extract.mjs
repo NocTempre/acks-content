@@ -29,7 +29,32 @@ export function rowsByY(items, tol = 3) {
   return rows;
 }
 
-const joinRuns = (runs) => runs.map((r) => r.str).join("").replace(/\s+/g, " ").trim();
+/**
+ * Join a row's runs into one string.
+ *
+ * Runs concatenate BLIND by default, because a small-cap opening letter is one
+ * word split across two runs ("c" + "rusader") and a space there would be wrong.
+ *
+ * `gapMin` opts a recipe into a GAP-AWARE join: where the next run starts more
+ * than that many points past the end of the previous one, the page is showing a
+ * word space the text layer does not carry, so one is inserted. The JJ sets its
+ * class lists in small caps, and "dwarven craftpriest" arrives as four runs —
+ * joined blind it reads "dwarvencraftpriest", which no consumer can match. In
+ * that printing the intra-word gap is ~0.1pt and the word gap ~1.9pt, so the
+ * threshold is a recipe's own number rather than a constant here: it is page
+ * geometry, like every other bound in a recipe.
+ */
+const joinRuns = (runs, gapMin = null) => {
+  if (gapMin == null) return runs.map((r) => r.str).join("").replace(/\s+/g, " ").trim();
+  let out = "";
+  let prev = null;
+  for (const run of runs) {
+    if (prev && run.x - (prev.x + (prev.w ?? 0)) > gapMin) out += " ";
+    out += run.str;
+    prev = run;
+  }
+  return out.replace(/\s+/g, " ").trim();
+};
 
 /** Apply a cell pattern to a joined string. Patterns are a fixed library. */
 export function applyCellPattern(text, pattern = "raw") {
@@ -297,7 +322,7 @@ export function extractPairs(items, recipe) {
       const label = joinRuns(rows[i].items.filter((it) => it.x < recipe.labelMaxX));
       if (label && re.test(label)) {
         const valRuns = rows[i].items.filter((it) => it.x >= recipe.labelMaxX);
-        const value = applyCellPattern(joinRuns(valRuns), recipe.cellPattern ?? "int");
+        const value = applyCellPattern(joinRuns(valRuns, recipe.joinGap), recipe.cellPattern ?? "int");
         // labelPattern: the label itself carries data (a roll band); the
         // value lands under valueKey beside it.
         out[spec.key] = spec.labelPattern
@@ -429,9 +454,18 @@ export function extractBandGrid(items, recipe) {
       if (label && re.test(label)) {
         const range = applyCellPattern(label, "rollBand") ?? {};
         const byCol = {};
+        // Accumulated PER COLUMN, so a gap-aware join measures the distance to
+        // the previous run of the same cell rather than to whatever sat left of
+        // it in the row (see joinRuns: the JJ's small-cap class names arrive as
+        // several runs with no space between them).
+        const prevRun = {};
         for (const run of rows[i].items.filter((it) => it.x >= recipe.labelMaxX)) {
           const col = colOfRun(run);
-          if (col) byCol[col.key] = (byCol[col.key] ?? "") + run.str;
+          if (!col) continue;
+          const prev = prevRun[col.key];
+          const spaced = prev && recipe.joinGap != null && run.x - (prev.x + (prev.w ?? 0)) > recipe.joinGap;
+          byCol[col.key] = (byCol[col.key] ?? "") + (spaced ? " " : "") + run.str;
+          prevRun[col.key] = run;
         }
         for (const bucket of buckets) {
           const token = (byCol[bucket.id] ?? "").trim();
@@ -627,6 +661,12 @@ function takeProse(window, take) {
     case "wordInt": {
       const m = window.match(/\b(one|two|three|four|five|six|seven|eight|nine|ten)\b/);
       return m ? WORD_INTS[m[1]] : undefined;
+    }
+    case "wagePeriod": {
+      // The prose counterpart of the `wagePeriod` cell pattern: a wage span
+      // written into a sentence ("a week's pay") rather than tabulated.
+      const m = window.match(/\b(day|week|month|year)\b/);
+      return m ? m[1] : undefined;
     }
     case "rarityTier": {
       // rarity ladder word → camel key ("very rare" → "veryRare")

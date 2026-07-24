@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.38.0
+
+The Judge's Screen inserts are no longer a book this module asks you to
+connect. Every table that was read off the cheatsheet is read from the book
+that prints it.
+
+- **Class Rarity**, **Random Henchman Level** and the double-d100 class grid
+  (the screen's "Leveled Henchman Class") now come from the **Judges Journal**
+  — the first two from the henchmen spread (~118), the third from the people
+  chapter, where it is printed as **"NPC Class"** (~259).
+- **Signing bonus** is not in the JJ at all. Both its ladders are printed in
+  the **Revised Rulebook**, as prose rather than a table: the base one with the
+  hiring rules (~162) and the cheaper Bribing-proficient one inside that
+  proficiency's entry (~108). Each ladder now locates its own page.
+- The `js` book id is gone. A seat that had the screen connected simply drops
+  the remembered location on upgrade (logged, not fatal), and the connect list
+  is six books instead of seven.
+- The short-name class map the screen grid needed is retired: the JJ prints
+  "dwarven craftpriest" where the screen printed "Craftpriest".
+
+Every relocated table was verified to extract **byte-identical values** to the
+screen version before the screen recipes were removed, and then again through
+the live import in a world with no screen connected.
+
+### Extractor
+
+- `joinGap`: an opt-in, per-recipe gap threshold that inserts the word spaces
+  the text layer omits. The JJ sets tables in small caps, so "dwarven
+  craftpriest" arrives as four runs and joined blind reads
+  "dwarvencraftpriest". Recipes that do not set it are unaffected.
+- New `wagePeriod` prose take, for a wage span written into a sentence ("a
+  week's pay") rather than tabulated.
+
 ## 0.37.0
 
 Say how far along an import is, and stop losing track of where the books are.

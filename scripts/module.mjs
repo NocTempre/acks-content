@@ -140,7 +140,18 @@ async function locations() {
   const out = new Map();
   keys.forEach((key, i) => {
     const record = asLocation(values[i]);
-    if (record) out.set(key, record);
+    if (!record) return;
+    // A book this build no longer reads (the Judge's Screen inserts, whose
+    // tables moved into the JJ and RR in 0.38.0) must not be offered for
+    // reconnect: there is nothing left for it to unlock, and every downstream
+    // caller would have to defend itself against a book id with no entry in
+    // BOOKS. The record is left in place rather than deleted — harmless, and a
+    // withdrawn book that ever comes back finds its location still remembered.
+    if (!BOOKS[key]) {
+      console.log(`${MODULE_ID} | remembered location for "${key}" ignored — this build no longer reads that book.`);
+      return;
+    }
+    out.set(key, record);
   });
   return out;
 }
@@ -257,7 +268,7 @@ async function ingestBook(bookId, buffer, { silent = false } = {}) {
     // Anything already on screen still says "connect your book" until it is drawn
     // again — the tag resolves per render, not per document.
     const redrawn = rerenderPdfTextApps();
-    const message = `acks-content | ${BOOKS[bookId].label}: open — ${hits}/${recipes.length} descriptions readable this session (in memory only; never stored).`;
+    const message = `acks-content | ${BOOKS[bookId]?.label ?? bookId}: open — ${hits}/${recipes.length} descriptions readable this session (in memory only; never stored).`;
     if (silent) console.log(message);
     else ui.notifications.info(message);
     if (redrawn) console.log(`${MODULE_ID} | re-rendered ${redrawn} open sheet(s) so their page references resolve.`);

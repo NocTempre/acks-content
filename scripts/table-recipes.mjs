@@ -139,15 +139,10 @@ const RARITY_TIER_ROWS = [
   { key: "legendary", labelRe: "^legendary" },
 ];
 
-// Short print names on the screen grid → registry class keys.
-const CLASS_MAP = {
-  Spellsword: "elven spellsword",
-  Nightblade: "elven nightblade",
-  Craftpriest: "dwarven craftpriest",
-  Vaultguard: "dwarven vaultguard",
-  Ruinguard: "zaharan ruinguard",
-  Wonderworker: "nobiran wonderworker",
-};
+// The Judge's Screen grid abbreviated demihuman classes ("Craftpriest") and
+// needed a short-name → registry-key map. The JJ's own NPC Class table prints
+// them in full ("dwarven craftpriest"), so reading the book instead of the
+// cheatsheet retired the map along with the screen (0.38.0).
 
 // Culture appearance blocks: [id, printed page, hair anchor, eyes anchor].
 // An anchor is the sentence's own lead-in; `#N` picks the Nth occurrence in
@@ -193,17 +188,27 @@ const CULTURE_APPEARANCE_BLOCKS = CULTURE_APPEARANCE.map(([id, page, hair, eyes]
 
 export const TABLE_RECIPES = {
   rarity: {
-    source: { book: "ACKS II Judges Journal 118-119 + Judges Screen" },
+    source: { book: "ACKS II Judges Journal", pages: "118-119, 259" },
     tables: {
+      // JJ ~118 prints TWO rarity tables: "Class Rarity" (left column) and
+      // "Henchmen Rarity by Class" (right column), which assign different
+      // tiers. This is the former — the one the Judge's Screen reprinted and
+      // the one that has always shipped as `variants.default`. The other is a
+      // candidate second variant, and would need its own recipe.
       classRarityTables: {
         shape: "pairs",
-        book: "js",
-        printedPage: 18,
-        locate: "Ubiquitous",
-        column: { xMin: 0, xMax: 300 },
-        startAfter: "Classes",
-        labelMaxX: 84,
+        book: "jj",
+        printedPage: 118,
+        locate: "Class Rarity",
+        column: { xMin: 40, xMax: 300 },
+        // The JJ sets its table headers in small caps, so "Classes" reaches the
+        // text layer as "c" + "lasses"; the marker has to be the second run.
+        startAfter: "lasses",
+        labelMaxX: 120,
         cellPattern: "refListLower",
+        // Same small caps inside the cells: without a gap-aware join the class
+        // list reads "dwarvencraftpriest" (see joinRuns).
+        joinGap: 1,
         rows: RARITY_TIER_ROWS,
         emit: {
           path: ["variants", "default", "tiers"],
@@ -245,11 +250,14 @@ export const TABLE_RECIPES = {
       },
       randomHenchmanLevel: {
         shape: "pairs",
-        book: "js",
-        printedPage: 18,
+        book: "jj",
+        printedPage: 118,
         locate: "Random Henchman Level",
-        column: { xMin: 460, xMax: 620 },
-        labelMaxX: 550,
+        // Right print column of the same spread. The rarity variant table above
+        // it reaches into this window, but none of its rows can match a roll
+        // band, so the label patterns are the only bound needed.
+        column: { xMin: 440, xMax: 620 },
+        labelMaxX: 510,
         cellPattern: "int",
         valueKey: "level",
         rows: [
@@ -260,23 +268,30 @@ export const TABLE_RECIPES = {
         ],
         emit: { container: "rows", merge: { formula: "1d20" } },
       },
+      // The screen called this "Leveled Henchman Class"; the JJ prints the same
+      // double-d100 grid as "NPC Class" in its people chapter (~259).
       classDistribution: {
         shape: "bandGrid",
-        book: "js",
-        printedPage: 18,
-        locate: "1d100",
-        column: { xMin: 0, xMax: 460 },
-        labelMaxX: 78,
-        headerMark: "1d100",
+        book: "jj",
+        printedPage: 259,
+        locate: "NPC Class",
+        column: { xMin: 60, xMax: 600 },
+        labelMaxX: 130,
+        // Cells run wide here (a full "dwarven vaultguard" spans ~40pt), so the
+        // column anchors sit at each cell's CENTRE with a tolerance to match.
+        columnTol: 25,
+        // "1d100" alone would match the prose above the table that tells the
+        // reader to roll it; the header's own run is the whole "1d100×100".
+        headerMark: "1d100×100",
+        joinGap: 1,
         cellColumns: [
-          { key: "arcane", x: 97 },
-          { key: "thief", x: 171 },
-          { key: "divine", x: 240 },
-          { key: "fighter", x: 312 },
-          { key: "explorer", x: 368 },
-          { key: "venturer", x: 413 },
+          { key: "arcane", x: 156 },
+          { key: "thief", x: 251 },
+          { key: "divine", x: 331 },
+          { key: "fighter", x: 416 },
+          { key: "explorer", x: 487 },
+          { key: "venturer", x: 531 },
         ],
-        classMap: CLASS_MAP,
         rows: [
           { key: 0, labelRe: "^1\\s*[-–]\\s*40" },
           { key: 1, labelRe: "^41" },
@@ -291,7 +306,7 @@ export const TABLE_RECIPES = {
     },
   },
   wages: {
-    source: { book: "ACKS II Revised Rulebook", pages: "166-171" },
+    source: { book: "ACKS II Revised Rulebook", pages: "108, 162-171" },
     tables: {
       henchmanWageByLevel: {
         shape: "pairs",
@@ -307,18 +322,36 @@ export const TABLE_RECIPES = {
         ],
         emit: { wrap: "byLevel" },
       },
+      // Signing bonus ladders: which span of pay buys +1/+2/+3 on the hiring
+      // reaction roll. The Judge's Screen tabulated both in one grid; the books
+      // print them as PROSE, in two different places — the base ladder with the
+      // hiring rules (RR ~162) and the cheaper Bribing-proficient one in that
+      // proficiency's own entry (RR ~108) — so each ladder locates its own page
+      // and the two are reassembled into the shape the reference already had.
       signingBonus: {
-        shape: "gridRows",
-        book: "js",
-        printedPage: 18,
-        locate: "Signing Bonus (Bribery)",
-        column: { xMin: 240, xMax: 520 },
-        labelMaxX: 315,
-        cellKeys: ["1", "2", "3"],
-        cellPattern: "wagePeriod",
-        rows: [
-          { key: "proficient", labelRe: "^proficient$" },
-          { key: "nonProficient", labelRe: "^non[–-]?\\s*proficient" },
+        shape: "proseValues",
+        book: "rr",
+        valueBlocks: [
+          {
+            id: "proficient",
+            printedPage: 108,
+            locate: "bonus to reaction rolls if he offers one",
+            values: [
+              { key: "1", find: "reaction rolls if he offers one", take: "wagePeriod" },
+              { key: "2", find: "pay for the target; a +2 bonus for a", take: "wagePeriod" },
+              { key: "3", find: "pay; and a +3 bonus for a", take: "wagePeriod" },
+            ],
+          },
+          {
+            id: "nonProficient",
+            printedPage: 162,
+            locate: "signing bonus worth one",
+            values: [
+              { key: "1", find: "signing bonus worth one", take: "wagePeriod" },
+              { key: "2", find: "grants a +1 bonus; a", take: "wagePeriod" },
+              { key: "3", find: "provides a +2 bonus, and a", take: "wagePeriod" },
+            ],
+          },
         ],
       },
       // Hireling base morale by role (RR ~166, all prose): specialists

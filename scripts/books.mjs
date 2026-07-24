@@ -7,6 +7,13 @@
  * missing-book path. Removed 2026-07-19: the cookbook now spans three real
  * books and no seat is expected to own all of them, so an unreadable entry is
  * the ordinary case and no longer needs a prop to show it off.
+ *
+ * The Judge's Screen inserts ("js") were listed too, because four hiring
+ * tables were read off them. Removed 2026-07-24: every one of those tables is
+ * printed in a book the reader already needs — three in the JJ, the signing
+ * bonus in the RR — so the screen only ever added a fifth PDF to connect for
+ * content the seat could already read. A book id is a promise that connecting
+ * that PDF unlocks something; the cheatsheet no longer unlocks anything.
  */
 
 export const BOOKS = {
@@ -27,12 +34,6 @@ export const BOOKS = {
     short: "BTA",
     pages: 273,
     titleRe: /By This Axe/i,
-  },
-  js: {
-    label: "ACKS II Judges Screen Inserts",
-    short: "JS",
-    pages: 24,
-    titleRe: /Judges Screen/i,
   },
   mm: {
     label: "ACKS II Monstrous Manual",
