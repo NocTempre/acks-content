@@ -40,9 +40,13 @@ export const WEAPON_TABLE = Object.freeze({
   // than short "Missile"), so it is read as a wide window purely to detect
   // melee/missile/ammunition — never as a value. Damage is a tight point
   // column just right of it so the die never lands in the type window.
-  typeBand: { x0: 158, x1: 218 },
+  // typeBand ends at 210 (not 218): a versatile die like "1d6/1d8" is wider and
+  // starts further left (x~213) than a single die (x~225), so it would fall
+  // inside an 218-wide type band and be lost. 210 keeps the type word ("Missile"
+  // at x182) in the band while letting every damage die reach its column.
+  typeBand: { x0: 158, x1: 210 },
   columns: [
-    { key: "damage", x: 225, tol: 9 }, // "1d8" — tight, right of the type band
+    { key: "damage", x: 220, tol: 14 }, // "1d8" | "1d6/1d8" (x213–225)
     { key: "enc", x: 280, tol: 11 }, // "1" | "1/6"
     { key: "short", x: 316, tol: 13 },
     { key: "med", x: 353, tol: 13 },
@@ -61,7 +65,7 @@ export const WEAPON_TABLE = Object.freeze({
  */
 export const WEAPON_NAMES = [
   { name: "Arbalest", re: /arbalest/i },
-  { name: "Crossbow", re: /crossbow/i },
+  { name: "Crossbow", re: /^c?rossbow/i }, // anchored: never the "Bows/crossbows" header
   { name: "Case, 20 Bolts", re: /bolts/i },
   { name: "Composite Bow", re: /composite/i },
   { name: "Long Bow", re: /long ?bow/i },
@@ -171,8 +175,13 @@ export function extractValueRows(items, recipe = WEAPON_TABLE) {
     const melee = /melee/i.test(typeSignal);
     const missile = /missile/i.test(typeSignal);
     const ammunition = /ammunition/i.test(typeSignal);
-    // A real row carries a die, a cost, or a type; headers/sub-headers do not.
-    if (!cells.damage && !cells.cost && !(melee || missile || ammunition)) continue;
+    // A real row carries a die, a PRICE, or a melee/missile type. The column
+    // HEADER row ("type/damage/…/cost/Special") otherwise sneaks through because
+    // its "cost" cell is a non-empty string — so require the cost to look like a
+    // price (a digit or "gp"), not merely be present.
+    const hasDie = /\dd\d/i.test(cells.damage ?? "");
+    const hasPrice = /\d|gp/i.test(cells.cost ?? "");
+    if (!hasDie && !hasPrice && !(melee || missile || ammunition)) continue;
     out.push({ label, melee, missile, ammunition, cells });
   }
   return out;

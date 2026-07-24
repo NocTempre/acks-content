@@ -154,17 +154,30 @@ export async function extractArmorFromDoc(doc, readPage, recipe = ARMOR_TABLE) {
   return [];
 }
 
-/** Build a core `armor` item from a materialized row. */
+/** Barding material from its name ("Barding, Scale" → "scale"), for the model. */
+function bardingMaterial(name) {
+  const m = String(name).match(/barding,\s*(\w+)/i);
+  return m ? m[1].toLowerCase() : null;
+}
+
+/**
+ * Build a core `armor` item from a materialized row.
+ *
+ * BARDING is modelled, not skipped. The book prints "Varies" for barding
+ * encumbrance and cost because they are NOT intrinsic to the barding — they
+ * derive from the MOUNT's size (a warhorse's plate barding weighs and costs
+ * more than a pony's). So a barding item carries its fixed AC and an explicit
+ * `sizeScales` descriptor (material + the rule) that a consumer resolves once a
+ * mount is known, rather than a fake fixed number or a silent null. Spiked
+ * barding is a cost modifier (+50%) and an attack rider, not a base suit — it
+ * carries no AC and is flagged as a modifier.
+ */
 export function bindArmorRow(row, id, cite) {
   const c = row.cells ?? {};
   const type = armorType(row.category, row.name);
   const isHelmet = /helmet/i.test(row.name);
   const isBarding = /barding/i.test(row.name);
-  const tags = String(c.special ?? "")
-    .split(/,|;/)
-    .map((s) => s.trim())
-    .filter((s) => s && s !== "-")
-    .map((title) => ({ title, value: title }));
+  const isSpiked = /spiked/i.test(row.name);
   const system = {
     description: `<p>@PdfText[${id}]{${cite}}</p>`,
     aac: { value: acValue(c.ac) },
@@ -175,19 +188,32 @@ export function bindArmorRow(row, id, cite) {
   const cost = costGp(c.cost);
   if (weight6 != null) system.weight6 = weight6;
   if (cost != null) system.cost = cost;
+
+  const armorFlag = { helmet: isHelmet, barding: isBarding, category: row.category };
+  if (isBarding) {
+    // The barding size model: the item is size-relative; cost/encumbrance come
+    // from the mount. Make it explicit on the sheet AND in structured data.
+    system.description += `<p><em>${
+      isSpiked
+        ? "Adds +1 damage per die to the mount's natural attacks; cost +50%."
+        : "Encumbrance and cost vary by the mount's size (RAW: “Varies”)."
+    }</em></p>`;
+    armorFlag.sizeScales = !isSpiked;
+    armorFlag.material = bardingMaterial(row.name) ?? (isSpiked ? "spiked" : null);
+    if (isSpiked) {
+      armorFlag.modifier = true; // a rider on other barding, not a base suit
+      armorFlag.costMultiplier = 1.5;
+      armorFlag.bonusDamagePerDie = 1;
+    }
+  }
+
   return {
     name: row.name,
     type: "armor",
     img: type === "shield" ? "icons/svg/shield.svg" : "icons/svg/statue.svg",
     system,
     flags: {
-      [MODULE_ID]: {
-        cookbook: { id, cite },
-        generated: true,
-        // Structural facts the flat item cannot express, for consumers
-        // (acks-equipment reads helmet/barding).
-        armor: { helmet: isHelmet, barding: isBarding, category: row.category },
-      },
+      [MODULE_ID]: { cookbook: { id, cite }, generated: true, armor: armorFlag },
     },
   };
 }

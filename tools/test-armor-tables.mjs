@@ -40,6 +40,11 @@ check("Heavy Helmet grants no AC (RAW)", helm?.system.aac.value === 0);
 const barding = byName["barding, plate"] && bindArmorRow(byName["barding, plate"], "x", "y");
 check("Plate Barding flagged as barding", barding?.flags["acks-content"].armor.barding === true);
 check("Plate Barding maps to a heavy type", barding?.system.type === "heavy");
+check("Plate Barding models size scaling, not a fake number", barding?.flags["acks-content"].armor.sizeScales === true && barding?.system.cost === undefined);
+check("Plate Barding names its material", barding?.flags["acks-content"].armor.material === "plate");
+check("Plate Barding description states the scaling rule", /vary by the mount/i.test(barding?.system.description ?? ""));
+const spiked = byName["barding, spiked"] && bindArmorRow(byName["barding, spiked"], "x", "y");
+check("Spiked Barding is a modifier, not a base suit", spiked?.flags["acks-content"].armor.modifier === true && spiked?.flags["acks-content"].armor.costMultiplier === 1.5);
 
 // Every bound item is the core armour shape.
 for (const r of rows) {
