@@ -2575,10 +2575,28 @@ async function main() {
     // Derived, not authored — it stays in step with the register mechanically.
     {
       const groups = {};
+      const push = (base, variant, entry) =>
+        (groups[base] ??= []).push({ id: entry.id, variant, page: entry.pages[0] });
       for (const entry of list) {
-        if (entry.kind !== "kind.monster" || !out.entries[entry.id]) continue;
-        const m = /^([^,]+),\s*(.+)$/.exec(entry.anchor?.display ?? "");
-        if (m) (groups[m[1].trim()] ??= []).push({ id: entry.id, variant: m[2].trim(), page: entry.pages[0] });
+        if (!out.entries[entry.id]) continue;
+        if (entry.kind === "kind.monster") {
+          const m = /^([^,]+),\s*(.+)$/.exec(entry.anchor?.display ?? "");
+          if (m) push(m[1].trim(), m[2].trim(), entry);
+        } else if (entry.kind === "kind.monsterLegacy") {
+          // Legacy appendix blocks share one display per family, so the NAME
+          // carries the variant: a trailing parenthetical when present
+          // ("Cobra, Mechanical (Bronze)" → family "Cobra, Mechanical",
+          // variant "Bronze"), else the after-comma piece ("Mummy, Baboon" →
+          // "Mummy" / "Baboon"). NPC epithets never reach here — this branch
+          // is monster kinds only, an AX3 "Aghilas, the Lion" stays a person.
+          const nm = String(entry.name ?? "");
+          const paren = /^(.*?)\s*\(([^)]+)\)\s*$/.exec(nm);
+          if (paren && paren[1].includes(",")) push(paren[1].trim(), paren[2].trim(), entry);
+          else {
+            const m = /^([^,]+),\s*(.+)$/.exec(nm);
+            if (m) push(m[1].trim(), m[2].trim(), entry);
+          }
+        }
       }
       const families = {};
       for (const [base, members] of Object.entries(groups)) {

@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.44.0
+
+**The adventure books' families too.**
+
+- **Five AX2 legacy families** join the generator model: Animal Mummy (8
+  species), Mechanical Cobra, Undead Bone Golem, Animated Statue, Faewyrd.
+  Legacy appendix blocks share one printed display per family, so these
+  derive from the entry NAMES — a trailing parenthetical is the variant
+  ("Cobra, Mechanical (Bronze)"), else the after-comma piece ("Mummy,
+  Baboon"). NPC epithets ("Aghilas, the Lion of the Desert") are people, not
+  families — the derivation is monster kinds only.
+- **Per-member kind dispatch** in the family importer: MM-style members bind
+  rich (stats + Full Monster Sheet extras); legacy members bind through the
+  same translator the direct importer uses and carry lazy biography only.
+  Live parity: "Mummy, Cat" generated from the family is field-identical to
+  a direct import.
+- The `revisedBy` defer rule is unchanged and applies to DIRECT imports;
+  an adventure family imports the adventure's own printing.
+
 ## 0.43.0
 
 **Leader roles for every family; graceful failure everywhere.**

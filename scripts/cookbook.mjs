@@ -1142,14 +1142,24 @@ async function importFamily(bookId, famId, folderId) {
       ui.notifications.warn(`acks-content | ${entry.name}: page did not match the cookbook — variant skipped.`);
       continue;
     }
-    const { system, items, flags, prototypeToken } = bindMonster(node);
+    // Per-member kind dispatch: MM-style monsters bind rich (stats + FMS
+    // extras); legacy appendix blocks bind through their own translator and
+    // carry biography only — the same split the direct importers use.
+    const legacy = entry.kind === "kind.monsterLegacy";
+    const { system, items, flags, prototypeToken } = legacy ? bindLegacyMonster(node) : bindMonster(node);
     cookbookCacheParas(bookId, member.id, node.fields.description ?? []);
     memberText.set(slugLabel(member.variant), (node.fields.description ?? []).map((p) => p.text).join(" "));
-    const { tag, fmsFlags } = monsterProseChannels(node, member.id, entry.cite);
-    // Both prose channels ship on the option: biography for the core sheet,
-    // extras flags for the Full Monster Sheet — whichever is active at
-    // GENERATE time uses its own; the other is inert.
-    system.details = { ...(system.details ?? {}), biography: tag(null) };
+    let fmsFlags = {};
+    if (legacy) {
+      system.details = { ...(system.details ?? {}), biography: pdfTag(member.id, entry.cite) };
+    } else {
+      const channels = monsterProseChannels(node, member.id, entry.cite);
+      fmsFlags = channels.fmsFlags;
+      // Both prose channels ship on the option: biography for the core sheet,
+      // extras flags for the Full Monster Sheet — whichever is active at
+      // GENERATE time uses its own; the other is inert.
+      system.details = { ...(system.details ?? {}), biography: channels.tag(null) };
+    }
 
     let art = "";
     if (node.fields.art && ctx.uploadPageArt) {

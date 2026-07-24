@@ -10661,5 +10661,121 @@
         "reason": "folio"
       }
     ]
+  },
+  "families": {
+    "ax2.familyCobraMechanical": {
+      "name": "Cobra, Mechanical",
+      "nameFormat": "{variant}",
+      "cite": "AX2 p.144",
+      "pages": [
+        144
+      ],
+      "members": [
+        {
+          "id": "ax2.cobraMechanicalBronze",
+          "variant": "Bronze"
+        },
+        {
+          "id": "ax2.cobraMechanicalIron",
+          "variant": "Iron"
+        }
+      ]
+    },
+    "ax2.familyFaewyrd": {
+      "name": "Faewyrd",
+      "nameFormat": "{variant}",
+      "cite": "AX2 p.144",
+      "pages": [
+        144
+      ],
+      "members": [
+        {
+          "id": "ax2.faewyrdLesser",
+          "variant": "Lesser"
+        },
+        {
+          "id": "ax2.faewyrdGreater",
+          "variant": "Greater"
+        }
+      ]
+    },
+    "ax2.familyGolemUndeadBone": {
+      "name": "Golem, Undead Bone",
+      "nameFormat": "{variant}",
+      "cite": "AX2 p.146",
+      "pages": [
+        146
+      ],
+      "members": [
+        {
+          "id": "ax2.golemUndeadBoneLesser",
+          "variant": "Lesser"
+        },
+        {
+          "id": "ax2.golemUndeadBoneGreater",
+          "variant": "Greater"
+        }
+      ]
+    },
+    "ax2.familyMummy": {
+      "name": "Mummy",
+      "nameFormat": "{variant}",
+      "cite": "AX2 p.150",
+      "pages": [
+        150
+      ],
+      "members": [
+        {
+          "id": "ax2.mummyBaboon",
+          "variant": "Baboon"
+        },
+        {
+          "id": "ax2.mummyCat",
+          "variant": "Cat"
+        },
+        {
+          "id": "ax2.mummyCrocodile",
+          "variant": "Crocodile"
+        },
+        {
+          "id": "ax2.mummyJackal",
+          "variant": "Jackal"
+        },
+        {
+          "id": "ax2.mummyPanther",
+          "variant": "Panther"
+        },
+        {
+          "id": "ax2.mummyRat",
+          "variant": "Rat"
+        },
+        {
+          "id": "ax2.mummyViper",
+          "variant": "Viper"
+        },
+        {
+          "id": "ax2.mummyWolf",
+          "variant": "Wolf"
+        }
+      ]
+    },
+    "ax2.familyStatueAnimated": {
+      "name": "Statue, Animated",
+      "nameFormat": "{variant}",
+      "cite": "AX2 p.152",
+      "pages": [
+        152
+      ],
+      "members": [
+        {
+          "id": "ax2.statueAnimatedBronze",
+          "variant": "Bronze"
+        },
+        {
+          "id": "ax2.statueAnimatedChryselephantine",
+          "variant": "Chryselephantine"
+        }
+      ]
+    }
   }
 }
