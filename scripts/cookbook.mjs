@@ -1442,13 +1442,50 @@ const itemShelfFor = (id) => {
   return ITEM_SHELF[key] ?? null;
 };
 
-async function ensureItemFolder(id = null) {
-  return ensureFolderPath("Item", [FOLDER_NAME, itemShelfFor(id)]);
+/**
+ * Sub-shelves under a top shelf, from the entry's own `meta.group`.
+ *
+ * The equipment chapter is not one list: 147 entries span carried gear,
+ * clothing, animals, structures and vehicles, and a single "Equipment" folder
+ * reproduces the flat pile one level down. The register already records which
+ * group each entry belongs to, so the shelf just reads it — no new data, and a
+ * group nobody declared simply lands on the top shelf.
+ *
+ * Titles are display strings for a folder, not book values.
+ */
+const GROUP_SHELF = {
+  gear: "Adventuring Gear",
+  clothing: "Clothing",
+  animal: "Animals",
+  provisions: "Provisions",
+  lodging: "Lodging",
+  structure: "Structures",
+  vehicle: "Vehicles",
+};
+
+/** The full folder path for a generated item: root → shelf → group. */
+function itemShelfPath(id) {
+  const shelf = itemShelfFor(id);
+  if (!shelf) return [FOLDER_NAME];
+  const group = cookbookEntry(id)?.entry?.meta?.group;
+  return [FOLDER_NAME, shelf, GROUP_SHELF[group] ?? null];
 }
 
-/** Create every item shelf before anything imports in parallel. */
+async function ensureItemFolder(id = null) {
+  return ensureFolderPath("Item", itemShelfPath(id));
+}
+
+/** Create every item shelf (and equipment sub-shelf) before parallel imports. */
 async function prepareItemShelves() {
   for (const shelf of [null, ...Object.values(ITEM_SHELF)]) await ensureFolderPath("Item", [FOLDER_NAME, shelf]);
+  // Only groups the shipped cookbook actually uses — never the whole table, so
+  // an empty folder is never created for content this world does not have.
+  const groups = new Set();
+  for (const id of cookbookEquipmentIds()) {
+    const g = cookbookEntry(id)?.entry?.meta?.group;
+    if (GROUP_SHELF[g]) groups.add(GROUP_SHELF[g]);
+  }
+  for (const g of groups) await ensureFolderPath("Item", [FOLDER_NAME, ITEM_SHELF["def.equip"], g]);
 }
 
 /**
