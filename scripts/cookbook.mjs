@@ -946,6 +946,27 @@ function weaponsFromRoutine(routine, damageText, types) {
   return items;
 }
 
+/**
+ * Generic color-word → hex vocabulary for token TINTS (a dragon wears its
+ * hide color on the canvas). Purely lexical English mapping — the WORDS come
+ * from the seat's own extracted hideColor text; the first recognized one wins.
+ */
+const COLOR_HEX = {
+  black: "#3a3a3a", charcoal: "#464646", grey: "#8c8c8c", gray: "#8c8c8c", slate: "#708090",
+  white: "#f2f2f2", ivory: "#f5f0dc", pearl: "#eae0c8", snow: "#f7f7f7", cloud: "#e8e8ee",
+  red: "#b22222", flaming: "#c43419", crimson: "#a51c1c", orange: "#d2691e", burnt: "#b35a1f",
+  copper: "#b87333", sandy: "#c9a86a", brown: "#8b5a2b", taupe: "#7a6a58", liver: "#674c47",
+  purple: "#6a4a7a", green: "#3f7a3f", moss: "#5d7d46", olive: "#6b6b3a", forest: "#2e5d34",
+  blue: "#3a5f9e", sky: "#6fa8dc", cerulean: "#2a7fbf", teal: "#2f7f7a", sea: "#3f8f80",
+  bronze: "#cd7f32", silver: "#c0c0c0", electrum: "#d8d4b8", gold: "#d4af37", yellow: "#d4b23a",
+};
+const tintFromColorText = (text) => {
+  for (const word of String(text ?? "").toLowerCase().split(/[^a-z]+/)) {
+    if (COLOR_HEX[word]) return COLOR_HEX[word];
+  }
+  return "";
+};
+
 /** Cell keys shown as note lines on an option (materialized world data). */
 const OPTION_NOTE_KEYS = [
   "size", "habitat", "hideColor", "breathWeapon", "chanceSpeech", "casterLevel", "spells",
@@ -998,6 +1019,11 @@ function templateOption(ax, row, cells, { id, cite, sections }) {
     `${secKey ? ` @PdfText[${id}#${secKey}]{${cite}}` : ""}` +
     `${notes.length ? ` <em>${notes.join("; ")}</em>` : ""}</p>`;
 
+  // Presentation channels the page itself prints: an age row's SIZE category
+  // scales the token; a type row's HIDE COLOR tints it.
+  const sizeWord = (/^\s*([A-Za-z-]+)/.exec(String(cells.size ?? ""))?.[1] ?? "").toLowerCase().split("-")[0];
+  const token = TOKEN_SIZE[sizeWord] ? { ...TOKEN_SIZE[sizeWord] } : {};
+
   return {
     key: row.key,
     label,
@@ -1006,9 +1032,11 @@ function templateOption(ax, row, cells, { id, cite, sections }) {
     rollMax: null,
     menuBudget: ax.budgetCol ? intFrom(cells[ax.budgetCol]) : null,
     art: "",
+    tint: tintFromColorText(cells.hideColor),
     merge: system,
     items,
     html,
+    token,
   };
 }
 
@@ -1024,10 +1052,13 @@ function templateOption(ax, row, cells, { id, cite, sections }) {
  * a chieftain sentence lacks that one cell.
  */
 const proseLeaderRoles = ({ options, memberText, axes, cells, out }) => {
+    // Tolerant of both printed shapes: goblin's "1 HD, and 7 hp" AND gnoll's
+    // "3 HD, 16 hp, and a +2 damage bonus" (the damage clause may follow any
+    // of the three; "and" may sit before hp or before the bonus).
     const RX = {
-      champion: /led by a champion with (\d+) AC,? (\d+(?:[+-]\d+)?) HD,? and (\d+) hp/i,
-      subChieftain: /led by a sub-?chieftain with (\d+) AC,? (\d+(?:[+-]\d+)?) HD,? (\d+) hp(?:,? and a ([+-]\d+) damage bonus)?/i,
-      chieftain: /(?:lair|village) will be led by a chieftain with (\d+) AC,? (\d+(?:[+-]\d+)?) HD,? (\d+) hp(?:,? and a ([+-]\d+) damage bonus)?/i,
+      champion: /led by a champion with (\d+) AC,? (\d+(?:[+-]\d+)?) HD,? (?:and )?(\d+) hp(?:,? and a ([+-]\d+) damage bonus)?/i,
+      subChieftain: /led by a sub-?chieftain with (\d+) AC,? (\d+(?:[+-]\d+)?) HD,? (?:and )?(\d+) hp(?:,? and a ([+-]\d+) damage bonus)?/i,
+      chieftain: /(?:lair|village) will be led by a chieftain with (\d+) AC,? (\d+(?:[+-]\d+)?) HD,? (?:and )?(\d+) hp(?:,? and a ([+-]\d+) damage bonus)?/i,
       drudgeWhelp: /drudges and whelps have Spd (\d+)['’]?,? AC (\d+),? (\d+) hp,? ML (-?\d+)/i,
       shaman: /shaman is equivalent to a (champion|sub-?chieftain|chieftain) statistically,? but has (\w+) abilities at level (\d+d\d+|\d+)/i,
       witchDoctor: /witch doctor is equivalent to a (champion|sub-?chieftain|chieftain) statistically,? but has (\w+) abilities at level (\d+d\d+|\d+)/i,
@@ -1400,6 +1431,17 @@ async function importTemplate(bookId, id, folderId) {
       return templateOption(ax, row, cells, { id, cite, sections });
     });
     if (!options.length) console.warn(`${MODULE_ID} | ${id}: axis "${ax.key}" materialized no options.`);
+    // AUTHORED per-option art (the body-form portraits on the dragon's own
+    // pages, associated by XObject name) — uploaded once, hard-bounded.
+    for (const [optKey, spec2] of Object.entries(ax.art ?? {})) {
+      const option = options.find((o) => o.key === optKey);
+      if (!option || !ctx.uploadPageArt) continue;
+      const up = await Promise.race([
+        ctx.uploadPageArt(session.doc, { id: `${id}-${optKey}`, page: spec2.page, name: spec2.name ?? null, box: spec2.box ?? null }).catch(() => null),
+        new Promise((r) => setTimeout(() => r(null), 30000)),
+      ]);
+      if (up?.path) option.art = up.path;
+    }
     axes.push({
       key: ax.key,
       label: ax.label ?? ax.key,
@@ -1470,6 +1512,14 @@ async function importTemplate(bookId, id, folderId) {
     folder: folderId,
     system: {
       output: { actorType: "monster", nameFormat: spec.nameFormat ?? "" },
+      // The FIXED foundation: rows the template page prints as plain values
+      // ("Type: Monstrosity", vision, morale) bind through the same scalar
+      // binder + sheet-extras mapping as any monster; "varies by …" rows
+      // simply failed their patterns and contribute nothing.
+      base: {
+        merge: bindStatsScalars(node.fields.stats ?? {}).system,
+        flags: { "acks-monsters": { extras: buildExtras(node) } },
+      },
       axes,
       cells,
       menu,

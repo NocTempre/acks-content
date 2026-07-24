@@ -1474,7 +1474,25 @@
           "label": "Body Form",
           "grids": [
             "forms"
-          ]
+          ],
+          "art": {
+            "drake": {
+              "page": 109,
+              "name": "img_p108_4"
+            },
+            "guivre": {
+              "page": 109,
+              "name": "img_p108_5"
+            },
+            "lindworm": {
+              "page": 109,
+              "name": "img_p108_6"
+            },
+            "wyvern": {
+              "page": 109,
+              "name": "img_p108_7"
+            }
+          }
         }
       ],
       "cells": [

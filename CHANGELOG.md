@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.47.0
+
+**Dragons look like dragons; fixed stats reach every generation.**
+
+- **Body-form portraits:** the four dragon illustrations (printed p.107) are
+  associated by XObject name with the drake/guivre/lindworm/wyvern options —
+  a generated dragon wears its body form's artwork.
+- **Hide-color tints and age scaling:** the type's extracted hide color maps
+  through a generic color-word vocabulary onto the prototype token's texture
+  tint (a red dragon's token is red), and the age row's printed size
+  category sets token dimensions (spawn 2×1 … venerable 8×6). Both are
+  page-derived; the color map is lexical English, not book content.
+- **The FIXED stat rows bind:** template pages print some rows as plain
+  values ("Type: Monstrosity (sapient)", vision, senses, morale, alignment)
+  — those now compile through the same per-row machinery as any monster and
+  reach every generated actor as its foundation, Full Monster Sheet
+  classification included. "Varies by …" rows fail their patterns and stay
+  advisory, as before.
+- **Beastman role regression fixed:** the leader regexes only matched the
+  goblin's phrasing ("1 HD, and 7 hp"); gnoll-style ("3 HD, 16 hp, and a +2
+  damage bonus") now parses, and champions capture their damage bonus.
+  Verified: gnoll chieftain = AC 7, 6 HD, 28 hp, +3 damage.
+- Spoils/harvesting for template creatures (the dragon-components prose) is
+  Treasure-Tome-adjacent and stays a lazy prose tag for now.
+
 ## 0.46.0
 
 **Families merge across books; ACKS II names win.**

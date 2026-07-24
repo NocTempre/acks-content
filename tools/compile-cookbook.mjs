@@ -663,7 +663,7 @@ async function compileMonster(doc, entry, kindRow, glyphChars) {
  * headings, slugged with the same slugLabel the executor and binding use — and
  * (d) passes the axis/menu wiring through with its references checked.
  */
-async function compileMonsterTemplate(doc, entry) {
+async function compileMonsterTemplate(doc, entry, kindRow, bookCtx) {
   const t = entry.template ?? {};
   const pages = entry.pages;
   const page = pages[0];
@@ -755,7 +755,52 @@ async function compileMonsterTemplate(doc, entry) {
       top = line.y - 3;
     }
     statBox = { x0, x1, y0: top, y1: end };
-    fields.statsPrinted = { op: "value", page, pattern: "raw", box: statBox };
+    // FIXED rows bind like any monster's (the same rows map + midpoint
+    // bands); "varies by …" values simply fail their patterns at runtime and
+    // surface only as _raw. Divider mini-headings drop via ordinals, exactly
+    // as compileMonster does.
+    const monsterRows = bookCtx?.kinds?.["kind.monster"]?.fields?.stats;
+    if (monsterRows) {
+      const dividerItems = new Set();
+      const colItems = pd0.items
+        .filter((it) => it.h < HEADING_MIN_H && it.x >= x0 && it.x <= x1 && it.y >= top && it.y <= end)
+        .sort((a, b) => a.y - b.y);
+      for (const line of toLines(colItems)) {
+        const lineText = line.items.map((i) => i.str).join("").replace(/\s+/g, "").toLowerCase();
+        if (/(secondarycharacteristics|primarycharacteristics|encounters)$/.test(lineText) && !lineText.includes(":")) {
+          for (const it of line.items) dividerItems.add(it);
+        }
+      }
+      labels.forEach((label, i) => {
+        const labelText = label.str.trim();
+        const rowName = labelText.slice(0, -1);
+        const prevY = i > 0 ? labels[i - 1].y : label.y - 12;
+        const y0 = (prevY + label.y) / 2;
+        const y1 = i + 1 < labels.length ? (label.y + labels[i + 1].y) / 2 : end;
+        const base = { op: "value", page, box: { x0, x1, y0, y1 }, dropText: labelText };
+        if (rowName.startsWith(monsterRows.speedRows.prefix)) {
+          const kind2 = /\(([^)]+)\)/.exec(rowName)?.[1] ?? "land";
+          fields[`stats.speed${cap(camel(kind2))}`] = withFixes({ ...base, pattern: monsterRows.speedRows.pattern }, pd0, dividerItems);
+          return;
+        }
+        const row = monsterRows.rows[rowName];
+        if (row) {
+          fields[`stats.${row.field}`] = withFixes({
+            ...base,
+            pattern: row.pattern,
+            ...(row.table ? { table: row.table } : {}),
+            ...(row.parenTable ? { parenTable: row.parenTable } : {}),
+            ...(row.stripRoll ? { stripRoll: true } : {}),
+          }, pd0, dividerItems);
+        } else {
+          fields[`stats._raw.${camel(rowName)}`] = withFixes({ ...base, pattern: "raw" }, pd0, dividerItems);
+        }
+      });
+      // The divider band ABOVE the first label stays claimed.
+      fields.statsPrinted = { op: "value", page, pattern: "raw", box: { x0, x1, y0: top, y1: labels[0].y - 6 } };
+    } else {
+      fields.statsPrinted = { op: "value", page, pattern: "raw", box: statBox };
+    }
   }
 
   /* --- description: every page, column by column, sections flowed --- */
@@ -2512,6 +2557,10 @@ async function main() {
         .filter((e) => e.kind === "kind.npc")
         .map((e) => e.anchor?.runin ?? e.anchor?.display)
         .filter(Boolean),
+      // The template compiler reads the monster kind's stat-row map so a
+      // template page's FIXED rows ("Type: Monstrosity") bind like any
+      // monster's; the "varies by …" rows fail their patterns and stay raw.
+      kinds,
     };
     for (const entry of list.sort((a, b) => a.pages[0] - b.pages[0])) {
       const kindRow = kinds[entry.kind];
