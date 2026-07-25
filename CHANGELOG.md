@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.53.1
+
+- **Fix: imported drawbacks no longer land unsorted in the root folder.** The
+  content audit gave beastman drawbacks their own `def.drawback` id namespace,
+  but the item-shelf map still only knew `def.power` — so the 11 drawback powers
+  imported into the top-level "ACKS Cookbook" folder instead of a shelf. They now
+  file under a **Drawbacks** shelf beside Class Powers. Run **Organize Cookbook**
+  to move drawbacks already imported into place.
+- Note: with acks-equipment 0.26.0 a **torch** now imports as a carried *item
+  stack* (readied into a 1d4 weapon on demand) rather than a wielded weapon —
+  this is the equipment root's call; content is unchanged and simply consumes it.
+
 ## 0.53.0
 
 **Equipment binds through the acks-equipment "root."** `bindEquipment` now asks

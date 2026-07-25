@@ -2203,6 +2203,11 @@ export function bindAbility(entry, node, id, opts = {}) {
 const ITEM_SHELF = {
   "def.prof": "Proficiencies",
   "def.power": "Class Powers",
+  // Beastman drawbacks are `kind.power` items but carry their own id namespace
+  // (reclassified off `def.power` in the content audit). Without this line they
+  // fall through itemShelfFor to the root ACKS Cookbook folder, unsorted — so
+  // give them their own shelf beside Class Powers.
+  "def.drawback": "Drawbacks",
   "def.skill": "Skills",
   "def.equip": "Equipment",
   "def.weapon": "Weapons",
