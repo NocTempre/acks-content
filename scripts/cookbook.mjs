@@ -19,6 +19,7 @@ import { slugLabel } from "./table-extract.mjs";
 import { pageItems } from "./extract.mjs";
 import { WEAPON_TABLE, extractWeaponsFromDoc, bindWeaponRow } from "./weapon-tables.mjs";
 import { ARMOR_TABLE, extractArmorFromDoc, bindArmorRow } from "./armor-tables.mjs";
+import { extractPriceMapFromDoc, priceFor } from "./gear-prices.mjs";
 import { savesForLevel } from "./stats.mjs";
 import { progressBar } from "./progress.mjs";
 
@@ -2502,7 +2503,16 @@ export async function importEquipment(id, folderId) {
   }
 
   const folder = folderId ?? (await ensureItemFolder(id))?.id ?? null;
-  const item = await Item.create({ ...bindEquipment(found.entry, node, id), folder });
+  const doc = bindEquipment(found.entry, node, id);
+  // Enrich gear/clothing with cost/weight from the RR price grids (p131/p132),
+  // materialized per-seat. A general category with several priced variants
+  // stays unpriced (priceFor returns null) rather than take a guessed variant.
+  if (["gear", "clothing"].includes(found.entry.meta?.group)) {
+    const priced = priceFor(await gearPriceMap(), found.entry.name);
+    if (priced?.cost != null) doc.system.cost = priced.cost;
+    if (priced?.weight6 != null) doc.system.weight6 = priced.weight6;
+  }
+  const item = await Item.create({ ...doc, folder });
   // acks-equipment owns the RAW annotation layer (container capacities, the
   // harness, the bowquiver). Its profiles key off the printed name, so a
   // generated item annotates exactly like a core one. Reuse, never restate.
@@ -2657,6 +2667,21 @@ export async function importWeapons(folderId) {
 
 /** camelCase cookbook id for a table-materialized armour item. */
 const armorId = (name) => `def.armor.${slugLabel(name).replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase())}`;
+
+/** The RR gear/clothing price map, built once per session from the reader's book. */
+let _priceMap = null;
+async function gearPriceMap() {
+  if (_priceMap && _priceMap.size) return _priceMap;
+  const session = ctx.sessionDocs.get(WEAPON_TABLE.book);
+  if (!session?.doc) return new Map(); // bookless: gear stays unpriced
+  try {
+    _priceMap = await extractPriceMapFromDoc(session.doc, pageItems);
+  } catch (err) {
+    console.error(`${MODULE_ID} | gear price extraction failed`, err);
+    _priceMap = new Map();
+  }
+  return _priceMap;
+}
 
 /**
  * Materialize the RR armour TABLE (suits, shields, helmets, barding) into
