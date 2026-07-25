@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.53.0
+
+**Equipment binds through the acks-equipment "root."** `bindEquipment` now asks
+acks-equipment's `equipmentClass(name)` which core item type a piece of gear
+should become and consumes the answer — so a torch imports as a 1d4
+light-**weapon**, a flask of military oil / holy water as a thrown splash
+**weapon**, and a lantern/candle as a light-bearing **item** — while ordinary
+gear is untouched. The RAW mechanics live in acks-equipment, never baked here;
+an extracted page value still wins over the root's fallback, and without
+acks-equipment the register's own type stands. Adds `npm test`
+(`tools/test-equipment-binding.mjs` plus the weapon/armour/gear-price suites).
+
 ## 0.48.0
 
 **Getting Started walkthrough.** A first-launch dialog

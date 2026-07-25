@@ -2365,7 +2365,18 @@ export function bindEquipment(entry, node, id) {
   const cite = entry.cite ?? "";
   const meta = entry.meta ?? {};
   const f = node?.fields ?? {};
-  const type = equipmentTypeOf(entry);
+  let type = equipmentTypeOf(entry);
+
+  // EQUIPMENT ROOT (acks-equipment, optional). "Equipment is just a special
+  // class of item; they should share a root" (user, 2026-07-24) — acks-equipment
+  // owns that root: it classifies a name into the core type + stats it should
+  // carry. So a torch (a 1d4 light-weapon) and a flask of military oil / holy
+  // water (thrown splash flasks) — dual-nature gear the register files under
+  // adventuring equipment — import as WEAPONS, while a lantern/candle stay
+  // light-bearing items. The RULES live once in acks-equipment, never baked
+  // here; absent the module, the register's own type stands.
+  const klass = globalThis.acksEquipment?.equipmentClass?.(entry.name) ?? null;
+  if (klass?.type) type = klass.type;
 
   // Fields that exist only on the chosen type. `item` keeps subtype/quantity;
   // weapon and armor have neither and would fail validation if handed them.
@@ -2374,13 +2385,21 @@ export function bindEquipment(entry, node, id) {
     typed.subtype = meta.subtype === "clothing" ? "clothing" : "item";
     typed.quantity = { value: 1, max: 0 };
   } else if (type === "weapon") {
-    if (f.damage) typed.damage = f.damage;
+    // Prefer a page-extracted value; fall back to the equipment root's RAW stat
+    // for gear the weapons table never listed (a torch's 1d4 is a rule, not a
+    // table cell). melee/missile likewise.
+    const damage = f.damage ?? (klass?.damage || undefined);
+    if (damage) typed.damage = damage;
     if (Number.isFinite(f.bonus)) typed.bonus = f.bonus;
-    // Melee/missile is a printed property of the weapon, not an inference: only
-    // set what the extract actually found.
-    if (typeof f.melee === "boolean") typed.melee = f.melee;
-    if (typeof f.missile === "boolean") typed.missile = f.missile;
+    const melee = typeof f.melee === "boolean" ? f.melee : klass?.melee;
+    const missile = typeof f.missile === "boolean" ? f.missile : klass?.missile;
+    if (typeof melee === "boolean") typed.melee = melee;
+    if (typeof missile === "boolean") typed.missile = missile;
     if (f.range) typed.range = f.range;
+    // NB: a weapon-torch is a SINGLE wielded torch — core weapons carry no
+    // `quantity` field, so it cannot be a stack. It is "consumable" only in that
+    // it burns out on its timer (acks-formation). A supply of torches is a
+    // stackable `item`, which keeps its quantity and decrements when lit.
   } else if (type === "armor") {
     if (Number.isFinite(f.aac)) typed.aac = { value: f.aac };
     // The system's armour `type` choices are unarmored/veryLight/light/medium/
@@ -2406,6 +2425,10 @@ export function bindEquipment(entry, node, id) {
       [MODULE_ID]: {
         cookbook: { id, cite, ...(entry.audited ? {} : { unaudited: true }) },
         generated: true,
+        // Mark a light source so the sheet/formation layers can treat it as an
+        // equippable, holdable light (the rule of WHICH names are lights is the
+        // equipment root's; we only record the verdict).
+        ...(klass?.light ? { light: true } : {}),
       },
     },
   };
