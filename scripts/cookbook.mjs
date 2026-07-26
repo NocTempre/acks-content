@@ -680,8 +680,15 @@ function familyGroupOf(bookId, id) {
   return familyGroupCache.get(bookId).get(id) ?? null;
 }
 
-/** The display group an actor-kind entry files under: authored group, else family. */
-const actorGroupOf = (found, id) => found?.entry?.meta?.group ?? familyGroupOf(bookOf(found), id) ?? null;
+/**
+ * The display group an actor-kind entry files under: authored group, else the
+ * family it heads/belongs to, else a kind bucket for NPCs — so a book that
+ * prints NPCs without section groups still separates people from monsters.
+ */
+const actorGroupOf = (found, id) =>
+  found?.entry?.meta?.group ??
+  familyGroupOf(bookOf(found), id) ??
+  (found?.entry?.kind === "kind.npc" ? "NPCs" : null);
 
 /**
  * THE one destination rule for a cookbook ACTOR — used by import AND organize so
@@ -2326,12 +2333,39 @@ const GROUP_SHELF = {
   vehicle: "Vehicles",
 };
 
-/** The full folder path for a generated item: root → shelf → group. */
+/**
+ * Alphabet bands for a shelf whose SOURCE is a flat alphabetical dictionary —
+ * the JJ class-powers list declares no taxonomy at all, and 316 entries in one
+ * folder is unbrowsable. Bands mirror how the book itself is read (a dictionary
+ * is looked up by letter), inventing nothing.
+ */
+const LETTER_BANDS = [["A", "D"], ["E", "H"], ["I", "L"], ["M", "P"], ["Q", "T"], ["U", "Z"]];
+const letterBand = (name) => {
+  const c = String(name ?? "").trim().charAt(0).toUpperCase();
+  const band = LETTER_BANDS.find(([a, z]) => c >= a && c <= z);
+  return band ? `${band[0]}–${band[1]}` : null;
+};
+
+/** The full folder path for a generated item: root → shelf → sub-shelf. */
 function itemShelfPath(id) {
   const shelf = itemShelfFor(id);
   if (!shelf) return [FOLDER_NAME];
-  const group = cookbookEntry(id)?.entry?.meta?.group;
-  return [FOLDER_NAME, shelf, GROUP_SHELF[group] ?? null];
+  const entry = cookbookEntry(id)?.entry;
+  // Proficiencies: the RR's OWN split — every proficiency is printed on the
+  // General list, the Class lists, or is one of the combat picks (weapon/
+  // armour/fighting-style). Authored data (`meta.general` + the kind), not
+  // a guess.
+  if (shelf === "Proficiencies") {
+    const sub =
+      entry?.kind === "kind.combatProficiency" ? "Combat"
+      : entry?.meta?.general === true ? "General"
+      : entry?.meta?.general === false ? "Class"
+      : null;
+    return [FOLDER_NAME, shelf, sub];
+  }
+  // Class powers: no authored grouping exists (see letterBand) — file by letter.
+  if (shelf === "Class Powers") return [FOLDER_NAME, shelf, letterBand(entry?.name ?? "")];
+  return [FOLDER_NAME, shelf, GROUP_SHELF[entry?.meta?.group] ?? null];
 }
 
 async function ensureItemFolder(id = null) {

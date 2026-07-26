@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.55.0
+
+**Abilities and NPCs get the same organization monsters got.**
+
+- **Proficiencies** now file under the Revised Rulebook's own split — **General**
+  (43), **Class** (73), and **Combat** (the weapon/armour/fighting-style picks) —
+  read from the authored `general` flag and kind, not guessed.
+- **Class Powers** (316 entries, printed by the Judges Journal as one flat
+  alphabetical dictionary with no taxonomy) file into **letter bands** (A–D, E–H,
+  …, U–Z) so each folder is browsable. Drawbacks and Skills stay flat — they are
+  small enough already.
+- **NPCs without an authored section group** file under an **NPCs** bucket in
+  their book folder instead of loose beside the monsters (current books all
+  declare groups; this covers future ones).
+- Import and Organize share these rules, so freshly imported abilities land on
+  the right sub-shelf immediately and Organize re-files an existing world (436
+  items moved on the reference world, zero failures).
+
 ## 0.54.0
 
 **Import and Organize now agree on where every actor files — and monsters group
