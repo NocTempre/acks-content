@@ -662,15 +662,49 @@ const bookFolderName = (bookId) => BOOKS[bookId]?.label ?? bookId;
 const targetFolder = (type, bookId, group) =>
   ensureFolderPath(type, [FOLDER_NAME, bookFolderName(bookId), group]);
 
+/**
+ * The FAMILY an entry heads or belongs to, as a display name — the Monstrous
+ * Manual declares no `meta.group`, but it declares families, so a bat can file
+ * under "Bat" instead of joining a 150-actor pile. Cached per book.
+ */
+const familyGroupCache = new Map(); // bookId → Map(entryId → family display name)
+function familyGroupOf(bookId, id) {
+  if (!familyGroupCache.has(bookId)) {
+    const map = new Map();
+    for (const [fid, fam] of Object.entries(data.books.get(bookId)?.families ?? {})) {
+      map.set(fid, fam.name);
+      for (const m of fam.members ?? []) map.set(m.id, fam.name);
+    }
+    familyGroupCache.set(bookId, map);
+  }
+  return familyGroupCache.get(bookId).get(id) ?? null;
+}
+
+/** The display group an actor-kind entry files under: authored group, else family. */
+const actorGroupOf = (found, id) => found?.entry?.meta?.group ?? familyGroupOf(bookOf(found), id) ?? null;
+
+/**
+ * THE one destination rule for a cookbook ACTOR — used by import AND organize so
+ * they can never disagree again (animals used to import into "Animals" and then
+ * be organized away into "<book> › animal", the raw group key; MM monsters with
+ * no group sat 150 to a folder while their families went unused).
+ */
+function actorFolderFor(id, found = cookbookEntry(id)) {
+  if (isAnimalEntry(found?.entry)) return ensureFolderPath("Actor", [FOLDER_NAME, "Animals"]);
+  return targetFolder("Actor", bookOf(found), actorGroupOf(found, id));
+}
+
 /** Pre-create every folder a batch will need, before the workers fan out. */
 async function prepareFolders(type, ids) {
   const seen = new Set();
   for (const id of ids) {
     const found = cookbookEntry(id);
-    const key = `${bookOf(found)}|${found?.entry?.meta?.group ?? ""}`;
+    const group = type === "Actor" ? actorGroupOf(found, id) : (found?.entry?.meta?.group ?? null);
+    const key = `${bookOf(found)}|${isAnimalEntry(found?.entry) ? "@animal" : (group ?? "")}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    await targetFolder(type, bookOf(found), found?.entry?.meta?.group);
+    if (type === "Actor") await actorFolderFor(id, found);
+    else await targetFolder(type, bookOf(found), group);
   }
 }
 
@@ -751,7 +785,7 @@ async function importMany(ids, label) {
         const id = n.value;
         const found = cookbookEntry(id);
         const bookId = bookOf(found);
-        const folder = await targetFolder("Actor", bookId, found?.entry?.meta?.group);
+        const folder = await actorFolderFor(id, found);
         const actor = await importOne(bookId, id, folder?.id ?? null).catch(
           (err) => (console.error(`${MODULE_ID} | import ${id}`, err), null),
         );
@@ -1701,7 +1735,7 @@ async function importAdventureActor(bookId, id, folderId) {
     ui.notifications.info(`acks-content | ${id} is reprinted in ${BOOKS[tb]?.label ?? tb} — importing ${target} instead.`);
     // File it under the book it actually came FROM, not the adventure that
     // pointed at it.
-    const tFolder = await targetFolder("Actor", tb, cookbookEntry(target)?.entry?.meta?.group);
+    const tFolder = await actorFolderFor(target);
     return importOne(tb, target, tFolder?.id ?? folderId);
   }
   const found = cookbookEntry(id);
@@ -1952,6 +1986,7 @@ export async function cookbookImportRollTables() {
 export async function cookbookOrganize() {
   if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only (moves documents).");
   const moved = { Actor: 0, JournalEntry: 0, RollTable: 0, Item: 0 };
+  const failed = [];
 
   // Every candidate is collected before anything moves, so the bar can measure
   // the whole job — a world that imported several books has hundreds of them
@@ -1965,63 +2000,115 @@ export async function cookbookOrganize() {
     actors.length + journals.length + tables.length + items.length,
   );
 
+  // ONE broken document must cost one skip, not the whole run — a legacy actor
+  // whose stored data no longer validates throws from its own update(), and
+  // before this guard that aborted organize entirely (nothing after it moved).
+  const attempt = async (doc, kind, fn) => {
+    try {
+      await fn();
+    } catch (err) {
+      failed.push(`${kind} ${doc.name}`);
+      console.warn(`${MODULE_ID} | organize skipped ${kind} "${doc.name}" — its update failed:`, err);
+    }
+  };
+
   try {
     await prepareFolders("Actor", actors.map((a) => a.getFlag(MODULE_ID, "cookbook").id));
     for (const a of actors) {
       bar.step(a.name);
-      const id = a.getFlag(MODULE_ID, "cookbook").id;
-      const found = cookbookEntry(id);
-      const folder = await targetFolder("Actor", bookOf(found) ?? a.getFlag(MODULE_ID, "cookbook").book, found?.entry?.meta?.group);
-      if (folder && (a.folder?.id ?? null) !== folder.id) {
-        await a.update({ folder: folder.id });
-        moved.Actor++;
-      }
+      await attempt(a, "Actor", async () => {
+        const id = a.getFlag(MODULE_ID, "cookbook").id;
+        const found = cookbookEntry(id);
+        // The SAME destination rule the importers use (actorFolderFor), so
+        // organize can never move a document away from where import put it.
+        // An id the loaded cookbooks no longer know falls back to the book
+        // recorded on the flag.
+        const folder = found
+          ? await actorFolderFor(id, found)
+          : await targetFolder("Actor", a.getFlag(MODULE_ID, "cookbook").book, null);
+        if (folder && (a.folder?.id ?? null) !== folder.id) {
+          await a.update({ folder: folder.id });
+          moved.Actor++;
+        }
+      });
     }
 
     for (const j of journals) {
       bar.step(j.name);
-      const { book, group } = j.getFlag(MODULE_ID, "cookbook");
-      const folder = await ensureFolderPath("JournalEntry", [FOLDER_NAME, bookFolderName(book)]);
-      const patch = {};
-      if (folder && (j.folder?.id ?? null) !== folder.id) patch.folder = folder.id;
-      if (j.name !== group) patch.name = group;
-      if (Object.keys(patch).length) {
-        await j.update(patch);
-        moved.JournalEntry++;
-      }
+      await attempt(j, "JournalEntry", async () => {
+        const { book, group } = j.getFlag(MODULE_ID, "cookbook");
+        const folder = await ensureFolderPath("JournalEntry", [FOLDER_NAME, bookFolderName(book)]);
+        const patch = {};
+        if (folder && (j.folder?.id ?? null) !== folder.id) patch.folder = folder.id;
+        if (j.name !== group) patch.name = group;
+        if (Object.keys(patch).length) {
+          await j.update(patch);
+          moved.JournalEntry++;
+        }
+      });
     }
 
     for (const t of tables) {
       bar.step(t.name);
-      const { id, book } = t.getFlag(MODULE_ID, "cookbook");
-      const found = cookbookEntry(id);
-      const folder = await targetFolder("RollTable", bookOf(found) ?? book, found?.entry?.meta?.group);
-      if (folder && (t.folder?.id ?? null) !== folder.id) {
-        await t.update({ folder: folder.id });
-        moved.RollTable++;
-      }
+      await attempt(t, "RollTable", async () => {
+        const { id, book } = t.getFlag(MODULE_ID, "cookbook");
+        const found = cookbookEntry(id);
+        const folder = await targetFolder("RollTable", bookOf(found) ?? book, found?.entry?.meta?.group);
+        if (folder && (t.folder?.id ?? null) !== folder.id) {
+          await t.update({ folder: folder.id });
+          moved.RollTable++;
+        }
+      });
     }
 
     await prepareItemShelves();
     for (const i of items) {
       bar.step(i.name);
-      const folder = await ensureItemFolder(i.getFlag(MODULE_ID, "cookbook").id);
-      if (folder && (i.folder?.id ?? null) !== folder.id) {
-        await i.update({ folder: folder.id });
-        moved.Item++;
+      await attempt(i, "Item", async () => {
+        const folder = await ensureItemFolder(i.getFlag(MODULE_ID, "cookbook").id);
+        if (folder && (i.folder?.id ?? null) !== folder.id) {
+          await i.update({ folder: folder.id });
+          moved.Item++;
+        }
+      });
+    }
+
+    // Sweep folders the moves left EMPTY (the old "<book> › animal" home, a
+    // group whose last member re-filed) — deepest first, repeated until stable
+    // so an empty chain collapses. Only inside each type's ACKS Cookbook tree;
+    // deleting an empty folder loses nothing and a live destination is simply
+    // re-created on the next import. The session folder cache is cleared after,
+    // so a cached reference to a deleted folder can never file a document into
+    // nowhere.
+    for (const type of ["Actor", "JournalEntry", "RollTable", "Item"]) {
+      const root = game.folders.find((f) => f.type === type && f.name === FOLDER_NAME && !f.folder);
+      if (!root) continue;
+      for (let pass = 0; pass < 5; pass++) {
+        const empties = game.folders.filter(
+          (f) =>
+            f.type === type &&
+            f.id !== root.id &&
+            (f.ancestors ?? []).some((an) => an.id === root.id) &&
+            !(f.contents?.length ?? 0) &&
+            !game.folders.some((ch) => ch.folder?.id === f.id),
+        );
+        if (!empties.length) break;
+        for (const f of empties) await f.delete().catch(() => {});
       }
     }
+    folderCache.clear();
   } finally {
     bar.finish();
   }
 
   const total = Object.values(moved).reduce((a, b) => a + b, 0);
   ui.notifications.info(
-    total
+    (total
       ? `acks-content | organized ${total} document(s): ${Object.entries(moved).filter(([, n]) => n).map(([k, n]) => `${n} ${k}`).join(", ")}.`
-      : `acks-content | every cookbook document is already in place.`,
+      : `acks-content | every cookbook document is already in place.`) +
+      (failed.length ? ` ${failed.length} document(s) could not be moved (see console).` : ""),
   );
-  return moved;
+  return { ...moved, failed };
 }
 
 /*
@@ -2526,7 +2613,8 @@ export async function importEquipment(id, folderId) {
   }
 
   if (asActor) {
-    const folder = (await ensureFolderPath("Actor", [FOLDER_NAME, "Animals"]))?.id ?? null;
+    // Same destination rule organize uses (actorFolderFor → the "Animals" home).
+    const folder = (await actorFolderFor(id, found))?.id ?? null;
     return Actor.create({ ...bindAnimal(found.entry, node, id), folder });
   }
 

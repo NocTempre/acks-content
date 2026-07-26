@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.54.0
+
+**Import and Organize now agree on where every actor files — and monsters group
+by family.** ("The cookbook import macro isn't organizing correctly.")
+
+- **One destination rule.** Import filed the priced animals under `ACKS Cookbook
+  › Animals`, then Organize moved them away into `‹book› › animal` — the raw
+  group key as a folder name. Both now resolve through the same rule
+  (`actorFolderFor`), so Organize can never again move a document away from
+  where import put it. Animals live in **Animals**, full stop.
+- **Family folders.** Monstrous Manual entries declare no display group, so 154
+  monsters piled flat into one folder. The cookbook *does* declare families —
+  that data now files each family's members (and its generator) into a subfolder
+  named for the family: `Monstrous Manual › Bat › Bat, Common / Bat, Giant / …`.
+  28 family folders on the reference world; ungrouped monsters stay in the book
+  folder as before.
+- **One broken document no longer aborts the whole run.** Organize used to die
+  mid-pass if any actor's stored data failed validation (a pre-0.20.0 acks-lib
+  template generator missing its `base` field crashed the entire organize, with
+  nothing after it moving). Each document now moves in its own guard; failures
+  are skipped, counted, and named in the console. (Fix such a generator by
+  deleting it and re-importing its family with the book connected.)
+- **Empty-folder sweep.** After moving, Organize deletes folders left empty
+  inside the ACKS Cookbook trees (the stale `animal` home, an emptied group),
+  deepest first; live destinations are simply re-created by the next import.
+
 ## 0.53.1
 
 - **Fix: imported drawbacks no longer land unsorted in the root folder.** The
