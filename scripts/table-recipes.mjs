@@ -186,7 +186,84 @@ const CULTURE_APPEARANCE_BLOCKS = CULTURE_APPEARANCE.map(([id, page, hair, eyes]
   };
 });
 
+// Scavenged equipment (RR p160) prints FOUR d20 grids in a 2×2 block: the two
+// weapon tables above, armour/equipment and vessels/vehicles below, left and
+// right print columns. Every grid shares the same seven d20 bands, which is why
+// each recipe needs `startAfter` — without it the upper grid in a column answers
+// for the lower one. Bands only; no effect text or values live here.
+const SCAVENGED_ROWS = [
+  { key: "2", labelRe: "^1\\s*[–—-]\\s*2\\b", set: { min: 1, max: 2 } },
+  { key: "6", labelRe: "^3\\s*[–—-]\\s*6\\b", set: { min: 3, max: 6 } },
+  { key: "10", labelRe: "^7\\s*[–—-]\\s*10\\b", set: { min: 7, max: 10 } },
+  { key: "14", labelRe: "^11\\s*[–—-]\\s*14\\b", set: { min: 11, max: 14 } },
+  { key: "16", labelRe: "^15\\s*[–—-]\\s*16\\b", set: { min: 15, max: 16 } },
+  { key: "18", labelRe: "^17\\s*[–—-]\\s*18\\b", set: { min: 17, max: 18 } },
+  { key: "20", labelRe: "^19\\s*[–—-]\\s*20\\b", set: { min: 19, max: 20 } },
+];
+
+/** One scavenged grid: the print column, its header anchor, and its three cells. */
+const scavengedGrid = ({ locate, column, labelMaxX, cells }) => ({
+  shape: "gridRows",
+  book: "rr",
+  printedPage: 160,
+  locate,
+  startAfter: locate,
+  column,
+  labelMaxX,
+  rowTol: 4,
+  // The book sets these headings and several cells in SMALL CAPS, which reaches
+  // the text layer as split runs ("o" + "ff balance"); windowed columns join
+  // every run inside the band, so the cell reads whole.
+  cellColumns: cells,
+  rows: SCAVENGED_ROWS,
+});
+
 export const TABLE_RECIPES = {
+  equipment: {
+    source: { book: "ACKS II Revised Rulebook", pages: "160" },
+    tables: {
+      scavengedPiercingSlashing: scavengedGrid({
+        locate: "Piercing/Slashing Weapons",
+        column: { xMin: 40, xMax: 300 },
+        labelMaxX: 78,
+        cells: [
+          { key: "category", x: 83, w: 80, row: true },
+          { key: "effect", x: 165, w: 80, row: true },
+          { key: "value", x: 245, w: 50, row: true },
+        ],
+      }),
+      scavengedBludgeoning: scavengedGrid({
+        locate: "Bludgeoning Weapons",
+        column: { xMin: 300, xMax: 620 },
+        labelMaxX: 334,
+        cells: [
+          { key: "category", x: 339, w: 80, row: true },
+          { key: "effect", x: 420, w: 80, row: true },
+          { key: "value", x: 500, w: 50, row: true },
+        ],
+      }),
+      scavengedArmorEquipment: scavengedGrid({
+        locate: "Armor and Equipment",
+        column: { xMin: 40, xMax: 300 },
+        labelMaxX: 78,
+        cells: [
+          { key: "category", x: 83, w: 70, row: true },
+          { key: "effect", x: 155, w: 88, row: true },
+          { key: "value", x: 245, w: 50, row: true },
+        ],
+      }),
+      scavengedVesselsVehicles: scavengedGrid({
+        locate: "Vessels and Vehicles",
+        column: { xMin: 300, xMax: 620 },
+        labelMaxX: 334,
+        cells: [
+          { key: "category", x: 339, w: 80, row: true },
+          { key: "effect", x: 420, w: 80, row: true },
+          { key: "value", x: 500, w: 50, row: true },
+        ],
+      }),
+    },
+  },
   rarity: {
     source: { book: "ACKS II Judges Journal", pages: "118-119, 259" },
     tables: {

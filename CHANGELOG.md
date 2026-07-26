@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.56.0
+
+**Scavenged equipment (RR p160) extracts from your own book.** The page prints
+four d20 condition grids — Piercing/Slashing Weapons, Bludgeoning Weapons, Armor
+and Equipment, and Vessels and Vehicles — and all four now import into the
+ruledata registry as the `equipment` document, so acks-equipment's condition
+control rolls and lists **your** book's bands, category names, effects and resale
+percentages instead of built-in stand-ins. As always the recipes carry geometry
+and patterns only; every value is read from the reader's PDF at import time.
+
+- `extractGridRows` learns `startAfter`, the vertical anchor the other shapes
+  already had. RR p160 stacks two grids in each print column (Armor and Equipment
+  sits directly below Piercing/Slashing and repeats the same d20 bands), so
+  without it the upper grid answered for the lower one.
+
 ## 0.55.0
 
 **Abilities and NPCs get the same organization monsters got.**

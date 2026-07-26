@@ -210,6 +210,15 @@ export function extractGridRows(items, recipe) {
   const rows = rowsByY(items, recipe.rowTol ?? 3);
   const out = {};
   let cursor = 0;
+  // startAfter: a page may STACK two grids in the same print column (RR p160
+  // sets Armor and Equipment directly below Piercing/Slashing, both sharing the
+  // left column and the same d20 row labels). Skipping to the marker row is what
+  // stops the upper grid from answering for the lower one. Same convention the
+  // pairs/bandGrid shapes already use.
+  if (recipe.startAfter) {
+    const idx = rows.findIndex((r) => r.items.some((it) => it.str.includes(recipe.startAfter)));
+    if (idx >= 0) cursor = idx + 1;
+  }
   for (const spec of recipe.rows) {
     const re = new RegExp(spec.labelRe, "i");
     let matched = null;
