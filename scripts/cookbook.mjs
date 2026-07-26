@@ -644,15 +644,21 @@ async function ensureFolderPath(type, names) {
   let parent = null;
   for (const name of names.filter(Boolean).map((n) => String(n).trim()).filter(Boolean)) {
     const key = `${type}|${parent?.id ?? "root"}|${name}`;
-    let folder = folderCache.get(key);
-    if (!folder) {
-      folder =
+    // Cache the PROMISE, not the resolved folder: two concurrent importers that
+    // both miss a resolved cache would each create the folder and the world
+    // would end up with duplicates. Awaiting a shared promise means the second
+    // caller waits for the first one's folder instead of making its own — which
+    // is what lets a folder be resolved mid-import (once extraction reveals the
+    // monster's type) rather than having to be pre-created before the fan-out.
+    let pending = folderCache.get(key);
+    if (!pending) {
+      pending = (async () =>
         game.folders.find(
           (fo) => fo.type === type && fo.name === name && (fo.folder?.id ?? null) === (parent?.id ?? null),
-        ) ?? (await Folder.create({ name, type, folder: parent?.id ?? null, sorting: "a" }));
-      folderCache.set(key, folder);
+        ) ?? (await Folder.create({ name, type, folder: parent?.id ?? null, sorting: "a" })))();
+      folderCache.set(key, pending);
     }
-    parent = folder;
+    parent = await pending;
   }
   return parent;
 }
@@ -663,32 +669,75 @@ const targetFolder = (type, bookId, group) =>
   ensureFolderPath(type, [FOLDER_NAME, bookFolderName(bookId), group]);
 
 /**
- * The FAMILY an entry heads or belongs to, as a display name — the Monstrous
- * Manual declares no `meta.group`, but it declares families, so a bat can file
- * under "Bat" instead of joining a 150-actor pile. Cached per book.
+ * Monster TYPE → folder name. The stat block's own taxonomy (Animal, Undead,
+ * Beastman, …) is what a Judge actually browses by; the Monstrous Manual prints
+ * no section groups, so without this its 154 entries pile into one folder.
+ *
+ * Filing by FAMILY was tried first and was wrong: most families have one to
+ * three members, so it produced a folder per creature ("Bat", "Boar", "Cat")
+ * rather than a taxonomy.
  */
-const familyGroupCache = new Map(); // bookId → Map(entryId → family display name)
-function familyGroupOf(bookId, id) {
-  if (!familyGroupCache.has(bookId)) {
-    const map = new Map();
-    for (const [fid, fam] of Object.entries(data.books.get(bookId)?.families ?? {})) {
-      map.set(fid, fam.name);
-      for (const m of fam.members ?? []) map.set(m.id, fam.name);
-    }
-    familyGroupCache.set(bookId, map);
-  }
-  return familyGroupCache.get(bookId).get(id) ?? null;
+const TYPE_FOLDER = {
+  animal: "Animals",
+  beastman: "Beastmen",
+  construct: "Constructs",
+  enchanted: "Enchanted",
+  giant: "Giants",
+  humanoid: "Humanoids",
+  incarnation: "Incarnations",
+  monstrosity: "Monstrosities",
+  ooze: "Oozes",
+  plant: "Plants",
+  undead: "Undead",
+  vermin: "Vermin",
+};
+
+/**
+ * The type a block leads with, preferring the SPECIFIC one when it prints
+ * several ("Humanoid, Beastman" files under Beastmen — the useful bucket).
+ */
+const TYPE_PRIORITY = ["beastman", "incarnation", "undead", "construct", "ooze", "plant", "giant", "vermin", "monstrosity", "animal", "humanoid", "enchanted"];
+function primaryTypeOf(node) {
+  const t = node?.fields?.stats?.type;
+  const keys = (t?.keys ?? (t?.key ? [t.key] : [])).map((k) => String(k).toLowerCase());
+  if (!keys.length) return null;
+  for (const p of TYPE_PRIORITY) if (keys.includes(p)) return p;
+  return keys[0];
+}
+
+/** Folder for a type key ("undead" → "Undead"), or null. */
+const typeFolderOf = (key) => (key ? TYPE_FOLDER[String(key).toLowerCase()] ?? null : null);
+
+/** The recorded type of an already-imported actor (our flag, else the FMS extras). */
+function actorTypeFolder(doc) {
+  const own = doc?.getFlag?.(MODULE_ID, "cookbook")?.type;
+  if (own) return typeFolderOf(own);
+  const fms = doc?.getFlag?.("acks-monsters", "extras")?.types;
+  const keys = Array.isArray(fms) ? fms.map((k) => String(k).toLowerCase()) : [];
+  if (!keys.length) return null;
+  for (const p of TYPE_PRIORITY) if (keys.includes(p)) return TYPE_FOLDER[p];
+  return TYPE_FOLDER[keys[0]] ?? null;
 }
 
 /**
- * The display group an actor-kind entry files under: authored group, else the
- * family it heads/belongs to, else a kind bucket for NPCs — so a book that
- * prints NPCs without section groups still separates people from monsters.
+ * The display group an actor-kind entry files under: the book's authored
+ * section group, else its stat-block TYPE, else a bucket for the kinds that
+ * have no type at all (generator templates, NPCs).
  */
-const actorGroupOf = (found, id) =>
-  found?.entry?.meta?.group ??
-  familyGroupOf(bookOf(found), id) ??
-  (found?.entry?.kind === "kind.npc" ? "NPCs" : null);
+function actorGroupOf(found, id, { doc = null, type = null } = {}) {
+  const authored = found?.entry?.meta?.group;
+  if (authored) return authored;
+  const kind = found?.entry?.kind;
+  // A family/monster TEMPLATE is a generator, not a creature — it has no stat
+  // block to type, and mixing generators in with monsters hides both.
+  if (kind === "kind.monsterFamily" || kind === "kind.monsterTemplate") return "Templates";
+  // `type` is the freshly extracted stat-block type (import time); `doc` is an
+  // actor already in the world (organize time). Either answers the same question.
+  const byType = typeFolderOf(type) ?? actorTypeFolder(doc);
+  if (byType) return byType;
+  if (kind === "kind.npc") return "NPCs";
+  return null;
+}
 
 /**
  * THE one destination rule for a cookbook ACTOR — used by import AND organize so
@@ -696,9 +745,9 @@ const actorGroupOf = (found, id) =>
  * be organized away into "<book> › animal", the raw group key; MM monsters with
  * no group sat 150 to a folder while their families went unused).
  */
-function actorFolderFor(id, found = cookbookEntry(id)) {
+function actorFolderFor(id, found = cookbookEntry(id), opts = {}) {
   if (isAnimalEntry(found?.entry)) return ensureFolderPath("Actor", [FOLDER_NAME, "Animals"]);
-  return targetFolder("Actor", bookOf(found), actorGroupOf(found, id));
+  return targetFolder("Actor", bookOf(found), actorGroupOf(found, id, opts));
 }
 
 /** Pre-create every folder a batch will need, before the workers fan out. */
@@ -872,6 +921,14 @@ async function importOne(bookId, id, folderId) {
   const fmsActive = game.modules.get("acks-monsters")?.active;
   if (!fmsActive) system.details = { ...(system.details ?? {}), biography: tag(null) };
 
+  // FILE IT NOW, not on a later Organize pass. The stat block has just told us
+  // the creature's TYPE — the axis monsters are grouped by — so the destination
+  // is resolved here instead of importing into the book root and depending on
+  // the GM pressing Organize afterwards. (ensureFolderPath caches the promise,
+  // so concurrent importers cannot race two folders of the same name.)
+  const typed = primaryTypeOf(node);
+  const folder = (await actorFolderFor(id, found, { type: typed }))?.id ?? folderId;
+
   // ONE write, not four. create/update/createEmbeddedDocuments/setFlag were each
   // a separate socket round-trip a bulk import paid per monster; fold the
   // embedded items, the cookbook id, and the FMS extras into the single create
@@ -880,7 +937,7 @@ async function importOne(bookId, id, folderId) {
   const actor = await Actor.create({
     name: found.entry.name,
     type: "monster",
-    folder: folderId,
+    folder,
     system,
     ...(prototypeToken ? { prototypeToken } : {}),
     // Merge, don't replace: an embedded shared ability keeps its cookbook id
@@ -891,7 +948,13 @@ async function importOne(bookId, id, folderId) {
     })),
     flags: {
       ...(flags ?? {}),
-      [MODULE_ID]: { ...((flags ?? {})[MODULE_ID] ?? {}), cookbook: { id, cite: found.entry.cite } },
+      // The stat block's TYPE rides on OUR flag, not only the Full Monster
+      // Sheet's extras: it is the axis monsters are filed by, and a world
+      // without acks-monsters would otherwise have nothing to group on.
+      [MODULE_ID]: {
+        ...((flags ?? {})[MODULE_ID] ?? {}),
+        cookbook: { id, cite: found.entry.cite, ...(typed ? { type: typed } : {}) },
+      },
       ...(fmsActive ? fmsFlags : {}),
     },
   });
@@ -2031,8 +2094,8 @@ export async function cookbookOrganize() {
         // An id the loaded cookbooks no longer know falls back to the book
         // recorded on the flag.
         const folder = found
-          ? await actorFolderFor(id, found)
-          : await targetFolder("Actor", a.getFlag(MODULE_ID, "cookbook").book, null);
+          ? await actorFolderFor(id, found, { doc: a })
+          : await targetFolder("Actor", a.getFlag(MODULE_ID, "cookbook").book, actorTypeFolder(a));
         if (folder && (a.folder?.id ?? null) !== folder.id) {
           await a.update({ folder: folder.id });
           moved.Actor++;

@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.57.0
+
+**Monsters group by TYPE, and they are filed on import.**
+
+- The Monstrous Manual prints no section groups, so monsters were grouped by
+  FAMILY — which was wrong: most families have one to three members, so it made a
+  folder per creature ("Bat", "Boar", "Cat") instead of a taxonomy. They now file
+  by the stat block's own type: **Animals, Beastmen, Constructs, Giants,
+  Humanoids, Incarnations, Monstrosities, Oozes, Plants, Undead, Vermin** (and
+  **Templates** for the family generators, which are not creatures and have no
+  stat block to type). A block that prints several types files under the more
+  specific one, so a "Humanoid, Beastman" lands in Beastmen.
+- **Filed at import, not by a later Organize.** The type is known the moment the
+  stat block is read, so the destination folder is resolved right there. Organize
+  is now only a repair tool for worlds imported by an older version.
+- The type is recorded on this module's own flag as well, so a world without
+  acks-monsters still has something to group on.
+- Folder creation is race-safe: the cache holds the pending promise, so two
+  concurrent importers can no longer create duplicate folders of the same name.
+
 ## 0.56.0
 
 **Scavenged equipment (RR p160) extracts from your own book.** The page prints
