@@ -1,0 +1,20 @@
+{
+  "_id": "ackscMacRemoveAl",
+  "_key": "!macros!ackscMacRemoveAl",
+  "name": "Remove ALL Imports (GM)",
+  "type": "script",
+  "img": "icons/svg/trash.svg",
+  "scope": "global",
+  "command": "const api = globalThis.acksContent;\nif (!api) return ui.notifications.warn(\"acks-content | module not ready (is it enabled?).\");\nif (!api.cookbookRemoveImports) return ui.notifications.warn(\"acks-content | removing imports needs a newer module build.\");\napi.cookbookRemoveImports();",
+  "folder": "ackscFldImport00",
+  "sort": 290,
+  "ownership": {
+    "default": 2
+  },
+  "flags": {},
+  "_stats": {
+    "coreVersion": "14",
+    "createdTime": 1784332800000,
+    "modifiedTime": 1784332800000
+  }
+}

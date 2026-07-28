@@ -118,6 +118,16 @@ api.reconnectBooks();`,
       FOLDERS.import,
     ),
     macro(
+      "ackscMacRemoveAl",
+      "Remove ALL Imports (GM)",
+      "icons/svg/trash.svg",
+      GUARD +
+        `if (!api.cookbookRemoveImports) return ui.notifications.warn("acks-content | removing imports needs a newer module build.");
+api.cookbookRemoveImports();`,
+      290,
+      FOLDERS.import,
+    ),
+    macro(
       "ackscMacAdvJourn",
       "Import Location Journals (GM)",
       "icons/svg/book.svg",

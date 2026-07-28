@@ -888,6 +888,46 @@ function familyMemberIds() {
   return members;
 }
 
+/**
+ * GM: delete EVERY document this module imported — actors (monsters,
+ * templates, families, NPCs), world abilities, journals, roll tables, and the
+ * folders they were filed in. Identified by our own cookbook flag, so
+ * hand-made documents are never touched. The counterpart to "import all":
+ * a clean slate for re-importing after a recipe change, and the reset the
+ * test cycle needs.
+ *
+ * Art files stay on disk (Foundry exposes no delete API); a re-import reuses
+ * them, which is the point — only a changed recipe needs them cleared by hand.
+ */
+export async function cookbookRemoveImports() {
+  if (!game.user.isGM) return ui.notifications.warn("acks-content | GM only (deletes documents).");
+  const mine = (d) => !!d.getFlag(MODULE_ID, "cookbook");
+  const groups = [
+    ["Actor", game.actors.filter(mine)],
+    ["Item", game.items.filter(mine)],
+    ["JournalEntry", game.journal.filter(mine)],
+    ["RollTable", game.tables.filter(mine)],
+    ["Folder", game.folders.filter(mine)],
+  ];
+  const total = groups.reduce((n, [, docs]) => n + docs.length, 0);
+  if (!total) return ui.notifications.info("acks-content | nothing imported by this module to remove.");
+  const lines = groups.filter(([, d]) => d.length).map(([type, d]) => `${d.length} ${type}(s)`).join(", ");
+  const ok = await foundry.applications.api.DialogV2.confirm({
+    window: { title: "acks-content — Remove Imports" },
+    content: `<p>Delete <strong>${total}</strong> imported document(s): ${lines}?</p>
+      <p class="notes">Only documents this module imported are removed. Extracted art files stay on disk and are reused by the next import.</p>`,
+  });
+  if (!ok) return null;
+  for (const [type, docs] of groups) {
+    if (!docs.length) continue;
+    await foundry.utils.getDocumentClass(type).deleteDocuments(docs.map((d) => d.id)).catch((err) => {
+      console.warn(`${MODULE_ID} | remove ${type}`, err);
+    });
+  }
+  ui.notifications.info(`acks-content | removed ${total} imported document(s).`);
+  return total;
+}
+
 /** Report an import run, naming what was skipped as already present. */
 function reportImport(done, picked, skipped) {
   ui.notifications.info(
