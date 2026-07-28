@@ -775,14 +775,27 @@ async function loadHeadings(bookId, page, pageData, picked, kindChoice) {
  * page-render crop stays as a fallback for a seat whose decoders fail.
  */
 async function uploadPageArt(doc, recipe) {
+  const FP = foundry.applications?.apps?.FilePicker?.implementation ?? globalThis.FilePicker;
+  const dir = "acks-content-art";
+  const filename = `${recipe.id.replaceAll(".", "-")}.png`;
+  // Already imported? Reuse it — decode + upload is the expensive half of a
+  // re-import. A tiny file is a corrupt/aborted upload and is redone.
+  try {
+    const listing = await FP.browse("data", dir);
+    const existing = (listing?.files ?? []).find((f) => f.split("/").pop() === filename);
+    if (existing) {
+      const head = await fetch(existing, { method: "HEAD" }).catch(() => null);
+      const size = parseInt(head?.headers?.get("content-length") ?? "0", 10);
+      if (!head || size >= 1024) return { path: existing, width: 0, height: 0, cached: true };
+    }
+  } catch {
+    /* directory may not exist yet — fall through and create it */
+  }
   const art =
     (await extractPageArt(doc, recipe.page, recipe.name ?? null)) ??
     (recipe.box ? await extractPageArtRegion(doc, recipe.page, recipe.box) : null);
   if (!art) return null;
-  const FP = foundry.applications?.apps?.FilePicker?.implementation ?? globalThis.FilePicker;
-  const dir = "acks-content-art";
   await FP.createDirectory("data", dir).catch(() => {});
-  const filename = `${recipe.id.replaceAll(".", "-")}.png`;
   const file = new File([art.blob], filename, { type: "image/png" });
   const res = await FP.upload("data", dir, file, {}, { notify: false });
   return res?.path ? { path: res.path, width: art.width, height: art.height } : null;
@@ -796,7 +809,7 @@ async function importArt(actor, doc, recipe) {
       return false;
     }
     await actor.update({ img: up.path, "prototypeToken.texture.src": up.path });
-    console.log(`${MODULE_ID} | ${actor.name}: art imported (${up.width}x${up.height}) -> ${up.path}`);
+    console.log(`${MODULE_ID} | ${actor.name}: art ${up.cached ? "reused" : `imported (${up.width}x${up.height})`} -> ${up.path}`);
     return true;
   } catch (err) {
     console.warn(`${MODULE_ID} | ${actor.name}: art import failed`, err);
