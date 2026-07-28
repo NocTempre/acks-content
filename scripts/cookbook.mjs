@@ -640,10 +640,67 @@ export function bindMonster(node) {
  */
 const folderCache = new Map();
 
+/* -------------------------------------------- */
+/*  Import target: world documents or compendium */
+/* -------------------------------------------- */
+
+/**
+ * Imports may land in WORLD COMPENDIUMS instead of the sidebar (setting
+ * `importToCompendium`): hundreds of imported monsters stay out of the Actors
+ * directory and remain drag-and-droppable reference material. One world pack
+ * per document type, created on first use and cached by type.
+ *
+ * Everything downstream is unchanged — the same documents, flags and folder
+ * paths, just created with `{pack}`. A world that flips the setting keeps
+ * whatever it already imported where it is.
+ */
+const packCache = new Map();
+const compendiumMode = () => {
+  try {
+    return !!game.settings.get(MODULE_ID, "importToCompendium");
+  } catch {
+    return false; // setting not registered (older build / test harness)
+  }
+};
+
+/** The pack collection id imports of this type go to, or null for the world. */
+async function packFor(type) {
+  if (!compendiumMode()) return null;
+  let pending = packCache.get(type);
+  if (!pending) {
+    pending = (async () => {
+      const label = `${FOLDER_NAME} — ${type}`;
+      const found = game.packs.find(
+        (p) => p.metadata.packageType === "world" && p.documentName === type && p.metadata.label === label,
+      );
+      if (found) return found.collection;
+      const CC = foundry.documents?.collections?.CompendiumCollection ?? globalThis.CompendiumCollection;
+      const made = await CC.createCompendium({ label, type });
+      return made.collection;
+    })().catch((err) => {
+      console.warn(`${MODULE_ID} | could not open a ${type} compendium — importing into the world instead.`, err);
+      return null;
+    });
+    packCache.set(type, pending);
+  }
+  return pending;
+}
+
+/** `{pack}` option for document creation, or `{}` in world mode. */
+const packOpts = async (type) => {
+  const pack = await packFor(type);
+  return pack ? { pack } : {};
+};
+
+/** Create a document in the configured target (world or compendium). */
+const createDoc = async (cls, data, opts = {}) => cls.create(data, { ...opts, ...(await packOpts(cls.documentName)) });
+
 async function ensureFolderPath(type, names) {
+  const pack = await packFor(type);
+  const collection = pack ? game.packs.get(pack)?.folders : game.folders;
   let parent = null;
   for (const name of names.filter(Boolean).map((n) => String(n).trim()).filter(Boolean)) {
-    const key = `${type}|${parent?.id ?? "root"}|${name}`;
+    const key = `${type}|${pack ?? "world"}|${parent?.id ?? "root"}|${name}`;
     // Cache the PROMISE, not the resolved folder: two concurrent importers that
     // both miss a resolved cache would each create the folder and the world
     // would end up with duplicates. Awaiting a shared promise means the second
@@ -652,10 +709,12 @@ async function ensureFolderPath(type, names) {
     // monster's type) rather than having to be pre-created before the fan-out.
     let pending = folderCache.get(key);
     if (!pending) {
+      const parentId = parent?.id ?? null;
       pending = (async () =>
-        game.folders.find(
-          (fo) => fo.type === type && fo.name === name && (fo.folder?.id ?? null) === (parent?.id ?? null),
-        ) ?? (await Folder.create({ name, type, folder: parent?.id ?? null, sorting: "a" })))();
+        (collection ?? game.folders).find(
+          (fo) => fo.type === type && fo.name === name && (fo.folder?.id ?? null) === parentId,
+        ) ??
+        (await Folder.create({ name, type, folder: parentId, sorting: "a" }, pack ? { pack } : {})))();
       folderCache.set(key, pending);
     }
     parent = await pending;
@@ -667,6 +726,35 @@ const bookFolderName = (bookId) => BOOKS[bookId]?.label ?? bookId;
 /** The folder an entry of this kind belongs in, creating the path as needed. */
 const targetFolder = (type, bookId, group) =>
   ensureFolderPath(type, [FOLDER_NAME, bookFolderName(bookId), group]);
+
+/**
+ * Every cookbook id this world already holds, in WHICHEVER target is
+ * configured — the sidebar plus, in compendium mode, the pack INDEX (read
+ * with the cookbook flag as an index field, so no document is loaded).
+ */
+async function importedIdSet() {
+  const ids = new Set(game.actors.map((a) => a.getFlag(MODULE_ID, "cookbook")?.id).filter(Boolean));
+  const pack = await packFor("Actor");
+  const collection = pack ? game.packs.get(pack) : null;
+  if (collection) {
+    const index = await collection.getIndex({ fields: [`flags.${MODULE_ID}.cookbook.id`] }).catch(() => null);
+    for (const row of index ?? []) {
+      const id = row.flags?.[MODULE_ID]?.cookbook?.id;
+      if (id) ids.add(id);
+    }
+  }
+  return ids;
+}
+
+/** Actors of one type, wherever imports live (sidebar + configured pack). */
+async function importedActorsOfType(type) {
+  const world = game.actors.filter((a) => a.type === type);
+  const pack = await packFor("Actor");
+  const collection = pack ? game.packs.get(pack) : null;
+  if (!collection) return world;
+  const docs = await collection.getDocuments({ type }).catch(() => []);
+  return [...world, ...docs];
+}
 
 /**
  * Monster TYPE → folder name. The stat block's own taxonomy (Animal, Undead,
@@ -888,6 +976,9 @@ function familyMemberIds() {
   return members;
 }
 
+const sysObject = (doc) =>
+  typeof doc?.system?.toObject === "function" ? doc.system.toObject() : foundry.utils.deepClone(doc?.system ?? {});
+
 /**
  * GM: delete EVERY document this module imported — actors (monsters,
  * templates, families, NPCs), world abilities, journals, roll tables, and the
@@ -909,9 +1000,18 @@ export async function cookbookRemoveImports() {
     ["RollTable", game.tables.filter(mine)],
     ["Folder", game.folders.filter(mine)],
   ];
-  const total = groups.reduce((n, [, docs]) => n + docs.length, 0);
+  // Compendium imports too: OUR world packs, found by label whatever the
+  // setting says now, so a world that has flipped it still gets a clean slate.
+  const ourPacks = game.packs.filter(
+    (p) => p.metadata.packageType === "world" && String(p.metadata.label ?? "").startsWith(`${FOLDER_NAME} — `),
+  );
+  const packed = ourPacks.reduce((n, p) => n + p.index.size, 0);
+  const total = groups.reduce((n, [, docs]) => n + docs.length, 0) + packed;
   if (!total) return ui.notifications.info("acks-content | nothing imported by this module to remove.");
-  const lines = groups.filter(([, d]) => d.length).map(([type, d]) => `${d.length} ${type}(s)`).join(", ");
+  const lines = [
+    ...groups.filter(([, d]) => d.length).map(([type, d]) => `${d.length} ${type}(s)`),
+    ...(packed ? [`${packed} in ${ourPacks.length} compendium(s)`] : []),
+  ].join(", ");
   const ok = await foundry.applications.api.DialogV2.confirm({
     window: { title: "acks-content — Remove Imports" },
     content: `<p>Delete <strong>${total}</strong> imported document(s): ${lines}?</p>
@@ -924,6 +1024,13 @@ export async function cookbookRemoveImports() {
       console.warn(`${MODULE_ID} | remove ${type}`, err);
     });
   }
+  // The packs themselves go — a re-import recreates them, and an empty
+  // "ACKS Cookbook — Actor" left behind is just clutter.
+  for (const p of ourPacks) {
+    await p.deleteCompendium().catch((err) => console.warn(`${MODULE_ID} | remove pack ${p.collection}`, err));
+  }
+  packCache.clear();
+  folderCache.clear();
   ui.notifications.info(`acks-content | removed ${total} imported document(s).`);
   return total;
 }
@@ -974,7 +1081,7 @@ async function importOne(bookId, id, folderId) {
   // embedded items, the cookbook id, and the FMS extras into the single create
   // (measured ~2.6x on the write phase alone). Art follows separately — it needs
   // the uploaded file path.
-  const actor = await Actor.create({
+  const actor = await createDoc(Actor, {
     name: found.entry.name,
     type: "monster",
     folder,
@@ -1438,8 +1545,7 @@ async function importFamily(bookId, famId, folderId) {
     const conv = convertName(data.registers, String(n ?? ""));
     return (conv?.status === "renamed" && conv.to ? conv.to : String(n ?? "")).toLowerCase();
   };
-  const existing = game.actors.find((a) => {
-    if (a.type !== TEMPLATE_TYPE) return false;
+  const existing = (await importedActorsOfType(TEMPLATE_TYPE)).find((a) => {
     const aFam = a.getFlag(MODULE_ID, "cookbook")?.id ?? "";
     if (aFam === famId || (aFam.split(".")[1] ?? aFam) === famSuffix) return true;
     if (aFam && canonicalName(a.name) === canonicalName(fam.name)) return true;
@@ -1448,7 +1554,7 @@ async function importFamily(bookId, famId, folderId) {
     );
   });
   if (existing) {
-    const exAxes = existing.system.toObject().axes;
+    const exAxes = sysObject(existing).axes;
     const vAxis = exAxes.find((a) => a.key === "variant");
     if (vAxis) {
       const haveIds = new Set(vAxis.options.map(optionIdOf).filter(Boolean));
@@ -1475,7 +1581,7 @@ async function importFamily(bookId, famId, folderId) {
           : {};
       if (added.length || Object.keys(rename).length) {
         vAxis.options.push(...added);
-        const exCells = existing.system.toObject().cells ?? [];
+        const exCells = sysObject(existing).cells ?? [];
         await existing.update({
           "system.axes": exAxes,
           "system.cells": [...exCells, ...addedCells],
@@ -1493,7 +1599,7 @@ async function importFamily(bookId, famId, folderId) {
     }
   }
 
-  const actor = await Actor.create({
+  const actor = await createDoc(Actor, {
     name: fam.name,
     type: TEMPLATE_TYPE,
     folder: folderId,
@@ -1654,7 +1760,7 @@ async function importTemplate(bookId, id, folderId) {
     }),
   };
 
-  const actor = await Actor.create({
+  const actor = await createDoc(Actor, {
     name: found.entry.name,
     type: TEMPLATE_TYPE,
     folder: folderId,
@@ -1837,7 +1943,7 @@ async function importAdventureActor(bookId, id, folderId) {
     // The deferred TARGET id gets its own already-present check — the caller
     // only filtered on the adventure id, and a world that imported the MM
     // entry directly must not get a twin.
-    if (importedMonsterIds().has(target)) {
+    if ((await importedIdSet()).has(target)) {
       ui.notifications.info(`acks-content | ${id} defers to ${target}, which this world already has — skipped.`);
       return null;
     }
@@ -1872,7 +1978,7 @@ async function importAdventureActor(bookId, id, folderId) {
     bound.items = [...(bound.items ?? []), ...profItems];
     if (missing.length) console.log(`${MODULE_ID} | ${id}: unresolved proficiencies ${missing.join(", ")}`);
   }
-  const actor = await Actor.create({
+  const actor = await createDoc(Actor, {
     name: found.entry.name,
     type: "monster",
     folder: folderId,
@@ -1954,7 +2060,7 @@ export async function cookbookImportJournals() {
           if ((journal.folder?.id ?? null) !== folder.id) move.folder = folder.id;
           if (Object.keys(move).length) await journal.update(move);
         } else {
-          journal = await JournalEntry.create({
+          journal = await createDoc(JournalEntry, {
             name: group,
             folder: folder.id,
             flags: { [MODULE_ID]: { cookbook: { book: bookId, group } } },
@@ -2067,7 +2173,7 @@ export async function cookbookImportRollTables() {
         const formula =
           (typeof node.fields.roll === "string" && node.fields.roll) ||
           (Math.min(...lows) === 1 ? `1d${Math.max(...his)}` : "");
-        await RollTable.create({
+        await createDoc(RollTable, {
           name: e.name,
           folder: folder?.id ?? null,
           formula,
@@ -2521,7 +2627,7 @@ export async function importAbility(id, folderId) {
   const doc = bindAbility(found.entry, node, id);
   const extras = doc.flags["acks-abilities"].extras;
   extras.effects = await resolveCompanions(extras.effects);
-  return Item.create({ ...doc, folder });
+  return createDoc(Item, { ...doc, folder });
 }
 
 /**
@@ -2752,7 +2858,7 @@ export async function importEquipment(id, folderId) {
   if (asActor) {
     // Same destination rule organize uses (actorFolderFor → the "Animals" home).
     const folder = (await actorFolderFor(id, found))?.id ?? null;
-    return Actor.create({ ...bindAnimal(found.entry, node, id), folder });
+    return createDoc(Actor, { ...bindAnimal(found.entry, node, id), folder });
   }
 
   const folder = folderId ?? (await ensureItemFolder(id))?.id ?? null;
@@ -2765,7 +2871,7 @@ export async function importEquipment(id, folderId) {
     if (priced?.cost != null) doc.system.cost = priced.cost;
     if (priced?.weight6 != null) doc.system.weight6 = priced.weight6;
   }
-  const item = await Item.create({ ...doc, folder });
+  const item = await createDoc(Item, { ...doc, folder });
   // acks-equipment owns the RAW annotation layer (container capacities, the
   // harness, the bowquiver). Its profiles key off the printed name, so a
   // generated item annotates exactly like a core one. Reuse, never restate.
@@ -2912,7 +3018,7 @@ export async function importWeapons(folderId) {
     const id = weaponId(row.name);
     if (game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id)) continue;
     const cite = `${BOOKS[WEAPON_TABLE.book]?.short ?? "RR"} p. ${WEAPON_TABLE.page}`;
-    await Item.create({ ...bindWeaponRow(row, id, cite), folder });
+    await createDoc(Item, { ...bindWeaponRow(row, id, cite), folder });
     created++;
   }
   return { table: rows.length, created };
@@ -2961,7 +3067,7 @@ export async function importArmor(folderId) {
     const id = armorId(row.name);
     if (game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id)) continue;
     const cite = `${BOOKS[ARMOR_TABLE.book]?.short ?? "RR"} p. ${ARMOR_TABLE.page}`;
-    await Item.create({ ...bindArmorRow(row, id, cite), folder });
+    await createDoc(Item, { ...bindArmorRow(row, id, cite), folder });
     created++;
   }
   return { table: rows.length, created };
@@ -3539,7 +3645,7 @@ export async function cookbookImport() {
     );
   }
   const esc = foundry.utils.escapeHTML ?? ((x) => x);
-  const have = importedMonsterIds();
+  const have = await importedIdSet();
   const { rows: entryRows } = actorEntriesAcrossBooks();
   // One list across every connected book, with a heading per book so a long
   // list still says where each block came from. The filter matches the book
@@ -3646,7 +3752,7 @@ export async function cookbookImport() {
         if (!picked.length) return ui.notifications.warn("acks-content | nothing selected.");
         // Re-read rather than trusting the marks drawn when the dialog opened —
         // an import may have happened in another window since.
-        const present = importedMonsterIds();
+        const present = await importedIdSet();
         const todo = picked.filter((id) => !present.has(id));
         const done = await importMany(todo, game.i18n.localize(`${LANG_PREFIX}.ui.cookbookWorking`));
         reportImport(done, picked.length, picked.length - todo.length);
@@ -3675,7 +3781,7 @@ export async function cookbookImportMonsters() {
   // no template type, so members import flat exactly as they always did.
   const members = globalThis.acksLib?.TEMPLATE_TYPE ? familyMemberIds() : new Set();
   const ids = actorEntriesAcrossBooks().rows.map((r) => r.id).filter((id) => !members.has(id));
-  const present = importedMonsterIds();
+  const present = await importedIdSet();
   const todo = ids.filter((id) => !present.has(id));
   if (!todo.length) {
     return ui.notifications.info(game.i18n.format(`${LANG_PREFIX}.ui.cookbookAllPresent`, { n: ids.length }));

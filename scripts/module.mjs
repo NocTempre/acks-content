@@ -1021,6 +1021,18 @@ async function onRevealClick(event) {
 
 Hooks.once("init", () => {
   game.settings.register(MODULE_ID, SETTING_DYNAMIC, { scope: "world", config: false, type: Object, default: {} });
+  // Where imports land. A world compendium keeps hundreds of imported monsters
+  // out of the sidebar and makes them drag-and-droppable reference material;
+  // the world-document default stays for GMs who edit imports in place.
+  // Changing it affects the NEXT import, never what is already there.
+  game.settings.register(MODULE_ID, "importToCompendium", {
+    name: "Import into compendiums",
+    hint: "Imported monsters, abilities, journals and tables are created in world compendiums (\"ACKS Cookbook — …\") instead of the sidebar directories.",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
+  });
   registerGettingStartedSettings();
   setWorker(`modules/${MODULE_ID}/vendor/pdf.worker.mjs`);
   setWasmUrl(`modules/${MODULE_ID}/vendor/wasm/`);
