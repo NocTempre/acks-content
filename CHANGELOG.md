@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.60.2
+
+**Aura of Protection is conditional again — the 0.60.1 ruling is retracted.**
+Both printings go back to the chef reading: the +1 AC and the +1 saves are both
+scoped to attacks made or effects created by evil (for the JJ printing,
+optionally good) creatures. Register data only; both entries stay signed.
+
+## 0.60.1
+
+**Aura of Protection: AC unconditional (owner ruling — retracted in 0.60.2).**
+
+## 0.60.0
+
+**Five abilities audited across every printing: Aura of Protection, Lay on
+Hands, Graceful Fighting, Strength of Faith, Weapon Finesse.** Twelve entries
+signed. Highlights:
+
+- **The RR class chapter was uncovered.** Class powers printed inside a class's
+  own entry had no register file — Strength of Faith exists only there, so it
+  was not in the cookbook at all. New `register/rr/p58-p95-classpowers.json`
+  (7 entries), and the class printings are deliberately distinct from the JJ
+  custom powers: the bladedancer's Graceful Fighting also grants initiative;
+  the wonderworker's Lay on Hands heals and nothing else.
+- **61 JJ powers were silently truncated** — the run-in stop rule mistook an
+  italicised flavour name for the next heading (same font resource). A heading
+  must now look like `Name:` on its joined line. Blade-Dancing recovered the
+  whole Swashbuckling stacking rule; all 61 re-verified.
+- **Recipe engine:** locators can fill breakpoint ladders (`pairs` reads the
+  rungs off the page too), `as: "perLevel"` treats the located number as
+  N x level, and word proportions ("one-half his class level") are locatable.
+  New offline suite `tools/test-executor.mjs` (18 checks).
+- **Two import bugs, live-caught:** compendium-mode imports deduped and updated
+  against the world (re-import duplicated; Update reported zero), and the
+  audit banner could be raised but never lowered (`unaudited` is now written
+  explicitly both ways).
+- Consumes acks-lib 0.26.0 (attributeSubstitution, LevelValue rounding,
+  mortalWounds target, conditionRemove) and pairs with acks-abilities 0.9.0,
+  which renders the new primitives.
+
 ## 0.57.0
 
 **Monsters group by TYPE, and they are filed on import.**

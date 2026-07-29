@@ -531,7 +531,8 @@
         "mode": "add",
         "from": {
           "pattern": "\\+\\s*(\\d+)\\s*bonus\\s*to\\s*AC"
-        }
+        },
+        "condition": "vs attacks and effects by evil (or good) creatures"
       },
       {
         "type": "modifier",
