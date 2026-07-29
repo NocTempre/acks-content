@@ -152,7 +152,6 @@
         "type": "modifier",
         "target": "ac",
         "mode": "add",
-        "condition": "vs attacks and effects by evil creatures",
         "from": {
           "pattern": "\\+\\s*(\\d+)\\s*bonus\\s*to\\s*AC"
         }
@@ -166,7 +165,8 @@
           "pattern": "\\+\\s*(\\d+)\\s*bonus\\s*(?:to|on)\\s*saving\\s*throws"
         }
       }
-    ]
+    ],
+    "audited": "2026-07-29"
   },
   {
     "id": "def.power.paladinLayOnHands",

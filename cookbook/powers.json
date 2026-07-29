@@ -1936,6 +1936,7 @@
       "meta": {
         "category": "classPower"
       },
+      "audited": true,
       "fields": {
         "name": {
           "op": "expect",
@@ -1985,7 +1986,6 @@
               "type": "modifier",
               "target": "ac",
               "mode": "add",
-              "condition": "vs attacks and effects by evil (or good) creatures",
               "from": {
                 "pattern": "\\+\\s*(\\d+)\\s*bonus\\s*to\\s*AC"
               }
@@ -20875,6 +20875,7 @@
       "meta": {
         "category": "classPower"
       },
+      "audited": true,
       "fields": {
         "name": {
           "op": "expect",
@@ -20923,7 +20924,6 @@
               "type": "modifier",
               "target": "ac",
               "mode": "add",
-              "condition": "vs attacks and effects by evil creatures",
               "from": {
                 "pattern": "\\+\\s*(\\d+)\\s*bonus\\s*to\\s*AC"
               }
