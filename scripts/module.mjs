@@ -36,7 +36,7 @@ import {
   cookbookFillCompanions, cookbookPruneAbilities, registerAbilityDirectoryButtons, importAbility, cookbookDebug, cookbookStub,
   cookbookCanReveal, cookbookProse, cookbookCount, refillMonster, resolveAbilities,
   importEquipment, importAllEquipment, cookbookEquipmentIds, repairEquipmentAbilities,
-  importWeapons, importArmor,
+  importWeapons, importArmor, forgetImportedIndex,
   cookbookImportJournals, cookbookImportRollTables, cookbookOrganize,
 } from "./cookbook.mjs";
 import { registerGettingStartedSettings, showGettingStarted } from "./getting-started.mjs";
@@ -1032,6 +1032,9 @@ Hooks.once("init", () => {
     config: true,
     type: Boolean,
     default: false,
+    // Flipping this changes WHERE an already-imported item lives, so the dedup
+    // index built against the old target is stale the moment it changes.
+    onChange: () => forgetImportedIndex(),
   });
   registerGettingStartedSettings();
   setWorker(`modules/${MODULE_ID}/vendor/pdf.worker.mjs`);

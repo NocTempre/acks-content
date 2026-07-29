@@ -4901,10 +4901,12 @@
       "meta": {
         "category": "proficiency",
         "general": false,
+        "repeatable": true,
         "provides": [
           "kw:layingonhands"
         ]
       },
+      "audited": true,
       "icon": "icons/svg/heal.svg",
       "iconNiche": "modules/game-icons-net/blacktransparent/healing.svg",
       "fields": {
@@ -4975,6 +4977,47 @@
                   3
                 ]
               }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "modifier",
+              "target": "hp",
+              "appliesTo": "ally",
+              "mode": "add",
+              "condition": "wounded creature",
+              "from": {
+                "as": "perLevel",
+                "pattern": "restore\\s*(\\d+)\\s*hit\\s*points\\s*per\\s*experience\\s*level"
+              }
+            },
+            {
+              "type": "modifier",
+              "target": "mortalWounds",
+              "appliesTo": "ally",
+              "mode": "add",
+              "condition": "incapacitated creature",
+              "from": {
+                "as": "perLevel",
+                "round": "up",
+                "pattern": "throw\\s*of\\s*(one-half|half)\\s*(?:his|her)\\s*class\\s*level"
+              }
+            },
+            {
+              "type": "conditionRemove",
+              "conditions": [
+                "paralysis"
+              ],
+              "appliesTo": "ally",
+              "condition": "paralyzed creature"
+            },
+            {
+              "type": "capability",
+              "frequency": "perDay",
+              "note": "Each further rank grants one more use per day."
             }
           ]
         }
@@ -8937,6 +8980,7 @@
         "category": "proficiency",
         "general": false
       },
+      "audited": true,
       "icon": "icons/svg/thrust.svg",
       "iconNiche": "modules/game-icons-net/blacktransparent/knife-thrust.svg",
       "fields": {
@@ -8968,6 +9012,18 @@
                   1
                 ]
               }
+            }
+          ]
+        },
+        "effects": {
+          "op": "effects",
+          "specs": [
+            {
+              "type": "attributeSubstitution",
+              "attribute": "dex",
+              "insteadOf": "str",
+              "target": "attackThrow",
+              "condition": "tiny, small, or medium melee weapons"
             }
           ]
         }

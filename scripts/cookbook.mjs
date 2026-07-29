@@ -695,6 +695,50 @@ const packOpts = async (type) => {
 /** Create a document in the configured target (world or compendium). */
 const createDoc = async (cls, data, opts = {}) => cls.create(data, { ...opts, ...(await packOpts(cls.documentName)) });
 
+/**
+ * Every Item this module may already have imported, indexed by cookbook id, in
+ * whichever target imports actually go to.
+ *
+ * Dedup and Update both read `game.items` outright, which was right while every
+ * import landed in the world. The `importToCompendium` setting moved the WRITES
+ * and not the READS: in compendium mode the checks looked somewhere nothing is
+ * ever written, so re-importing silently duplicated and Update reported zero on
+ * a world whose entire library sat in the pack. Caught by live testing — the
+ * offline suite has no compendium for it to happen in.
+ *
+ * Cached because dedup is asked once per id across a whole-corpus import, and
+ * loading a compendium's documents per id would be hundreds of round trips.
+ * `rememberImported` keeps the cache honest as new ones are created.
+ */
+let importedCache = null;
+async function importedIndex() {
+  if (importedCache) return importedCache;
+  const pack = await packFor("Item");
+  const collection = pack ? game.packs.get(pack) : null;
+  const docs = collection ? await collection.getDocuments() : [...game.items];
+  const byId = new Map();
+  for (const doc of docs) {
+    const id = doc.getFlag(MODULE_ID, "cookbook")?.id;
+    if (id && !byId.has(id)) byId.set(id, doc);
+  }
+  importedCache = byId;
+  return byId;
+}
+
+/** Record a freshly created import so the next dedup sees it. */
+function rememberImported(id, doc) {
+  if (id && doc && importedCache && !importedCache.has(id)) importedCache.set(id, doc);
+  return doc;
+}
+
+/** Drop the cache — after a bulk delete, or when the target may have changed. */
+export function forgetImportedIndex() {
+  importedCache = null;
+}
+
+/** The already-imported item for this cookbook id, or null. */
+const importedItem = async (id) => (await importedIndex()).get(id) ?? null;
+
 async function ensureFolderPath(type, names) {
   const pack = await packFor(type);
   const collection = pack ? game.packs.get(pack)?.folders : game.folders;
@@ -1031,6 +1075,7 @@ export async function cookbookRemoveImports() {
   }
   packCache.clear();
   folderCache.clear();
+  forgetImportedIndex(); // every id it remembers has just been deleted
   ui.notifications.info(`acks-content | removed ${total} imported document(s).`);
   return total;
 }
@@ -2427,7 +2472,14 @@ export function bindAbility(entry, node, id, opts = {}) {
     // — but they present as the machine draft they are: a wrong sign or a
     // missed bonus must read as unverified, never as the book's ruling. The
     // flag clears only when the register entry gains its `audited` sign-off.
-    ...(entry.audited ? {} : { unaudited: true }),
+    //
+    // Written EXPLICITLY either way, never omitted when audited. Update merges
+    // flags, so an omitted `false` left a stale `true` on every ability
+    // imported before its sign-off — the banner could be raised but never
+    // lowered, which makes the whole gate one-way. Live-caught on this very
+    // batch: twelve entries signed, and Update left them all still marked
+    // machine-classified.
+    unaudited: !entry.audited,
     // Set when this reference arrived under an older/foreign name: the reader's
     // source calls it `conversionFrom`, ACKS II calls it `entry.name`.
     ...(opts.conversionStatus ? { conversionStatus: opts.conversionStatus } : {}),
@@ -2612,7 +2664,7 @@ export async function importAbility(id, folderId) {
   // passage, not a synonym to redirect away. Its recipe already carries a
   // pointer to where that text lives, so it extracts and classifies normally —
   // it just does not stack with the entry it points at.
-  const existing = game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id);
+  const existing = await importedItem(id);
   if (existing) return existing;
 
   const bookId = bookOf(found);
@@ -2627,7 +2679,7 @@ export async function importAbility(id, folderId) {
   const doc = bindAbility(found.entry, node, id);
   const extras = doc.flags["acks-abilities"].extras;
   extras.effects = await resolveCompanions(extras.effects);
-  return createDoc(Item, { ...doc, folder });
+  return rememberImported(id, await createDoc(Item, { ...doc, folder }));
 }
 
 /**
@@ -2758,7 +2810,7 @@ export function bindEquipment(entry, node, id) {
     },
     flags: {
       [MODULE_ID]: {
-        cookbook: { id, cite, ...(entry.audited ? {} : { unaudited: true }) },
+        cookbook: { id, cite, unaudited: !entry.audited },
         generated: true,
         // Mark a light source so the sheet/formation layers can treat it as an
         // equippable, holdable light (the rule of WHICH names are lights is the
@@ -2809,7 +2861,7 @@ export function bindAnimal(entry, node, id) {
     },
     flags: {
       [MODULE_ID]: {
-        cookbook: { id, cite, ...(entry.audited ? {} : { unaudited: true }) },
+        cookbook: { id, cite, unaudited: !entry.audited },
         generated: true,
       },
     },
@@ -3016,9 +3068,9 @@ export async function importWeapons(folderId) {
   let created = 0;
   for (const row of rows) {
     const id = weaponId(row.name);
-    if (game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id)) continue;
+    if (await importedItem(id)) continue;
     const cite = `${BOOKS[WEAPON_TABLE.book]?.short ?? "RR"} p. ${WEAPON_TABLE.page}`;
-    await createDoc(Item, { ...bindWeaponRow(row, id, cite), folder });
+    rememberImported(id, await createDoc(Item, { ...bindWeaponRow(row, id, cite), folder }));
     created++;
   }
   return { table: rows.length, created };
@@ -3065,9 +3117,9 @@ export async function importArmor(folderId) {
   let created = 0;
   for (const row of rows) {
     const id = armorId(row.name);
-    if (game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id)) continue;
+    if (await importedItem(id)) continue;
     const cite = `${BOOKS[ARMOR_TABLE.book]?.short ?? "RR"} p. ${ARMOR_TABLE.page}`;
-    await createDoc(Item, { ...bindArmorRow(row, id, cite), folder });
+    rememberImported(id, await createDoc(Item, { ...bindArmorRow(row, id, cite), folder }));
     created++;
   }
   return { table: rows.length, created };
@@ -3120,7 +3172,7 @@ export async function cookbookFillCompanions() {
   let filled = 0;
   // A slot that resolves IMPORTS the creature from the seat's book, so this is
   // an actor import wearing a different name — same page extraction, same wait.
-  const all = [...eachAbility()];
+  const all = await allAbilities();
   const bar = progressBar(game.i18n.localize(`${LANG_PREFIX}.ui.progressCompanions`), all.length);
   try {
     for (const { doc, extras } of all) {
@@ -3141,17 +3193,29 @@ export async function cookbookFillCompanions() {
 /*  Bulk import / update                        */
 /* -------------------------------------------- */
 
-/** Every ability item in the world — loose in the library and on actors alike. */
-function* eachAbility() {
+/**
+ * Every ability item the library holds — loose in the import target (world or
+ * compendium) and on actors alike.
+ *
+ * Async because the compendium form has to be loaded; it used to walk
+ * `game.items` only, so on a compendium-mode world Update walked an empty
+ * library and reported that it had nothing to do.
+ */
+async function allAbilities() {
   const extrasOf = (doc) => doc.getFlag("acks-abilities", "extras") ?? {};
-  for (const item of game.items) {
-    if (item.type === "ability") yield { doc: item, extras: extrasOf(item), on: null };
+  const out = [];
+  const pack = await packFor("Item");
+  const collection = pack ? game.packs.get(pack) : null;
+  const loose = collection ? await collection.getDocuments() : [...game.items];
+  for (const item of loose) {
+    if (item.type === "ability") out.push({ doc: item, extras: extrasOf(item), on: null });
   }
   for (const actor of game.actors) {
     for (const item of actor.items) {
-      if (item.type === "ability") yield { doc: item, extras: extrasOf(item), on: actor };
+      if (item.type === "ability") out.push({ doc: item, extras: extrasOf(item), on: actor });
     }
   }
+  return out;
 }
 
 /** Names vary by punctuation and case between sources, so match folded. */
@@ -3198,13 +3262,20 @@ function abilityNameIndex() {
 }
 
 /**
- * Definition id -> the world item already standing for it.
+ * Definition id -> the item already standing for it.
  *
  * Doubles as the "which definitions does this world hold" signal that settles a
  * name collision without guessing. First one wins: duplicates are a world the
  * GM built by hand, and picking the earliest is at least stable across runs.
+ *
+ * SYNCHRONOUS, so it can only see a compendium library through the warm
+ * `importedIndex()` cache — `bindMonster` is sync and calls this, and making it
+ * async would thread a promise through the whole monster bind. Async callers
+ * should `await importedIndex()` (below) instead; this form falls back to the
+ * world so a cold session still resolves whatever is loose there.
  */
 function loadedAbilityIndex() {
+  if (importedCache) return importedCache;
   const byId = new Map();
   for (const item of game.items) {
     const id = item.getFlag(MODULE_ID, "cookbook")?.id;
@@ -3369,7 +3440,7 @@ export async function cookbookImportAbilities() {
     await prepareItemShelves();
     const folder = null; // per-id shelf
     for (const id of ids) {
-      if (game.items.find((i) => i.getFlag(MODULE_ID, "cookbook")?.id === id)) reused++;
+      if (await importedItem(id)) reused++;
       else made++;
       await importAbility(id, folder).catch((err) => console.error(`${MODULE_ID} | import ${id}`, err));
       bar.step(cookbookEntry(id)?.entry?.name ?? id);
@@ -3398,7 +3469,7 @@ export async function cookbookUpdateAbilities() {
 
   // Which definitions the world already holds — the signal that resolves a
   // name collision without guessing.
-  const present = new Set(loadedAbilityIndex().keys());
+  const present = new Set((await importedIndex()).keys());
   const nodeCache = new Map();
   let updated = 0;
   let adopted = 0;
@@ -3408,7 +3479,7 @@ export async function cookbookUpdateAbilities() {
   // Counted first: this walks every ability in the world, actors included, and
   // re-extracts each definition it has not seen — hundreds of items on a world
   // that imported the whole corpus.
-  const all = [...eachAbility()];
+  const all = await allAbilities();
   const bar = progressBar(game.i18n.localize(`${LANG_PREFIX}.ui.progressUpdate`), all.length);
   try {
     for (const { doc, extras, on } of all) {
@@ -3818,7 +3889,7 @@ export async function resolveAbilities(tokens) {
   const items = [];
   const missing = [];
   const nameIndex = abilityNameIndex();
-  const loadedById = loadedAbilityIndex();
+  const loadedById = await importedIndex();
   const present = new Set(loadedById.keys());
   for (const raw of tokens ?? []) {
     const token = String(raw).trim();

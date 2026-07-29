@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build:packs": "node tools/build-packs.mjs",
-    "test": "node tools/test-equipment-binding.mjs && node tools/test-weapon-tables.mjs && node tools/test-armor-tables.mjs && node tools/test-gear-prices.mjs",
+    "test": "node tools/test-executor.mjs && node tools/test-equipment-binding.mjs && node tools/test-weapon-tables.mjs && node tools/test-armor-tables.mjs && node tools/test-gear-prices.mjs",
     "validate": "node tools/validate.mjs",
     "lint:register": "node tools/lint-register.mjs",
     "check:drift": "node tools/check-cookbook-drift.mjs",

@@ -2129,8 +2129,34 @@ async function compileDefinition(doc, entry, kindRow) {
     const colX = cols[col];
     const nextX = cols[col + 1];
     const box = { x0: colX - 5, x1: nextX ? nextX - 6 : pd.width };
+    // The next run-in heading ends this entry. Font alias alone does NOT
+    // identify one: the JJ sets run-in headings and italic emphasis from the
+    // same font resource, so a flavour name italicised at the start of a line
+    // ("…mog brutes call it *pugilism*, and pugilists…") looked exactly like
+    // the next heading and cut Blade-Dancing in half — six of its eleven
+    // printed lines, including the whole Swashbuckling stacking rule, and its
+    // alias Graceful Fighting with it. A heading is a NAME FOLLOWED BY A
+    // COLON, so require that shape of the line the candidate opens; the
+    // heading may still be split across runs ("Discern" + "Evil:"), which is
+    // why the test reads the joined line rather than the candidate's own text.
+    const lineFrom = (it) =>
+      pd.items
+        .filter((o) => Math.abs(o.y - it.y) <= 2 && colOf(o.x, cols) === col && o.x >= it.x - 1)
+        .sort((a, b) => a.x - b.x)
+        .map((o) => o.str)
+        .join("")
+        .replace(/\s+/g, " ")
+        .trim();
     const stop = pd.items
-      .filter((it) => it !== anchor && it.alias === anchor.alias && colOf(it.x, cols) === col && it.y > anchor.y + 2 && Math.abs(it.x - colX) < 15)
+      .filter(
+        (it) =>
+          it !== anchor &&
+          it.alias === anchor.alias &&
+          colOf(it.x, cols) === col &&
+          it.y > anchor.y + 2 &&
+          Math.abs(it.x - colX) < 15 &&
+          /^[A-Z][^:]{0,44}:/.test(lineFrom(it)),
+      )
       .sort((a, b) => a.y - b.y)[0];
     // Where the NEXT heading carries a superscript ordinal ("Hideout (9th
     // level)"), that ordinal sits above its heading's baseline — so a block

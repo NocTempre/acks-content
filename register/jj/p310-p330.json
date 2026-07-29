@@ -523,7 +523,28 @@
     ],
     "meta": {
       "category": "classPower"
-    }
+    },
+    "effects": [
+      {
+        "type": "modifier",
+        "target": "ac",
+        "mode": "add",
+        "condition": "vs attacks and effects by evil (or good) creatures",
+        "from": {
+          "pattern": "\\+\\s*(\\d+)\\s*bonus\\s*to\\s*AC"
+        }
+      },
+      {
+        "type": "modifier",
+        "target": "save",
+        "mode": "add",
+        "condition": "vs attacks and effects by evil (or good) creatures",
+        "from": {
+          "pattern": "\\+\\s*(\\d+)\\s*bonus\\s*(?:to|on)\\s*saving\\s*throws"
+        },
+        "note": "The JJ printing lets the polarity be reversed for an anti-paladin, so the scope may be good creatures instead of evil ones."
+      }
+    ]
   },
   {
     "id": "def.power.balefulTransformation",
@@ -688,7 +709,24 @@
     ],
     "meta": {
       "category": "classPower"
-    }
+    },
+    "effects": [
+      {
+        "type": "modifier",
+        "target": "ac",
+        "mode": "add",
+        "condition": "light, very light, or no armor; 5 stones or less",
+        "stacksWith": [
+          "def.prof.swashbuckling"
+        ],
+        "from": {
+          "on": "level",
+          "pairs": true,
+          "pattern": "\\+\\s*(\\d+)\\s*bonus\\s*to\\s*Armor\\s*Class[\\s\\S]{0,140}?At\\s*level\\s*(\\d+)[\\s\\S]{0,40}?to\\s*\\+\\s*(\\d+)[\\s\\S]{0,60}?at\\s*level\\s*(\\d+)[\\s\\S]{0,60}?to\\s*\\+\\s*(\\d+)"
+        }
+      }
+    ],
+    "audited": "2026-07-28"
   },
   {
     "id": "def.power.blessingOfTheDead",
@@ -2128,6 +2166,9 @@
     "pages": [
       318
     ],
+    "assists": {
+      "descStopY": 365
+    },
     "meta": {
       "category": "classPower"
     }
@@ -2370,7 +2411,24 @@
     ],
     "meta": {
       "category": "classPower"
-    }
+    },
+    "effects": [
+      {
+        "type": "modifier",
+        "target": "ac",
+        "mode": "add",
+        "condition": "light, very light, or no armor; 5 stones or less",
+        "stacksWith": [
+          "def.prof.swashbuckling"
+        ],
+        "from": {
+          "on": "level",
+          "pairs": true,
+          "pattern": "\\+\\s*(\\d+)\\s*bonus\\s*to\\s*Armor\\s*Class[\\s\\S]{0,140}?At\\s*level\\s*(\\d+)[\\s\\S]{0,40}?to\\s*\\+\\s*(\\d+)[\\s\\S]{0,60}?at\\s*level\\s*(\\d+)[\\s\\S]{0,60}?to\\s*\\+\\s*(\\d+)"
+        }
+      }
+    ],
+    "audited": "2026-07-28"
   },
   {
     "id": "def.power.greaterRiteOfSealing",
@@ -2996,7 +3054,26 @@
     ],
     "meta": {
       "category": "classPower"
-    }
+    },
+    "effects": [
+      {
+        "type": "modifier",
+        "target": "hp",
+        "appliesTo": "ally",
+        "mode": "add",
+        "condition": "wounded creature",
+        "from": {
+          "as": "perLevel",
+          "pattern": "restore\\s*(\\d+)\\s*hit\\s*points\\s*per\\s*experience\\s*level"
+        }
+      },
+      {
+        "type": "capability",
+        "frequency": "perDay",
+        "note": "Selecting the Laying on Hands proficiency adds uses per day."
+      }
+    ],
+    "audited": "2026-07-28"
   },
   {
     "id": "def.power.legwork",
@@ -3011,7 +3088,24 @@
     ],
     "meta": {
       "category": "classPower"
-    }
+    },
+    "effects": [
+      {
+        "type": "modifier",
+        "target": "ac",
+        "mode": "add",
+        "condition": "light, very light, or no armor; 5 stones or less",
+        "stacksWith": [
+          "def.prof.swashbuckling"
+        ],
+        "from": {
+          "on": "level",
+          "pairs": true,
+          "pattern": "\\+\\s*(\\d+)\\s*bonus\\s*to\\s*Armor\\s*Class[\\s\\S]{0,140}?At\\s*level\\s*(\\d+)[\\s\\S]{0,40}?to\\s*\\+\\s*(\\d+)[\\s\\S]{0,60}?at\\s*level\\s*(\\d+)[\\s\\S]{0,60}?to\\s*\\+\\s*(\\d+)"
+        }
+      }
+    ],
+    "audited": "2026-07-28"
   },
   {
     "id": "def.power.lightlessVision",

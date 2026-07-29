@@ -1456,10 +1456,50 @@
     ],
     "meta": {
       "category": "proficiency",
-      "general": false
+      "general": false,
+      "repeatable": true
     },
     "icon": "icons/svg/heal.svg",
-    "iconNiche": "modules/game-icons-net/blacktransparent/healing.svg"
+    "iconNiche": "modules/game-icons-net/blacktransparent/healing.svg",
+    "effects": [
+      {
+        "type": "modifier",
+        "target": "hp",
+        "appliesTo": "ally",
+        "mode": "add",
+        "condition": "wounded creature",
+        "from": {
+          "as": "perLevel",
+          "pattern": "restore\\s*(\\d+)\\s*hit\\s*points\\s*per\\s*experience\\s*level"
+        }
+      },
+      {
+        "type": "modifier",
+        "target": "mortalWounds",
+        "appliesTo": "ally",
+        "mode": "add",
+        "condition": "incapacitated creature",
+        "from": {
+          "as": "perLevel",
+          "round": "up",
+          "pattern": "throw\\s*of\\s*(one-half|half)\\s*(?:his|her)\\s*class\\s*level"
+        }
+      },
+      {
+        "type": "conditionRemove",
+        "conditions": [
+          "paralysis"
+        ],
+        "appliesTo": "ally",
+        "condition": "paralyzed creature"
+      },
+      {
+        "type": "capability",
+        "frequency": "perDay",
+        "note": "Each further rank grants one more use per day."
+      }
+    ],
+    "audited": "2026-07-28"
   },
   {
     "id": "def.prof.leadership",
@@ -2673,7 +2713,17 @@
       "general": false
     },
     "icon": "icons/svg/thrust.svg",
-    "iconNiche": "modules/game-icons-net/blacktransparent/knife-thrust.svg"
+    "iconNiche": "modules/game-icons-net/blacktransparent/knife-thrust.svg",
+    "effects": [
+      {
+        "type": "attributeSubstitution",
+        "attribute": "dex",
+        "insteadOf": "str",
+        "target": "attackThrow",
+        "condition": "tiny, small, or medium melee weapons"
+      }
+    ],
+    "audited": "2026-07-28"
   },
   {
     "id": "def.prof.weaponFocus",

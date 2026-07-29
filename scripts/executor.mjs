@@ -351,6 +351,84 @@ const DEF_BOUNDARY =
  * integer there does not survive DataModel validation. The rest are plain
  * numbers, and `amount` is the only one the schema allows to be fractional.
  */
+/**
+ * Proportions the books write as WORDS, so a locator can point at them.
+ *
+ * "a bonus to their Mortal Wounds throw of one-half his class level (round up)"
+ * carries no digit at all. Without this the only ways to model it are to ship
+ * 0.5 — a value read off the page — or to drop the mechanic. Both are wrong, so
+ * the fraction is read from the seat's own prose like any other number.
+ */
+const WORD_NUMERALS = {
+  half: 0.5,
+  "one-half": 0.5,
+  "one half": 0.5,
+  third: 1 / 3,
+  "one-third": 1 / 3,
+  "two-thirds": 2 / 3,
+  quarter: 0.25,
+  "one-quarter": 0.25,
+  "three-quarters": 0.75,
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+  six: 6,
+  ten: 10,
+  twice: 2,
+  double: 2,
+};
+
+/** A located number: digits, "1,000", "1/2", or a word proportion. */
+function readNumber(raw, allowFraction) {
+  const s = String(raw ?? "").trim().toLowerCase();
+  const word = WORD_NUMERALS[s.replace(/\s+/g, " ")];
+  if (word != null) return allowFraction ? word : Math.round(word);
+  const ratio = /^(\d+)\s*\/\s*(\d+)$/.exec(s);
+  if (ratio) {
+    const v = Number(ratio[1]) / Number(ratio[2]);
+    return allowFraction ? v : Math.round(v);
+  }
+  return allowFraction ? parseFloat(s.replace(/[^\d.-]/g, "")) : parseInt(s.replace(/[^\d-]/g, ""), 10);
+}
+
+/**
+ * Build a breakpoint ladder out of one match's capture groups.
+ *
+ * Two shapes, because the books write ladders two ways. Plain: every group is a
+ * VALUE and the rungs are 1..N (or `steps`) — Animal Husbandry's 11+/7+/3+ by
+ * rank. Paired (`pairs`): the groups alternate rung and value, so the rungs
+ * come off the page too — Graceful Fighting's "+1 … at 7th level +2 … at 13th
+ * level +3" would otherwise need [1,7,13] shipped, and 7 and 13 are the book's
+ * numbers as much as the bonuses are. A leading odd group is the first rung's
+ * value, whose rung is implicit.
+ */
+function ladderFrom(match, { pairs = false, steps = null } = {}) {
+  const groups = match.slice(1).filter((g) => g != null);
+  const out = [];
+  if (pairs) {
+    let i = 0;
+    if (groups.length % 2) {
+      const value = readNumber(groups[0], true);
+      if (!Number.isNaN(value)) out.push({ atLevel: 1, value });
+      i = 1;
+    }
+    for (; i + 1 < groups.length; i += 2) {
+      const atLevel = readNumber(groups[i], false);
+      const value = readNumber(groups[i + 1], true);
+      if (!Number.isNaN(atLevel) && !Number.isNaN(value)) out.push({ atLevel, value });
+    }
+  } else {
+    const nums = groups.map((g) => readNumber(g, true));
+    const rungs = steps ?? nums.map((_, i) => i + 1);
+    for (const [i, value] of nums.entries()) {
+      if (!Number.isNaN(value)) out.push({ atLevel: rungs[i] ?? i + 1, value });
+    }
+  }
+  return out.sort((a, b) => a.atLevel - b.atLevel);
+}
+
 const LOCATABLE_FIELDS = {
   value: "levelValue",
   amount: "number",
@@ -383,6 +461,16 @@ const LOCATABLE_FIELDS = {
  * meant. An `into` naming a field that is not locatable drops the effect: a
  * typo must not silently produce an effect missing the number that was the
  * whole point of it.
+ *
+ * A locator filling `value` may ask for a scaling shape instead of a flat one:
+ *
+ *   { "as": "perLevel", "pattern": "restore (\\d+) hit points per .*level" }
+ *        -> base and rate both the located number: "2 hp per level" is 2·level.
+ *          `per` overrides the rate; `round` ("up"|"down") states the page's
+ *          own rounding, which is shape, not a value.
+ *   { "on": "level", "pairs": true, "pattern": "…(\\d+)…(\\d+)…(\\d+)…(\\d+)…" }
+ *        -> a breakpoint ladder. `on:"level"` gives a plain `breakpoints`
+ *          LevelValue; any other VALUE_SCALES scale gives a `conditional` one.
  */
 export function materializeEffects(specs, paras) {
   const text = (paras ?? []).map((p) => (typeof p === "string" ? p : p.text)).join(" ");
@@ -411,10 +499,25 @@ export function materializeEffects(specs, paras) {
         complete = false;
         break;
       }
+      // A LADDER reads every capture group at once, so it is handled before the
+      // single-value path rather than through it.
+      if (kind === "levelValue" && loc.on) {
+        const breakpoints = ladderFrom(m, { pairs: loc.pairs, steps: loc.steps });
+        if (!breakpoints.length) {
+          complete = false;
+          break;
+        }
+        effect[into] =
+          loc.on === "level"
+            ? { kind: "breakpoints", breakpoints, ...(loc.round ? { round: loc.round } : {}) }
+            : { kind: "conditional", on: loc.on, breakpoints, ...(loc.round ? { round: loc.round } : {}) };
+        continue;
+      }
       const raw = String(m[loc.group ?? 1] ?? m[0]);
       // Strip the page's own punctuation ("1,000 gp" -> 1000) but keep the
-      // decimal point for the one field allowed to be fractional.
-      const n = kind === "number" ? parseFloat(raw.replace(/[^\d.-]/g, "")) : parseInt(raw.replace(/[^\d-]/g, ""), 10);
+      // decimal point for the fields allowed to be fractional — `amount`, and
+      // `value` because "one-half his class level" is a rate, not a count.
+      const n = readNumber(raw, kind !== "integer");
       if (!Number.isFinite(n)) {
         complete = false;
         break;
@@ -422,7 +525,10 @@ export function materializeEffects(specs, paras) {
       effect[into] =
         kind === "levelValue"
           ? loc.as === "perLevel"
-            ? { kind: "perLevel", base: n, per: loc.per ?? -1 }
+            ? // "N per level" is N·level, so the located number is BOTH the
+              // first-level value and the rate. An explicit `per` overrides it
+              // for the rarer "base, then N more each level" shape.
+              { kind: "perLevel", base: n, per: loc.per ?? n, ...(loc.round ? { round: loc.round } : {}) }
             : { kind: "flat", flat: n }
           : n;
     }
@@ -476,11 +582,7 @@ export function materializeRolls(specs, paras) {
     const tm = run(target);
     if (!tm) continue; // no target materialized — drop the roll, never guess
     if (target.on) {
-      const nums = tm.slice(1).filter((g) => g != null).map((g) => parseInt(String(g).replace(/[^\d-]/g, ""), 10));
-      const steps = target.steps ?? nums.map((_, i) => i + 1);
-      const breakpoints = nums
-        .map((value, i) => ({ atLevel: steps[i] ?? i + 1, value }))
-        .filter((b) => !Number.isNaN(b.value));
+      const breakpoints = ladderFrom(tm, { pairs: target.pairs, steps: target.steps });
       if (!breakpoints.length) continue;
       roll.scale = target.on;
       roll.target = { kind: "conditional", on: target.on, breakpoints };

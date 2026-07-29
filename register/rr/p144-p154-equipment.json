@@ -1453,7 +1453,10 @@
       "group": "clothing",
       "subtype": "clothing"
     },
-    "icon": "icons/svg/statue.svg"
+    "icon": "icons/svg/statue.svg",
+    "assists": {
+      "descStopY": 400
+    }
   },
   {
     "id": "def.equip.camels",
