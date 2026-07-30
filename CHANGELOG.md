@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.61.1
+
+**The refresh bridge shipped in 0.61.0 never actually fired.** A page reload
+still asked for every book back. Three separate faults, each one alone enough
+to break it, and all three invisible to the tests that passed — those used
+files built in memory and a reload driven by navigation, so no real `pagehide`
+and no real Foundry boot were ever in the loop.
+
+- **The stamp could not survive `pagehide`.** It was written to IndexedDB, and
+  an async transaction opened during page teardown never commits. Measured
+  directly: the same write to localStorage lands every time. The stamp now
+  lives in localStorage and is written synchronously.
+- **Foundry's own boot was charged against the window.** The age check ran at
+  `ready`, 20–45s into a world load, so most of a 60-second window was spent
+  before the check happened. It now measures against `performance.timeOrigin`
+  — when the document started — so the window covers time the seat was *away*,
+  not time Foundry spent loading.
+- **The normal refresh was rejected as clock drift.** A reload records the new
+  document's `timeOrigin` before the old page gets `pagehide`, so the gap on an
+  ordinary F5 is a few milliseconds *negative*; the guard required it to be
+  positive. There is now a tolerance, and only an implausibly future stamp is
+  treated as a moved clock.
+
+Verified on a real F5 with the full world boot in the loop: books restore with
+no dialog and no click, prose reads out of the restored bytes, and a genuine
+95-second absence still purges the bytes and returns the reconnect dialog. Also
+confirmed along the way that an FSA-derived `File` in IndexedDB survives a
+reload byte-identical — the cached bytes were never the fragile part.
+
 ## 0.61.0
 
 **Remote seats keep their books across a page reload.** The File System Access

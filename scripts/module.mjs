@@ -196,12 +196,28 @@ const rememberFile = (bookId, file) =>
  *
  * So the bytes are bridged across the reload, and ONLY across the reload:
  *
- *   • while a page with books open is alive it stamps `touched` every 20s, and
+ *   • while a page with books open is alive it stamps the clock every 20s, and
  *     once more as it goes away;
- *   • the next page load reads that stamp. Within the window (60s by default)
- *     the cached bytes are reopened with no gesture at all — that is a refresh;
+ *   • the next page load compares that stamp against the moment IT started.
+ *     Inside the window (60s by default) the cached bytes are reopened with no
+ *     gesture at all — that is a refresh;
  *   • outside it, the bytes are deleted before anything else happens, and the
  *     seat goes through the normal reconnect gesture — that is a new session.
+ *
+ * Two details are load-bearing, and the first release of this got both wrong:
+ *
+ *   The stamp lives in localStorage, not IndexedDB, because it is written from
+ *   `pagehide` and an async IndexedDB transaction started there NEVER COMMITS —
+ *   the page is torn down first. localStorage.setItem is synchronous and lands.
+ *   With the async write silently lost, the freshest stamp was whatever the 20s
+ *   heartbeat had last managed, which quietly ate a third of the window.
+ *
+ *   The comparison is against `performance.timeOrigin` — when this document
+ *   started — and NOT against the time this code happens to run. Foundry takes
+ *   20-45s to reach `ready` on a real world, so measuring at `ready` charged
+ *   the reader's window for the boot they were sitting through, and a 60s
+ *   window bought perhaps fifteen. The question the window has to answer is
+ *   "how long was this seat away?", which is exactly timeOrigin minus stamp.
  *
  * This is deliberately NOT a copy of the book. It cannot outlive the window,
  * closing the tab for a minute empties it, and Forget Books empties it now.
@@ -210,6 +226,9 @@ const rememberFile = (bookId, file) =>
  * persists anywhere.
  */
 const CACHE_HEARTBEAT_MS = 20_000;
+const STAMP_KEY = "acks-content.bridgeTouched";
+/** How far ahead of this document a stamp may sit before it means clock drift. */
+const CLOCK_TOLERANCE_MS = 5_000;
 
 /** Configured bridge window in ms; 0 (or an unregistered setting) disables it. */
 function cacheWindowMs() {
@@ -223,9 +242,35 @@ function cacheWindowMs() {
 const bytesPut = (bookId, blob) => idbOp("readwrite", (s) => s.put(blob, bookId), IDB_BYTES);
 const bytesGet = (bookId) => idbOp("readonly", (s) => s.get(bookId), IDB_BYTES);
 const bytesClear = () => idbOp("readwrite", (s) => s.clear(), IDB_BYTES);
-const stampGet = () => idbOp("readonly", (s) => s.get(TOUCH_KEY), IDB_META);
-const stampPut = (at) => idbOp("readwrite", (s) => s.put(at, TOUCH_KEY), IDB_META);
-const stampClear = () => idbOp("readwrite", (s) => s.clear(), IDB_META);
+/**
+ * The stamp. Synchronous on purpose — see the note above about `pagehide`.
+ * A profile with storage blocked throws on access rather than returning null,
+ * and a bridge that cannot stamp simply never hits.
+ */
+function stampGet() {
+  try {
+    return Number(localStorage.getItem(STAMP_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+}
+function stampPut(at) {
+  try {
+    localStorage.setItem(STAMP_KEY, String(at));
+  } catch {
+    /* storage blocked or full: the bridge just misses */
+  }
+}
+function stampClear() {
+  try {
+    localStorage.removeItem(STAMP_KEY);
+  } catch {
+    /* nothing to do */
+  }
+  // The 0.61.0 stamp lived here and could not survive pagehide. Clear it so an
+  // upgrading seat is not carrying a dead record around forever.
+  return idbOp("readwrite", (s) => s.clear(), IDB_META).catch(() => {});
+}
 
 /**
  * Stash the bytes this seat just read, so a reload inside the window is free.
@@ -240,7 +285,7 @@ async function cacheBytes(bookId, blob) {
   if (!blob || !cacheWindowMs()) return;
   try {
     await bytesPut(bookId, blob);
-    await stampPut(Date.now());
+    stampPut(Date.now());
   } catch (err) {
     // Over quota, private mode, a locked-down profile — the bridge is a
     // convenience and must never take an opened book down with it.
@@ -281,21 +326,30 @@ async function openCached(bookId) {
  */
 async function sweepCache() {
   const windowMs = cacheWindowMs();
-  let stamp = 0;
-  try {
-    stamp = (await stampGet()) ?? 0;
-  } catch {
-    stamp = 0;
-  }
-  const age = Date.now() - stamp;
-  // A stamp from the future means the clock moved; treat it as untrustworthy
-  // rather than as an infinitely fresh cache.
-  if (windowMs && stamp && age >= 0 && age <= windowMs) {
-    console.log(`${MODULE_ID} | page reloaded ${Math.round(age / 1000)}s ago — books open at the time are restored without a gesture.`);
+  const stamp = stampGet();
+  // How long the seat was AWAY: from the old page going quiet to this document
+  // starting. Explicitly not "until now" — `now` is after Foundry's whole boot,
+  // which the reader should not be charged for.
+  const away = performance.timeOrigin - stamp;
+  // A reload records the INCOMING document's timeOrigin before the outgoing
+  // page is given `pagehide`, so the gap on an ordinary refresh is a few
+  // milliseconds NEGATIVE. Requiring it to be positive rejected every single
+  // refresh — the exact thing the bridge exists for. Only a stamp implausibly
+  // far ahead means the clock actually moved, and that one is not trustworthy.
+  const skewed = away < -CLOCK_TOLERANCE_MS;
+  if (windowMs && stamp && !skewed && away <= windowMs) {
+    console.log(
+      `${MODULE_ID} | page was away ${Math.max(0, away / 1000).toFixed(1)}s (window ${windowMs / 1000}s) — books open at the time are restored without a gesture.`,
+    );
     return true;
   }
+  if (stamp) {
+    console.log(
+      `${MODULE_ID} | refresh bridge expired — page was away ${(away / 1000).toFixed(1)}s, window is ${windowMs / 1000}s${skewed ? " (stamp is in the future — clock changed?)" : ""}. Books come back through the reconnect dialog.`,
+    );
+  }
   await bytesClear().catch(() => {});
-  await stampClear().catch(() => {});
+  await stampClear();
   return false;
 }
 
@@ -311,12 +365,19 @@ function startCacheHeartbeat() {
   if (heartbeat) return;
   const touch = () => {
     if (!sessionDocs.size || !cacheWindowMs()) return;
-    stampPut(Date.now()).catch(() => {});
+    stampPut(Date.now());
   };
   heartbeat = setInterval(touch, CACHE_HEARTBEAT_MS);
   // pagehide fires on reload, navigation and tab close alike — and unlike
-  // unload it also fires when the page goes into the back/forward cache.
+  // unload it also fires when the page goes into the back/forward cache. The
+  // write inside it must be synchronous; see the note above.
   window.addEventListener("pagehide", touch);
+  // pagehide is not guaranteed on mobile, where a backgrounded tab can be
+  // discarded outright; hidden is the last moment such a page is certain to
+  // get. Both are cheap and idempotent.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") touch();
+  });
   touch();
 }
 
@@ -946,10 +1007,13 @@ async function bookStatus() {
   // The bridge is invisible when it works, which makes "why did that reload
   // cost me a picker?" unanswerable without saying its state out loud.
   const windowMs = cacheWindowMs();
-  const stamp = await stampGet().catch(() => 0);
+  const stamp = stampGet();
+  const cached = await idbOp("readonly", (s) => s.getAllKeys(), IDB_BYTES).catch(() => []);
   const bridge = !windowMs
     ? "refresh bridge: off — every page reload re-picks"
-    : `refresh bridge: ${windowMs / 1000}s${stamp ? `, last touched ${Math.round((Date.now() - stamp) / 1000)}s ago` : ", nothing bridged yet"}`;
+    : `refresh bridge: ${windowMs / 1000}s window, ${cached?.length ?? 0} book(s) bridged` +
+      (stamp ? `, stamped ${Math.round((Date.now() - stamp) / 1000)}s ago` : ", not stamped yet") +
+      `; this page was away ${((performance.timeOrigin - stamp) / 1000).toFixed(1)}s before starting`;
   ui.notifications.info(`acks-content | ${game.i18n.localize(`${LANG_PREFIX}.ui.statusNote`)} Console has per-book detail.`);
   console.log(`${MODULE_ID} | book status (this seat):\n${lines.join("\n")}\n${bridge}`);
 }
@@ -959,7 +1023,7 @@ async function forgetBooks() {
   // Forget means forget: the refresh bridge goes with the locations, or the
   // next reload would quietly reopen the very books that were just dropped.
   await bytesClear().catch(() => {});
-  await stampClear().catch(() => {});
+  await stampClear();
   proseMem.clear();
   sessionDocs.clear();
   ui.notifications.info("acks-content | remembered book locations dropped; in-memory prose cleared. Sheets show stubs until books reconnect.");
@@ -1382,7 +1446,7 @@ Hooks.once("init", () => {
       // who changes their mind about bytes on disk means it.
       if (!Number(value)) {
         bytesClear().catch(() => {});
-        stampClear().catch(() => {});
+        stampClear();
       }
     },
   });

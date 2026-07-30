@@ -41,6 +41,30 @@ The stamp is deliberately not written at connect time. Measured from the
 connect, an hour of play would leave the window long expired at exactly the
 reload it exists to cover, which is the whole failure it addresses.
 
+Three properties of that stamp are load-bearing, and 0.61.0 shipped with all
+three wrong — the bridge never once fired on a real refresh. Recorded because
+each is invisible until tested against an actual reload:
+
+1. **The stamp lives in localStorage, not IndexedDB.** It is written from
+   `pagehide`, and an async IndexedDB transaction opened there never commits —
+   the page is destroyed first. Measured directly: the localStorage write lands
+   every time, the IndexedDB write lands never. With the async write silently
+   lost, the freshest stamp was whatever the 20s heartbeat last managed.
+2. **The comparison is against `performance.timeOrigin`, not "now".** Foundry
+   takes 20–45s to reach `ready`, so comparing at `ready` charged the reader's
+   window for the boot they had just sat through — a 60s window bought perhaps
+   fifteen, and a slower world bought none. The question is "how long was this
+   seat away?", which is timeOrigin minus stamp and nothing else.
+3. **A slightly negative gap is the normal case, not clock drift.** A reload
+   records the incoming document's `timeOrigin` *before* the outgoing page is
+   given `pagehide`, so an ordinary refresh yields a gap a few milliseconds
+   below zero. A `gap >= 0` guard therefore rejected every single refresh. Only
+   a stamp more than `CLOCK_TOLERANCE_MS` ahead means the clock actually moved.
+
+Worth stating plainly: the byte cache was never the fragile part. An
+FSA-derived `File` stored in IndexedDB was verified to survive a reload and
+read back byte-identical. Every failure was in deciding *whether* to use it.
+
 What this does and does not concede: a reload is not a new session, so bridging
 it enforces nothing less than before. A *session* still cannot begin without the
 reader's own file. Nothing is uploaded, nothing enters world data, no other seat
