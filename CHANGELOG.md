@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.61.0
+
+**Remote seats keep their books across a page reload.** The File System Access
+API does not exist outside a secure context, so a player on plain `http://` over
+the LAN — and every Firefox seat — could only ever have the *name* of their PDF
+remembered, and re-picked every book through the OS file dialog on every reload.
+Foundry reloads a lot.
+
+- **A 60-second refresh bridge.** The bytes of a book that is already open are
+  held in the seat's own IndexedDB and are readable only while a stamp — kept
+  current by the live page, and touched once more as it goes away — is inside
+  the window. Reload inside it and the books come back with no dialog and no
+  click, whatever kind of location they were remembered as. Every join sweeps
+  first: outside the window the bytes are deleted before anything else runs.
+  Configurable per seat (module settings, `0` disables); `Forget Books` empties
+  it too.
+- **The possession model is unchanged.** This bridges a reload, not a session.
+  It cannot outlive the window, nothing is uploaded, nothing enters world data,
+  and prose is still memory-only, per seat, per session. A durable per-seat copy
+  of the book was considered and rejected — see `docs/MODEL.md`.
+- **One picker for the whole shelf.** Where a gesture is still needed, a seat
+  with two or more books waiting gets an "All N at once" multi-file control.
+  Files are matched to books by remembered name, then remembered size, then the
+  book's title in the filename; anything unmatched is named rather than guessed
+  at, and the per-book pickers remain.
+- **Connect and Reconnect are singletons.** Both are reachable from a macro and
+  from a button, and neither checked for an open dialog — clicking "Connect your
+  book" twice stacked two identical pickers, each listing the same books. A
+  second call now brings the open one forward.
+
 ## 0.60.2
 
 **Aura of Protection is conditional again — the 0.60.1 ruling is retracted.**

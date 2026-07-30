@@ -71,7 +71,19 @@ browsers grant file permission one file at a time. `Reconnect Remembered Books`
 runs that pass again if you dismissed it. On browsers that cannot reopen a file
 at all (Firefox, or any seat on an insecure `http://` origin), the file's *name*
 is what gets remembered, and the dialog offers a picker with that name beside
-it. The prose itself is never stored, on any path.
+it. If several books are waiting, one **All N at once** picker takes them all in
+a single trip and matches each file to its book by name, then size, then the
+book's title in the filename; anything it cannot place is named so you can use
+that book's own picker. The prose itself is never stored, on any path.
+
+**Page reloads don't cost you the picker.** Foundry reloads often, and a remote
+seat — plain `http://` on the LAN, or any Firefox seat — used to re-pick every
+PDF each time. For **60 seconds** after a page goes away (configurable per seat
+in module settings; `0` turns it off), the books that were open reopen by
+themselves. It is a bridge across a reload, not a copy of the book: leave the
+table for longer than that and it empties, as does `Forget Books`. Nothing about
+possession changes — the bytes never leave your browser, they cannot outlive the
+window, and the prose still exists only in memory, for the session, on your seat.
 
 **Import content.** `Cookbook — Import Monsters` and `Cookbook — Browse & Import
 Abilities` open pickers; `Import ALL Abilities` takes the lot. Abilities import

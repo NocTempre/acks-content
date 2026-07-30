@@ -42,6 +42,7 @@ import {
 import { registerGettingStartedSettings, showGettingStarted } from "./getting-started.mjs";
 
 const SETTING_DYNAMIC = "dynamicRecipes";
+const SETTING_REFRESH_CACHE = "refreshCacheSeconds";
 const LEGACY_KEYS = ["acks-content.proseCache", "acks-content.contentCache"]; // pre-possession-model storage
 
 /** Open PDFs this session: bookId -> { doc, title }. Memory only. */
@@ -77,21 +78,33 @@ const proseMem = new Map();
  * had nothing remembered at all.
  */
 const IDB_STORE = "bookHandles"; // store name predates the record shape; renaming it would strand every already-remembered book
+const IDB_BYTES = "bookBytes"; // refresh bridge only — swept on every join, see below
+const IDB_META = "bookMeta"; // the bridge's freshness stamp, kept out of the byte store so the heartbeat is cheap
+const IDB_VERSION = 2;
+const TOUCH_KEY = "touched";
 
 function idb() {
   return new Promise((resolve, reject) => {
-    const rq = indexedDB.open("acks-content", 1);
-    rq.onupgradeneeded = () => rq.result.createObjectStore(IDB_STORE);
+    const rq = indexedDB.open("acks-content", IDB_VERSION);
+    rq.onupgradeneeded = () => {
+      const db = rq.result;
+      // Additive, and each store guarded: this runs for a fresh seat AND for
+      // one upgrading from v1, where bookHandles already exists and must
+      // survive untouched — its records are the whole point of the store.
+      for (const name of [IDB_STORE, IDB_BYTES, IDB_META]) {
+        if (!db.objectStoreNames.contains(name)) db.createObjectStore(name);
+      }
+    };
     rq.onsuccess = () => resolve(rq.result);
     rq.onerror = () => reject(rq.error);
   });
 }
 
-async function idbOp(mode, fn) {
+async function idbOp(mode, fn, store = IDB_STORE) {
   const db = await idb();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(IDB_STORE, mode);
-    const rq = fn(tx.objectStore(IDB_STORE));
+    const tx = db.transaction(store, mode);
+    const rq = fn(tx.objectStore(store));
     tx.oncomplete = () => resolve(rq?.result);
     tx.onerror = () => reject(tx.error);
   });
@@ -169,6 +182,145 @@ const rememberFile = (bookId, file) =>
   );
 
 /* -------------------------------------------- */
+/*  Refresh bridge (short-lived byte cache)     */
+/* -------------------------------------------- */
+
+/**
+ * A Foundry client reloads constantly — a module toggled, a macro saved, a
+ * dropped connection — and on an insecure origin (any remote seat on plain
+ * http, and every Firefox seat) each of those reloads used to cost the reader
+ * a fresh trip through the file picker for every book they own. The location
+ * was remembered; the FILE could not be reopened from it, because no browser
+ * hands a picked file back from storage and the File System Access API that
+ * would is absent outside a secure context.
+ *
+ * So the bytes are bridged across the reload, and ONLY across the reload:
+ *
+ *   • while a page with books open is alive it stamps `touched` every 20s, and
+ *     once more as it goes away;
+ *   • the next page load reads that stamp. Within the window (60s by default)
+ *     the cached bytes are reopened with no gesture at all — that is a refresh;
+ *   • outside it, the bytes are deleted before anything else happens, and the
+ *     seat goes through the normal reconnect gesture — that is a new session.
+ *
+ * This is deliberately NOT a copy of the book. It cannot outlive the window,
+ * closing the tab for a minute empties it, and Forget Books empties it now.
+ * The possession model is unchanged: a seat still cannot read a book it has
+ * not opened from its own file this session, and the prose still never
+ * persists anywhere.
+ */
+const CACHE_HEARTBEAT_MS = 20_000;
+
+/** Configured bridge window in ms; 0 (or an unregistered setting) disables it. */
+function cacheWindowMs() {
+  try {
+    return Math.max(0, Number(game.settings.get(MODULE_ID, SETTING_REFRESH_CACHE)) || 0) * 1000;
+  } catch {
+    return 0; // called before init registered it — treat as off rather than throw
+  }
+}
+
+const bytesPut = (bookId, blob) => idbOp("readwrite", (s) => s.put(blob, bookId), IDB_BYTES);
+const bytesGet = (bookId) => idbOp("readonly", (s) => s.get(bookId), IDB_BYTES);
+const bytesClear = () => idbOp("readwrite", (s) => s.clear(), IDB_BYTES);
+const stampGet = () => idbOp("readonly", (s) => s.get(TOUCH_KEY), IDB_META);
+const stampPut = (at) => idbOp("readwrite", (s) => s.put(at, TOUCH_KEY), IDB_META);
+const stampClear = () => idbOp("readwrite", (s) => s.clear(), IDB_META);
+
+/**
+ * Stash the bytes this seat just read, so a reload inside the window is free.
+ *
+ * Takes the File/Blob the caller already holds rather than the ArrayBuffer it
+ * passed to the reader: pdf.js takes ownership of that buffer and transfers it
+ * to its worker, so by the time a book is open the array is detached and there
+ * is nothing left to store. A File also costs no copy on Chromium — IndexedDB
+ * keeps a reference to the file already on disk.
+ */
+async function cacheBytes(bookId, blob) {
+  if (!blob || !cacheWindowMs()) return;
+  try {
+    await bytesPut(bookId, blob);
+    await stampPut(Date.now());
+  } catch (err) {
+    // Over quota, private mode, a locked-down profile — the bridge is a
+    // convenience and must never take an opened book down with it.
+    console.warn(`${MODULE_ID} | refresh bridge unavailable for ${bookId} (books still open this session)`, err);
+  }
+}
+
+/**
+ * Reopen from the bridge. Returns whether it hit — a miss is the ordinary case
+ * (a genuinely new session) and says nothing.
+ */
+async function openCached(bookId) {
+  if (!cacheWindowMs()) return false;
+  let blob = null;
+  try {
+    blob = await bytesGet(bookId);
+  } catch (err) {
+    console.warn(`${MODULE_ID} | could not read the refresh bridge for ${bookId}`, err);
+    return false;
+  }
+  if (!blob) return false;
+  try {
+    // Re-stash: the buffer below is about to be detached, and a seat that
+    // refreshes twice in a row should be bridged both times.
+    await ingestBook(bookId, await blob.arrayBuffer(), { silent: true, cache: blob });
+    console.log(`${MODULE_ID} | ${BOOKS[bookId]?.label ?? bookId} restored across a page reload — no gesture needed.`);
+    return true;
+  } catch (err) {
+    // The file moved out from under a stored reference, or the blob is gone.
+    console.warn(`${MODULE_ID} | refresh bridge for ${bookId} could not be read — falling back to the remembered location`, err);
+    return false;
+  }
+}
+
+/**
+ * Drop the bridge unless the last page died inside the window. Runs before
+ * anything else on join, so a real session gap can never read stale bytes.
+ */
+async function sweepCache() {
+  const windowMs = cacheWindowMs();
+  let stamp = 0;
+  try {
+    stamp = (await stampGet()) ?? 0;
+  } catch {
+    stamp = 0;
+  }
+  const age = Date.now() - stamp;
+  // A stamp from the future means the clock moved; treat it as untrustworthy
+  // rather than as an infinitely fresh cache.
+  if (windowMs && stamp && age >= 0 && age <= windowMs) {
+    console.log(`${MODULE_ID} | page reloaded ${Math.round(age / 1000)}s ago — books open at the time are restored without a gesture.`);
+    return true;
+  }
+  await bytesClear().catch(() => {});
+  await stampClear().catch(() => {});
+  return false;
+}
+
+let heartbeat = null;
+
+/**
+ * Keep the stamp current while this page is alive and books are open. Without
+ * it the window would be measured from the moment a book was connected, so a
+ * seat that had played for an hour would find its bridge expired on the very
+ * reload it exists to cover.
+ */
+function startCacheHeartbeat() {
+  if (heartbeat) return;
+  const touch = () => {
+    if (!sessionDocs.size || !cacheWindowMs()) return;
+    stampPut(Date.now()).catch(() => {});
+  };
+  heartbeat = setInterval(touch, CACHE_HEARTBEAT_MS);
+  // pagehide fires on reload, navigation and tab close alike — and unlike
+  // unload it also fires when the page goes into the back/forward cache.
+  window.addEventListener("pagehide", touch);
+  touch();
+}
+
+/* -------------------------------------------- */
 /*  Recipe resolution (static + dynamic)        */
 /* -------------------------------------------- */
 
@@ -236,8 +388,10 @@ async function connectBookUrl(bookId, url, { remember = true } = {}) {
   if (!BOOKS[bookId]) return ui.notifications.warn(`acks-content | unknown book id "${bookId}".`);
   const resp = await fetch(url);
   if (!resp.ok) return ui.notifications.warn(`acks-content | could not read ${url} (${resp.status}).`);
-  const buffer = await resp.arrayBuffer();
-  const hits = await ingestBook(bookId, buffer);
+  // Blob first, buffer from it: pdf.js detaches the array it is handed, and a
+  // re-download of a whole book is exactly what the refresh bridge saves.
+  const blob = await resp.blob();
+  const hits = await ingestBook(bookId, await blob.arrayBuffer(), { cache: blob });
   // A path IS a location, and the one kind that needs no gesture to reopen, so
   // a seat pointed at a staged copy reconnects itself on every future join.
   if (remember) {
@@ -248,7 +402,14 @@ async function connectBookUrl(bookId, url, { remember = true } = {}) {
   return hits;
 }
 
-async function ingestBook(bookId, buffer, { silent = false } = {}) {
+/**
+ * Read a book into this session.
+ *
+ * `cache` is the File/Blob the caller read `buffer` from, when it still holds
+ * one. It is bridged across page reloads (see the refresh bridge above) and is
+ * never a substitute for the file itself.
+ */
+async function ingestBook(bookId, buffer, { silent = false, cache = null } = {}) {
   const recipes = recipesForBookAll(bookId);
   // Opening a book is the one wait every seat pays, restore included: pdf.js
   // parses the whole file, then each shipped recipe is extracted from it.
@@ -266,6 +427,9 @@ async function ingestBook(bookId, buffer, { silent = false } = {}) {
       bar.step(recipe.name ?? recipe.id);
     }
     proseMem.set(bookId, entries);
+    // Only once the book actually opened: a file that failed the read is not
+    // worth bridging, and bridging it would keep re-failing every reload.
+    await cacheBytes(bookId, cache);
     const hits = Object.keys(entries).length;
     // Anything already on screen still says "connect your book" until it is drawn
     // again — the tag resolves per render, not per document.
@@ -325,7 +489,43 @@ async function cookbookImportTables() {
 
 const fsaAvailable = () => typeof window.showOpenFilePicker === "function";
 
-async function connectBook() {
+/* -------------------------------------------- */
+/*  One dialog of a kind at a time              */
+/* -------------------------------------------- */
+
+const openDialogs = new Map();
+
+/**
+ * Reuse the dialog that is already open instead of stacking another.
+ *
+ * Every entry point here can be reached twice over: the Getting Started button
+ * calls connectBook() on every click and nothing was stopping a second one,
+ * the macro calls it too, and the reconnect pass runs both from the join hook
+ * and from its own macro. Each of those opened ANOTHER identical window, so a
+ * reader who clicked twice got two book pickers stacked on top of each other —
+ * two dropdowns listing the same books, two chances to read the same PDF into
+ * the same slot, and no way to tell which one was in front.
+ *
+ * The key is registered synchronously, before the dialog's content is built,
+ * because the build is async (it reads remembered locations first) and two
+ * fast clicks would otherwise both get past that await before either had
+ * claimed the slot.
+ */
+function singleton(key, open) {
+  const existing = openDialogs.get(key);
+  if (existing) {
+    existing.app?.bringToFront?.();
+    return existing.promise;
+  }
+  const entry = { app: null };
+  entry.promise = Promise.resolve(open((app) => (entry.app = app))).finally(() => openDialogs.delete(key));
+  openDialogs.set(key, entry);
+  return entry.promise;
+}
+
+const connectBook = () => singleton("connect", connectBookDialog);
+
+async function connectBookDialog(capture) {
   // Say which books this seat already has, and which it merely remembers the
   // location of. Without this the list is identical before and after connecting
   // and the only way to find out is to connect again and see what happens.
@@ -352,6 +552,7 @@ async function connectBook() {
   return foundry.applications.api.DialogV2.prompt({
     window: { title: game.i18n.localize(`${LANG_PREFIX}.ui.connectTitle`) },
     content,
+    render: (event, dialog) => capture(dialog),
     ok: {
       label: game.i18n.localize(`${LANG_PREFIX}.ui.connectGo`),
       callback: async (event, button) => {
@@ -362,7 +563,8 @@ async function connectBook() {
             const [handle] = await window.showOpenFilePicker({
               types: [{ description: "PDF", accept: { "application/pdf": [".pdf"] } }],
             });
-            await ingestBook(bookId, await (await handle.getFile()).arrayBuffer());
+            const file = await handle.getFile();
+            await ingestBook(bookId, await file.arrayBuffer(), { cache: file });
             await locationPut(bookId, { kind: "handle", handle, name: handle.name ?? null });
             ui.notifications.info(game.i18n.format(`${LANG_PREFIX}.ui.locationSaved`, { book: BOOKS[bookId].label }));
           } catch (err) {
@@ -371,7 +573,7 @@ async function connectBook() {
         } else {
           const file = form.elements.pdf.files[0];
           if (!file) return ui.notifications.warn("acks-content | no file chosen — nothing read.");
-          await ingestBook(bookId, await file.arrayBuffer());
+          await ingestBook(bookId, await file.arrayBuffer(), { cache: file });
           // All this browser will let us keep is which file it was. That is
           // still worth keeping: next session says the name and offers the
           // picker instead of leaving the seat to work it out.
@@ -399,13 +601,19 @@ async function openRemembered(bookId, record, { interactive = false } = {}) {
   if (sessionDocs.has(bookId)) return true;
   const label = BOOKS[bookId]?.label ?? bookId;
 
+  // Was this page just reloaded? Then the bytes are still bridged and every
+  // kind reopens for free — including the `file` kind, which has no other way
+  // back and is what every remote seat on plain http gets.
+  if (await openCached(bookId)) return true;
+
   // A served path needs no permission and no gesture: this is the one kind
   // that puts a seat back exactly where it was, silently, on every join.
   if (record?.kind === "url") {
     try {
       const resp = await fetch(record.url);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      await ingestBook(bookId, await resp.arrayBuffer(), { silent: !interactive });
+      const blob = await resp.blob();
+      await ingestBook(bookId, await blob.arrayBuffer(), { silent: !interactive, cache: blob });
       return true;
     } catch (err) {
       console.warn(`${MODULE_ID} | remembered ${label}: ${record.url} could not be read`, err);
@@ -437,7 +645,8 @@ async function openRemembered(bookId, record, { interactive = false } = {}) {
       console.log(`${MODULE_ID} | remembered ${label}: permission "${perm}" — needs the unlock gesture this session.`);
       return false;
     }
-    await ingestBook(bookId, await (await record.handle.getFile()).arrayBuffer(), { silent: !interactive });
+    const file = await record.handle.getFile();
+    await ingestBook(bookId, await file.arrayBuffer(), { silent: !interactive, cache: file });
     return true;
   } catch (err) {
     console.warn(`${MODULE_ID} | remembered ${label} could not be opened (moved/deleted?)`, err);
@@ -464,6 +673,54 @@ async function restoreBooks() {
 }
 
 /**
+ * Work out which picked file answers which waiting book.
+ *
+ * A seat that must re-pick its books by hand is doing so because the browser
+ * cannot reopen them — the insecure-origin and Firefox case, i.e. most remote
+ * players. That seat can, however, pick SEVERAL files in one trip through the
+ * dialog, and one trip is all a plain `<input multiple>` costs. What it cannot
+ * do is tell us which file is which, so we work it out:
+ *
+ *   1. the exact name this seat used last time — the overwhelmingly common
+ *      case, since a book that has been read once is remembered by name;
+ *   2. the same byte size under a different name (a renamed or re-downloaded
+ *      copy — DTRPG watermarks per customer, but not per download);
+ *   3. the book's own title in the filename, which is how the stock DTRPG
+ *      filenames read and the only rule that can match a book this seat has
+ *      never opened.
+ *
+ * Passes run in that order over the whole set, so a confident match never
+ * loses its file to a speculative one. Anything unmatched is reported rather
+ * than guessed at — a book filled from the wrong PDF is far worse than a book
+ * left closed.
+ */
+function matchFilesToBooks(files, pendingIds, records) {
+  const matched = new Map();
+  const used = new Set();
+  const tests = [
+    (bookId, file) => {
+      const name = records.get(bookId)?.name;
+      return !!name && name.toLowerCase() === file.name.toLowerCase();
+    },
+    (bookId, file) => {
+      const size = records.get(bookId)?.size;
+      return Number.isFinite(size) && size > 0 && size === file.size;
+    },
+    (bookId, file) => BOOKS[bookId]?.titleRe?.test(file.name) ?? false,
+  ];
+  for (const test of tests) {
+    for (const bookId of pendingIds) {
+      if (matched.has(bookId)) continue;
+      const index = files.findIndex((file, i) => !used.has(i) && test(bookId, file));
+      if (index < 0) continue;
+      matched.set(bookId, files[index]);
+      used.add(index);
+    }
+  }
+  return { matched, unmatched: files.filter((_, i) => !used.has(i)) };
+}
+
+/**
  * The join-time offer: one row per book that could not reopen itself.
  *
  * One control PER BOOK, not one button for the lot, because re-granting file
@@ -472,8 +729,17 @@ async function restoreBooks() {
  * to end up with one book open and no explanation. A row therefore carries its
  * own Unlock (handle), Retry (path) or file picker, acts the moment it is
  * used, and says what happened; the dialog closes itself once nothing is left.
+ *
+ * The one control that CAN answer for several books at once is a plain file
+ * picker, which grants no persistent permission and so consumes nothing: a
+ * seat re-picking two or more books gets a "choose them all" row above the
+ * per-book ones. That is the difference between three round trips through the
+ * OS file dialog every reload and one — and on a remote seat, which is where
+ * this path is reached from, it is the whole of the reconnect experience.
  */
-async function offerReconnect(pending) {
+const offerReconnect = (pending) => singleton("reconnect", (capture) => offerReconnectDialog(pending, capture));
+
+async function offerReconnectDialog(pending, capture) {
   const records = await locations();
   const esc = foundry.utils.escapeHTML ?? ((s) => s);
   const control = (id, record) => {
@@ -501,14 +767,29 @@ async function offerReconnect(pending) {
     })
     .join("");
 
+  // Only worth showing when it actually saves a trip: two or more books that
+  // this browser can only get back through the picker.
+  const pickable = pending.filter((id) => records.get(id)?.kind === "file" || !records.get(id));
+  const bulk =
+    pickable.length > 1
+      ? `<div class="acks-content-reconnect-row acks-content-reconnect-bulk">
+           <div class="acks-content-reconnect-head">
+             <strong>${game.i18n.format(`${LANG_PREFIX}.ui.reconnectAllHead`, { count: pickable.length })}</strong>
+             <input type="file" name="pdf-all" data-bulk accept="application/pdf" multiple>
+           </div>
+           <p class="notes" data-status-bulk>${game.i18n.localize(`${LANG_PREFIX}.ui.reconnectAllNote`)}</p>
+         </div>`
+      : "";
+
   return foundry.applications.api.DialogV2.prompt({
     window: { title: game.i18n.localize(`${LANG_PREFIX}.ui.reconnectTitle`) },
     position: { width: 480 },
-    content: `<p>${game.i18n.localize(`${LANG_PREFIX}.ui.reconnectBody`)}</p>${rows}`,
+    content: `<p>${game.i18n.localize(`${LANG_PREFIX}.ui.reconnectBody`)}</p>${bulk}${rows}`,
     // Dismissing this is a legitimate answer ("not tonight"), not an error to
     // throw out of the ready hook.
     rejectClose: false,
     render: (event, dialog) => {
+      capture(dialog);
       const root = dialog.element ?? dialog;
       const left = new Set(pending);
       const settle = (bookId, ok, message) => {
@@ -541,6 +822,44 @@ async function offerReconnect(pending) {
           );
         });
       }
+
+      const bulkInput = root.querySelector("input[type=file][data-bulk]");
+      bulkInput?.addEventListener("change", async () => {
+        const files = [...(bulkInput.files ?? [])];
+        if (!files.length) return;
+        const status = root.querySelector("[data-status-bulk]");
+        const say = (text) => {
+          if (status) status.textContent = text;
+        };
+        bulkInput.disabled = true;
+        // Match against what is STILL waiting: a book opened from its own row
+        // while this dialog was up must not be re-read from a picked file.
+        const { matched, unmatched } = matchFilesToBooks(files, [...left], records);
+        let opened = 0;
+        // Sequentially: three ACKS PDFs read at once is hundreds of megabytes
+        // of parsed page content in flight, on the seat least likely to have
+        // the headroom for it.
+        for (const [bookId, file] of matched) {
+          try {
+            await ingestBook(bookId, await file.arrayBuffer(), { cache: file });
+            await rememberFile(bookId, file);
+            opened++;
+            settle(bookId, true, game.i18n.localize(`${LANG_PREFIX}.ui.reconnectOpened`));
+          } catch (err) {
+            console.error(`${MODULE_ID} | reconnect ${bookId} from ${file.name}`, err);
+            settle(bookId, false, game.i18n.localize(`${LANG_PREFIX}.ui.reconnectFailed`));
+          }
+        }
+        bulkInput.disabled = false;
+        bulkInput.value = "";
+        // Naming what went unused is the difference between "it half worked"
+        // and knowing the seat picked the wrong file, or one book too few.
+        if (unmatched.length) {
+          say(game.i18n.format(`${LANG_PREFIX}.ui.reconnectAllUnmatched`, { files: unmatched.map((f) => f.name).join(", ") }));
+        } else {
+          say(game.i18n.format(`${LANG_PREFIX}.ui.reconnectAllDone`, { count: opened }));
+        }
+      });
 
       for (const input of root.querySelectorAll("input[type=file][data-book]")) {
         input.addEventListener("change", async () => {
@@ -624,12 +943,23 @@ async function bookStatus() {
     else state = `not connected on this seat${scope ? ` — would unlock ${scope}` : ""}`;
     lines.push(`${book.label}: ${state}`);
   }
+  // The bridge is invisible when it works, which makes "why did that reload
+  // cost me a picker?" unanswerable without saying its state out loud.
+  const windowMs = cacheWindowMs();
+  const stamp = await stampGet().catch(() => 0);
+  const bridge = !windowMs
+    ? "refresh bridge: off — every page reload re-picks"
+    : `refresh bridge: ${windowMs / 1000}s${stamp ? `, last touched ${Math.round((Date.now() - stamp) / 1000)}s ago` : ", nothing bridged yet"}`;
   ui.notifications.info(`acks-content | ${game.i18n.localize(`${LANG_PREFIX}.ui.statusNote`)} Console has per-book detail.`);
-  console.log(`${MODULE_ID} | book status (this seat):\n${lines.join("\n")}`);
+  console.log(`${MODULE_ID} | book status (this seat):\n${lines.join("\n")}\n${bridge}`);
 }
 
 async function forgetBooks() {
   await locationClear().catch(() => {});
+  // Forget means forget: the refresh bridge goes with the locations, or the
+  // next reload would quietly reopen the very books that were just dropped.
+  await bytesClear().catch(() => {});
+  await stampClear().catch(() => {});
   proseMem.clear();
   sessionDocs.clear();
   ui.notifications.info("acks-content | remembered book locations dropped; in-memory prose cleared. Sheets show stubs until books reconnect.");
@@ -1036,6 +1366,26 @@ Hooks.once("init", () => {
     // index built against the old target is stale the moment it changes.
     onChange: () => forgetImportedIndex(),
   });
+  // The refresh bridge (see above). Client scope: how long a seat's own bytes
+  // may survive its own reload is that seat's business, and the answer differs
+  // between a GM on the host and a player on a phone tether.
+  game.settings.register(MODULE_ID, SETTING_REFRESH_CACHE, {
+    name: `${LANG_PREFIX}.cache.settingName`,
+    hint: `${LANG_PREFIX}.cache.settingHint`,
+    scope: "client",
+    config: true,
+    type: Number,
+    range: { min: 0, max: 300, step: 10 },
+    default: 60,
+    onChange: (value) => {
+      // Turning it off must take effect now, not at the next join — a reader
+      // who changes their mind about bytes on disk means it.
+      if (!Number(value)) {
+        bytesClear().catch(() => {});
+        stampClear().catch(() => {});
+      }
+    },
+  });
   registerGettingStartedSettings();
   setWorker(`modules/${MODULE_ID}/vendor/pdf.worker.mjs`);
   setWasmUrl(`modules/${MODULE_ID}/vendor/wasm/`);
@@ -1083,6 +1433,12 @@ Hooks.once("ready", async () => {
   console.log(
     `${MODULE_ID} | ready. Macros in "ACKS Content — Macros", or: acksContent.connectBook() · acksContent.cookbookImport() · acksContent.cookbookImportAbilitiesDialog() · acksContent.cookbookUpdateAbilities() · acksContent.browseAndLoad().`,
   );
+
+  // Before anything reads bytes: decide whether this page load is a reload
+  // inside the bridge window or a genuinely new session, and empty the bridge
+  // if it is the latter. Nothing below may see stale bytes.
+  await sweepCache();
+  startCacheHeartbeat();
 
   // Reopen remembered books; offer the reconnect gesture for the rest. A seat
   // with nothing remembered at all is (probably) brand new — that seat gets
