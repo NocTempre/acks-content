@@ -103,7 +103,6 @@
       "meta": {
         "category": "skill"
       },
-      "audited": true,
       "icon": "icons/tools/hand/claws-climbing.webp",
       "iconNiche": "modules/game-icons-net/blacktransparent/mountain-climbing.svg",
       "fields": {
@@ -1181,7 +1180,6 @@
       "meta": {
         "category": "skill"
       },
-      "audited": true,
       "icon": "icons/svg/trap.svg",
       "fields": {
         "name": {

@@ -76,9 +76,7 @@
       }
     ],
     "icon": "icons/tools/hand/claws-climbing.webp",
-    "iconNiche": "modules/game-icons-net/blacktransparent/mountain-climbing.svg",
-    "audited": "2026-08-01",
-    "auditor": "chef"
+    "iconNiche": "modules/game-icons-net/blacktransparent/mountain-climbing.svg"
   },
   {
     "id": "def.skill.hiding",
@@ -501,9 +499,7 @@
         "note": "The methodical method takes one turn and may be repeated on the same trap as often as desired; springing it is its only failure risk."
       }
     ],
-    "icon": "icons/svg/trap.svg",
-    "audited": "2026-08-01",
-    "auditor": "chef"
+    "icon": "icons/svg/trap.svg"
   },
   {
     "id": "def.skill.deciphering",
