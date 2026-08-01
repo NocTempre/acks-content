@@ -103,6 +103,7 @@
       "meta": {
         "category": "skill"
       },
+      "audited": true,
       "icon": "icons/tools/hand/claws-climbing.webp",
       "iconNiche": "modules/game-icons-net/blacktransparent/mountain-climbing.svg",
       "fields": {
@@ -191,6 +192,12 @@
               "from": {
                 "pattern": "full\\s*combat\\s*speed[^.]{0,40}?(-\\s*\\d+)\\s*penalty"
               }
+            },
+            {
+              "type": "outcome",
+              "trigger": "failure",
+              "consequence": "the climber falls",
+              "note": "Fall distance and damage as the entry states them - the formula involves dice and a midpoint, which no numeric field can honestly carry."
             }
           ]
         }
@@ -414,6 +421,7 @@
       "meta": {
         "category": "skill"
       },
+      "audited": true,
       "icon": "icons/skills/trades/security-lockpicking-chest-blue.webp",
       "fields": {
         "name": {
@@ -541,6 +549,51 @@
                 "pattern": "methodically\\s*pick\\s*a\\s*lock[\\s\\S]{0,140}?with\\s*a\\s*\\+(\\d+)\\s*bonus"
               },
               "note": "Applies only to the methodical method; a hasty attempt uses the unmodified throw."
+            },
+            {
+              "type": "outcome",
+              "trigger": "naturalBand",
+              "consequence": "the pick breaks in the lock, jamming it",
+              "condition": "hasty attempt (one round)",
+              "from": {
+                "into": "naturalMax",
+                "pattern": "fails\\s*on\\s*a\\s*natural\\s*roll\\s*of\\s*1\\s*[-–—]\\s*(\\d+)\\s*,\\s*the\\s*thief\\s*breaks"
+              }
+            },
+            {
+              "type": "outcome",
+              "trigger": "naturalBand",
+              "consequence": "the pick breaks in the lock, jamming it",
+              "condition": "methodical attempt (one turn)",
+              "from": {
+                "into": "naturalMax",
+                "pattern": "fails\\s*on\\s*a\\s*natural\\s*roll\\s*of\\s*(1)\\s*,\\s*the\\s*thief\\s*breaks"
+              }
+            }
+          ]
+        },
+        "rolls": {
+          "op": "rolls",
+          "specs": [
+            {
+              "key": "hasty",
+              "label": {
+                "pattern": "(hastily)"
+              },
+              "target": {
+                "fromProgression": true
+              },
+              "condition": "one round; botch band applies on a low natural roll"
+            },
+            {
+              "key": "methodical",
+              "label": {
+                "pattern": "(methodically)"
+              },
+              "target": {
+                "fromProgression": true
+              },
+              "condition": "one turn; add the methodical bonus; repeatable"
             }
           ]
         }
@@ -558,6 +611,7 @@
       "meta": {
         "category": "skill"
       },
+      "audited": true,
       "icon": "icons/commodities/currency/coins-plain-pouch-gold.webp",
       "fields": {
         "name": {
@@ -641,6 +695,26 @@
                 "pattern": "reaction\\s*roll\\s*with\\s*a\\s*(-\\d+)\\s*penalt"
               },
               "note": "Thrown by the Judge for the victim after a badly failed attempt. A penalty on the thief's own reaction roll, not one he imposes on a roll of someone else's, so it stays appliesTo self."
+            },
+            {
+              "type": "outcome",
+              "trigger": "naturalBand",
+              "consequence": "the intended victim notices the attempt",
+              "condition": "on a failed throw",
+              "from": {
+                "into": "naturalMax",
+                "pattern": "a\\s*natural\\s*roll\\s*of\\s*(1)\\s*or"
+              }
+            },
+            {
+              "type": "outcome",
+              "trigger": "belowFraction",
+              "consequence": "the intended victim notices the attempt",
+              "condition": "on a failed throw",
+              "from": {
+                "into": "belowFraction",
+                "pattern": "less\\s*than\\s*(half)\\s*the\\s*target\\s*value"
+              }
             }
           ]
         }
@@ -1180,6 +1254,7 @@
       "meta": {
         "category": "skill"
       },
+      "audited": true,
       "icon": "icons/svg/trap.svg",
       "fields": {
         "name": {
@@ -1311,25 +1386,56 @@
               "note": "Applies only to the slow method; a hasty attempt uses the unmodified throw."
             },
             {
-              "type": "limitation",
-              "forWhat": "Trapbreaking",
+              "type": "outcome",
+              "trigger": "naturalBand",
+              "consequence": "the trap is accidentally triggered",
               "condition": "hasty attempt (one round)",
-              "restriction": "Hasty: a low natural roll springs the trap",
-              "note": "The hasty method takes one round and uses the unmodified throw. Its triggering band is wider than the methodical method's; the band itself is a printed number and has no primitive here."
+              "from": {
+                "into": "naturalMax",
+                "pattern": "fails\\s*on\\s*a\\s*natural\\s*roll\\s*of\\s*1\\s*[-–—]\\s*(\\d+)\\s*,\\s*the\\s*thief\\s*accidentally"
+              }
+            },
+            {
+              "type": "outcome",
+              "trigger": "naturalBand",
+              "consequence": "the trap is accidentally triggered",
+              "condition": "methodical attempt (one turn)",
+              "from": {
+                "into": "naturalMax",
+                "pattern": "fails\\s*on\\s*a\\s*natural\\s*roll\\s*of\\s*(1)\\s*,\\s*the\\s*thief\\s*accidentally"
+              }
             },
             {
               "type": "limitation",
               "forWhat": "Trapbreaking",
               "condition": "hasty attempt (one round)",
               "restriction": "Hasty: one try per trap until he gains a level",
-              "note": "Any other failure only denies the quick fix — a methodical attempt on the same trap is still open."
+              "note": "Any other failure only denies the quick fix; a methodical attempt on the same trap is still open. TODO: retry rules await their own primitive per the owner's 2026-08-01 note."
+            }
+          ]
+        },
+        "rolls": {
+          "op": "rolls",
+          "specs": [
+            {
+              "key": "hasty",
+              "label": {
+                "pattern": "(hastily)"
+              },
+              "target": {
+                "fromProgression": true
+              },
+              "condition": "one round; botch band applies on a low natural roll"
             },
             {
-              "type": "limitation",
-              "forWhat": "Trapbreaking",
-              "condition": "methodical attempt (one turn)",
-              "restriction": "Methodical: a low natural roll springs the trap",
-              "note": "The methodical method takes one turn and may be repeated on the same trap as often as desired; springing it is its only failure risk."
+              "key": "methodical",
+              "label": {
+                "pattern": "(methodically)"
+              },
+              "target": {
+                "fromProgression": true
+              },
+              "condition": "one turn; add the methodical bonus; repeatable"
             }
           ]
         }

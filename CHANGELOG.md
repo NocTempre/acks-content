@@ -1,5 +1,54 @@
 # Changelog
 
+## 0.63.0
+
+The RR thief-skills chef batch: all 13 entries read in full (four chefs plus an
+independent second-opinion round), every proposed recipe merged, and the
+skills burn-down moves **1/13 → 8/13 chef-audited**. Newly signed: Climbing,
+Listening, Lockpicking, Pickpocketing, Shadowy Senses, Streetwise,
+Trapbreaking (Deciphering was already signed). Not signed: Backstabbing
+(owner-deferred — its level-scaled damage dice need vocabulary that does not
+exist yet), Hiding, Searching, Sneaking, Hideout (each carries a named
+remaining gap).
+
+### Added
+
+- **Roll Outcomes** ("on a roll of X, Y happens" — owner ruling: these are
+  mechanics, never prose). Lockpicking and Trapbreaking carry their botch
+  bands (hasty natural 1–3, methodical natural 1 — the pick breaks and jams
+  the lock; the trap is triggered), Pickpocketing its notice rule (natural 1,
+  or a result below half the target), Climbing its fall on failure. Band
+  edges and the fraction are read from your own book at import, like every
+  other number.
+- **Rolls can bind the entry's own progression ladder**
+  (`target.fromProgression`). Thief skills keep no numbers in their prose —
+  the whole ladder lives in the p.33 grid — so no prose locator could ever
+  express their throws, and every table-driven skill's Rolls tab was empty.
+  Lockpicking and Trapbreaking now present their two printed methods as named
+  rolls (hasty / methodical) targeting the same 14-rung ladder the grid
+  materializes.
+- Effect locators can fill `naturalMax` and `belowFraction` (word fractions —
+  "half" — resolve through the numeral table).
+
+### Fixed
+
+- **The merge gate falsely rejected every `into`-based recipe.** It counted a
+  locator as resolved only if it filled `value`, so a recipe whose locator
+  fills `range`/`amount`/`times` failed the gate however well it materialized
+  — Shadowy Senses resolved 6/6 effects with its radius read off the page and
+  was rejected anyway. The `into` primitive (c370e38) had never been taught
+  to the gate. Replaced with the all-or-nothing count check the rolls branch
+  already used.
+- **`readNumber` refuses dice expressions.** "2d6" was read as 26 — and it did
+  not fail; it materialized as a clean-looking value no gate could catch. A
+  dice token now drops its effect: a missing mechanic is honest, an invented
+  number is not.
+- **`descStopY` now stops a bleed onto the next page, not only into the next
+  column.** The overleaf branch of `compileDefinition` ignored the assist, so
+  Trapbreaking's description swallowed p.35's next-section heading and no
+  register entry could prevent it. Both branches now agree; Trapbreaking's
+  description drops to its four real paragraphs.
+
 ## 0.62.0
 
 - **Connect Your Book takes several PDFs in one trip.** Both branches (the

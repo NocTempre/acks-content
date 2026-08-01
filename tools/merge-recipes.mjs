@@ -76,18 +76,23 @@ async function main() {
     }
 
     // Re-execute the entry to get THIS SEAT's description, then run the
-    // proposed locators against it exactly as the runtime would.
+    // proposed locators against it exactly as the runtime would. The
+    // progression rides along for `target.fromProgression` rolls — the gate
+    // must offer a spec exactly what the runtime offers it, or a roll the
+    // runtime materializes reads here as an unresolved locator.
     const cb = cookbooks.find((c) => c.entries?.[id]);
     let paras = [];
+    let progression = null;
     if (cb) {
       const res = await executeEntry(doc, cb, registers, id);
       paras = res?.fields?.description ?? [];
+      progression = res?.fields?.progression ?? null;
     }
     const problems = [];
     if (!paras.length) problems.push("no description extracted to verify against");
 
     if (recipe.rolls?.length) {
-      const got = materializeRolls(recipe.rolls, paras);
+      const got = materializeRolls(recipe.rolls, paras, { progression });
       if (got.length !== recipe.rolls.length) {
         problems.push(`rolls: ${recipe.rolls.length} authored, ${got.length} materialized`);
       }

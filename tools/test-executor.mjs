@@ -241,4 +241,66 @@ t("a malformed pattern never throws at the table", () => {
   assert.deepEqual(materializeEffects([{ type: "modifier", from: { pattern: "([" } }], paras("anything")), []);
 });
 
+/* ------------------------------------------------------------------ */
+/*  rolls from the entry's own progression ladder                      */
+/* ------------------------------------------------------------------ */
+
+const LADDER = {
+  kind: "breakpoints",
+  breakpoints: [
+    { atLevel: 1, value: 18 },
+    { atLevel: 2, value: 17 },
+  ],
+};
+
+t("target.fromProgression binds the entry's ladder as the roll's target", () => {
+  const [r] = materializeRolls(
+    [{ key: "hasty", label: { pattern: "(hastily)" }, target: { fromProgression: true } }],
+    paras("The thief may work hastily or methodically."),
+    { progression: LADDER },
+  );
+  assert.equal(r.label, "hastily");
+  assert.equal(r.scale, "level");
+  assert.deepEqual(r.target, LADDER);
+});
+
+t("a fromProgression roll with no materialized ladder is dropped, never guessed", () => {
+  assert.deepEqual(
+    materializeRolls([{ key: "hasty", target: { fromProgression: true } }], paras("anything"), {}),
+    [],
+  );
+  assert.deepEqual(materializeRolls([{ key: "hasty", target: { fromProgression: true } }], paras("anything")), []);
+});
+
+/* ------------------------------------------------------------------ */
+/*  outcome locators: band edge and fraction come off the page         */
+/* ------------------------------------------------------------------ */
+
+t("a botch band's edge locates into naturalMax", () => {
+  const [e] = materializeEffects(
+    [{ type: "outcome", trigger: "naturalBand", consequence: "the lock jams", from: { into: "naturalMax", pattern: "unmodified\\s*(?:roll\\s*of\\s*)?1\\s*[-–]\\s*(\\d+)" } }],
+    paras("On an unmodified roll of 1-3 the lock jams."),
+  );
+  assert.equal(e.naturalMax, 3);
+  assert.equal(e.trigger, "naturalBand");
+});
+
+t("a word fraction locates into belowFraction", () => {
+  const [e] = materializeEffects(
+    [{ type: "outcome", trigger: "belowFraction", consequence: "the victim notices", from: { into: "belowFraction", pattern: "below\\s*(half)\\s*the\\s*target" } }],
+    paras("On a roll below half the target value, the victim notices."),
+  );
+  assert.equal(e.belowFraction, 0.5);
+});
+
+t("an outcome whose band locator misses is dropped whole", () => {
+  assert.deepEqual(
+    materializeEffects(
+      [{ type: "outcome", trigger: "naturalBand", consequence: "x", from: { into: "naturalMax", pattern: "unmodified\\s*1\\s*[-–]\\s*(\\d+)" } }],
+      paras("No band stated here."),
+    ),
+    [],
+  );
+});
+
 console.log(`\n${n} tests passed`);

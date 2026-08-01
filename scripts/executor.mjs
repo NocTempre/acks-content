@@ -450,6 +450,12 @@ const LOCATABLE_FIELDS = {
   // a total of 12 or more, the subjects act as if bewitched". The threshold is
   // the page's number like any other, so it is located, not shipped.
   kickerAt: "integer",
+  // Roll-outcome triggers (acks-lib `outcome`): the botch band's top edge
+  // ("on an unmodified 1–3" -> 3) and the notice fraction ("below half the
+  // target value" -> 0.5, via the word-numeral table). Both are the page's
+  // numbers; the recipe ships only where to read them.
+  naturalMax: "integer",
+  belowFraction: "number",
 };
 
 /**
@@ -566,7 +572,7 @@ export function materializeEffects(specs, paras) {
  * with on:"rank" is ranks 1/2/3. `steps` overrides the step numbers when the
  * book's ladder does not start at 1.
  */
-export function materializeRolls(specs, paras) {
+export function materializeRolls(specs, paras, ctx = {}) {
   const text = (paras ?? []).map((p) => (typeof p === "string" ? p : p.text)).join(" ");
   if (!text) return [];
   const out = [];
@@ -587,6 +593,22 @@ export function materializeRolls(specs, paras) {
     if (lm) {
       const text0 = String(lm[label.group ?? 1] ?? "").replace(/\s+/g, " ").trim();
       if (text0) roll.label = text0;
+    }
+
+    // The entry's own progression ladder as this roll's target. Thief skills
+    // keep no numbers in their prose — the whole ladder lives in a grid the
+    // `progression` op reads (`ctx.progression`) — so no prose locator can ever
+    // express their throw, which left every table-driven skill's Rolls tab
+    // empty (the gap three chefs hit independently). The recipe says only
+    // "this roll's target IS the ladder"; the numbers still come off the
+    // seat's own page, through the same op as always. No ladder materialized
+    // (bookless seat) drops the roll like any other unlocated target.
+    if (target?.fromProgression) {
+      if (!ctx.progression?.breakpoints?.length) continue;
+      roll.scale = "level";
+      roll.target = ctx.progression;
+      out.push(roll);
+      continue;
     }
 
     const tm = run(target);
@@ -1464,7 +1486,9 @@ export async function executeEntry(doc, bookCookbook, registers, entryId, opts =
     // than merging with it: the recipe states how many rolls the entry has, so
     // anything the scan additionally thinks it sees is a duplicate or an
     // artifact. Scans are the draft for entries nobody has read yet.
-    const authored = materializeRolls(entry.fields?.rolls?.specs, fields.description);
+    const authored = materializeRolls(entry.fields?.rolls?.specs, fields.description, {
+      progression: fields.progression,
+    });
     const rolls = entry.fields?.rolls?.specs?.length ? authored : rollScan(fields.description);
     if (rolls.length) fields.rolls = rolls;
   }
