@@ -62,11 +62,25 @@ release, and whenever you change a runtime surface:
    **the feature you changed, exercised end-to-end through the UI**. For Active
    Effects, sheets, and drag-and-drop, verify the write landed on the target
    field — not merely that the code ran.
-4. The world may stay running while you commit — compiled packs are
+4. **Build your own test artifacts, then destroy them.** Creating the actors /
+   items / users a check needs is part of the check, not a prerequisite for it
+   — "no data existed to exercise it" is test data you were expected to make.
+   Delete what you made when you are done.
+
+   **Never test by mutating documents the world already had.** Editing a
+   fixture and restoring it afterwards is not the same thing: a rollback is a
+   second write that can silently fail (and does — an ownership rollback that
+   reported success left the grant in place), it cannot restore what you did
+   not think to snapshot, and a crash mid-test strands the world in the broken
+   state. A disposable actor needs no rollback, no snapshot, and no trust.
+   Seats are cheap too — the world has one user of every role, so verify
+   player-facing behaviour by joining as that player rather than by reasoning
+   about the template.
+5. The world may stay running while you commit — compiled packs are
    gitignored, so it can no longer dirty the repo.
 
 Report what you exercised and name what you could not reach. "Live-verified"
-with no list is not a result.
+with no list is not a result. Say what you created and confirm you removed it.
 
 ## Release
 
