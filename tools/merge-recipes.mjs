@@ -96,11 +96,23 @@ async function main() {
       }
     }
     if (recipe.effects?.length) {
-      const withLocator = recipe.effects.filter((e) => e.from?.pattern).length;
       const got = materializeEffects(recipe.effects, paras);
-      const gotLocated = got.filter((e) => e.value != null).length;
-      if (withLocator && gotLocated < withLocator) {
-        problems.push(`effects: ${withLocator} locators authored, ${gotLocated} resolved`);
+      // `materializeEffects` is all-or-nothing per spec — a locator that does
+      // not match drops its whole effect — so a short count IS an unresolved
+      // locator, and it catches every locator rather than a privileged one.
+      //
+      // The previous check counted materialized effects with `value != null`
+      // against authored effects with `from.pattern`. Both halves were wrong.
+      // It missed array-form `from: [...]` entirely, and it rejected any recipe
+      // whose locator fills a field OTHER than `value` through `from.into`
+      // (`range`, `amount`, `times`, …) even when the effect had materialized
+      // perfectly — a false rejection that blocked every `into`-based recipe in
+      // the pipeline. Caught by a chef whose Shadowy Senses recipe materialized
+      // 6/6 effects with `range: 30` read off the page and was rejected anyway.
+      if (got.length !== recipe.effects.length) {
+        problems.push(
+          `effects: ${recipe.effects.length} authored, ${got.length} materialized (a locator did not match)`,
+        );
       }
       // Authored effects REPLACE the scan, so the recipe must cover the whole
       // entry. Anything the scan was carrying that the recipe drops is a

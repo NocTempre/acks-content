@@ -72,7 +72,31 @@
         "page": 33
       }
     },
-    "icon": "icons/magic/perception/silhouette-stealth-shadow.webp"
+    "icon": "icons/magic/perception/silhouette-stealth-shadow.webp",
+    "effects": [
+      {
+        "type": "modifier",
+        "target": "surprise",
+        "appliesTo": "opponent",
+        "mode": "add",
+        "condition": "stationary in cover, dim light, or darkness",
+        "note": "Applies whether or not the Hiding throw succeeded.",
+        "from": {
+          "pattern": "suffer\\s*a\\s*(-\\s*\\d+)\\s*penalty\\s*to\\s*surprise"
+        }
+      },
+      {
+        "type": "modifier",
+        "target": "attackThrow",
+        "appliesTo": "opponent",
+        "mode": "add",
+        "condition": "while hidden; opponent knows his general location",
+        "note": "An opponent that does not know the location cannot attack him at all.",
+        "from": {
+          "pattern": "attack\\s*him\\s*in\\s*melee\\s*at\\s*a\\s*(-\\s*\\d+)\\s*penalty"
+        }
+      }
+    ]
   },
   {
     "id": "def.skill.listening",
@@ -96,7 +120,15 @@
       },
       "descStopY": 700
     },
-    "icon": "icons/svg/sound.svg"
+    "icon": "icons/svg/sound.svg",
+    "effects": [
+      {
+        "type": "limitation",
+        "restriction": "One use per turn while the party is moving"
+      }
+    ],
+    "audited": "2026-08-01",
+    "auditor": "chef"
   },
   {
     "id": "def.skill.lockpicking",
@@ -123,11 +155,13 @@
       {
         "type": "modifier",
         "target": "proficiencyThrow",
+        "forWhat": "Lockpicking",
         "mode": "add",
         "condition": "methodical attempt (one turn); not a hasty attempt",
         "from": {
-          "pattern": "methodically pick a lock[\\s\\S]{0,120}?with a \\+(\\d+) bonus"
-        }
+          "pattern": "methodically\\s*pick\\s*a\\s*lock[\\s\\S]{0,140}?with\\s*a\\s*\\+(\\d+)\\s*bonus"
+        },
+        "note": "Applies only to the methodical method; a hasty attempt uses the unmodified throw."
       }
     ],
     "icon": "icons/skills/trades/security-lockpicking-chest-blue.webp"
@@ -153,7 +187,29 @@
         "page": 33
       }
     },
-    "icon": "icons/commodities/currency/coins-plain-pouch-gold.webp"
+    "icon": "icons/commodities/currency/coins-plain-pouch-gold.webp",
+    "effects": [
+      {
+        "type": "modifier",
+        "target": "proficiencyThrow",
+        "forWhat": "Pickpocketing",
+        "mode": "add",
+        "condition": "target is unaware of the thief",
+        "from": {
+          "pattern": "unaware\\s*of\\s*the\\s*thief[\\s\\S]{0,60}?\\+(\\d+)\\s*bonus"
+        }
+      },
+      {
+        "type": "modifier",
+        "target": "reaction",
+        "mode": "add",
+        "condition": "the victim notices the theft attempt",
+        "from": {
+          "pattern": "reaction\\s*roll\\s*with\\s*a\\s*(-\\d+)\\s*penalt"
+        },
+        "note": "Thrown by the Judge for the victim after a badly failed attempt. A penalty on the thief's own reaction roll, not one he imposes on a roll of someone else's, so it stays appliesTo self."
+      }
+    ]
   },
   {
     "id": "def.skill.searching",
@@ -181,10 +237,18 @@
         "type": "modifier",
         "target": "proficiencyThrow",
         "mode": "add",
-        "condition": "methodical attempt (one turn); not a hasty attempt",
+        "forWhat": "Searching",
+        "condition": "methodical search (one turn), not a hasty one",
         "from": {
-          "pattern": "methodically search requires[\\s\\S]{0,110}?with a \\+(\\d+) bonus"
-        }
+          "pattern": "methodically\\s*search\\s*requires[\\s\\S]{0,110}?with\\s*a\\s*\\+(\\d+)\\s*bonus"
+        },
+        "note": "Adds to the level-indexed Searching throw. The hasty variant, which takes one round instead of one turn, gets no bonus."
+      },
+      {
+        "type": "limitation",
+        "condition": "hasty search (one round)",
+        "restriction": "One hasty try per area until the thief gains a level",
+        "note": "A methodical search of the same area is still allowed, and may be repeated. A failed throw made while hastily searching on the move spends that area's one hasty attempt."
       }
     ],
     "icon": "icons/tools/scribal/magnifying-glass.webp"
@@ -235,10 +299,44 @@
         "type": "modifier",
         "target": "proficiencyThrow",
         "mode": "add",
+        "forWhat": "Sneaking",
+        "condition": "moving faster than one-half combat speed",
+        "from": {
+          "pattern": "greater\\s*than\\s*one-half\\s*combat\\s*speed,?\\s*he\\s*takes\\s*a\\s*(-\\d+)"
+        },
+        "note": "Exploration speed and one-half combat speed carry no penalty."
+      },
+      {
+        "type": "modifier",
+        "target": "proficiencyThrow",
+        "mode": "add",
+        "forWhat": "Sneaking",
         "condition": "running",
         "from": {
-          "pattern": "If he runs, he takes a (-\\d+) penalty"
-        }
+          "pattern": "If\\s*he\\s*runs,?\\s*he\\s*takes\\s*a\\s*(-\\d+)\\s*penalty"
+        },
+        "note": "Alternative to the faster-than-half-combat-speed penalty, not cumulative with it."
+      },
+      {
+        "type": "modifier",
+        "target": "surprise",
+        "mode": "add",
+        "appliesTo": "opponent",
+        "condition": "thief outside their line of sight",
+        "from": {
+          "pattern": "suffer\\s*a\\s*(-\\d+)\\s*penalty\\s*to\\s*surprise"
+        },
+        "note": "Imposed on opponents encountering the thief, whether or not the Sneaking throw succeeded."
+      },
+      {
+        "type": "capability",
+        "condition": "while sneaking (throw succeeded)",
+        "note": "The thief moves in total silence: even an alert creature that makes its Listening throw hears nothing."
+      },
+      {
+        "type": "capability",
+        "condition": "engaging an unengaged foe from the rear",
+        "note": "Engaging an unengaged opponent from the rear while sneaking denies that opponent its free facing change."
       }
     ],
     "icon": "icons/svg/cowled.svg"
@@ -260,16 +358,33 @@
     "rolls": [
       {
         "key": "identifyForeign",
+        "label": {
+          "pattern": "can\\s*(identify\\s*those\\s*of\\s*other\\s*\\w+\\s*\\w+)"
+        },
         "target": {
-          "pattern": "other urban settlements with a proficiency throw of (\\d+)\\+"
+          "pattern": "other\\s*urban\\s*settlements\\s*with\\s*a\\s*proficiency\\s*throw\\s*of\\s*(\\d+)\\+"
         },
         "rollType": "above",
         "formula": "1d20",
-        "condition": "an urban settlement other than his home settlement"
+        "condition": "urban settlements other than his home settlement",
+        "note": "Automatic in his own home settlement, with no throw. The Judge may set a harder target for secretive or distant organizations."
       }
     ],
     "icon": "icons/svg/city.svg",
-    "iconNiche": "modules/game-icons-net/blacktransparent/hooded-figure.svg"
+    "iconNiche": "modules/game-icons-net/blacktransparent/hooded-figure.svg",
+    "effects": [
+      {
+        "type": "capability",
+        "condition": "has the needed proficiencies or thief skills",
+        "note": "Lets the character undertake hijinks."
+      },
+      {
+        "type": "capability",
+        "note": "Counts as one rank of the Streetwise proficiency; the two do not stack."
+      }
+    ],
+    "audited": "2026-08-01",
+    "auditor": "chef"
   },
   {
     "id": "def.skill.trapbreaking",
@@ -350,6 +465,17 @@
       "descStopY": 315,
       "expectTop": 2
     },
-    "icon": "icons/svg/house.svg"
+    "icon": "icons/svg/house.svg",
+    "effects": [
+      {
+        "type": "companion",
+        "condition": "owns a hideout worth at least the printed sum",
+        "note": "Novice thief followers. Both how many arrive and how long they take are rolled on the page's own dice. At least one is a plant spying for a local rival; any the thief hires draw the standard ruffian wage."
+      },
+      {
+        "type": "capability",
+        "note": "The followers can be built into a criminal syndicate; those rules are printed in the Campaigns chapter."
+      }
+    ]
   }
 ]
