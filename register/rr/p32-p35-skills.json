@@ -501,7 +501,9 @@
         "note": "The methodical method takes one turn and may be repeated on the same trap as often as desired; springing it is its only failure risk."
       }
     ],
-    "icon": "icons/svg/trap.svg"
+    "icon": "icons/svg/trap.svg",
+    "audited": "2026-08-01",
+    "auditor": "chef"
   },
   {
     "id": "def.skill.deciphering",

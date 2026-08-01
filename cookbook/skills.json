@@ -1181,6 +1181,7 @@
       "meta": {
         "category": "skill"
       },
+      "audited": true,
       "icon": "icons/svg/trap.svg",
       "fields": {
         "name": {
