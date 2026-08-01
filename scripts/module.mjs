@@ -604,11 +604,12 @@ async function connectBookDialog(capture) {
   const fileRow = fsa
     ? `<p class="notes">${game.i18n.localize(`${LANG_PREFIX}.ui.connectNoteFsa`)}</p>`
     : `<div class="form-group"><label>${game.i18n.localize(`${LANG_PREFIX}.ui.connectFile`)}</label>
-         <input type="file" name="pdf" accept="application/pdf"></div>
+         <input type="file" name="pdf" accept="application/pdf" multiple></div>
        <p class="notes">${game.i18n.localize(`${LANG_PREFIX}.ui.connectNote`)}</p>`;
   const content = `
     <div class="form-group"><label>${game.i18n.localize(`${LANG_PREFIX}.ui.connectBook`)}</label>
       <select name="book">${options}</select></div>
+    <p class="notes">${game.i18n.localize(`${LANG_PREFIX}.ui.connectBulkNote`)}</p>
     ${fileRow}`;
   return foundry.applications.api.DialogV2.prompt({
     window: { title: game.i18n.localize(`${LANG_PREFIX}.ui.connectTitle`) },
@@ -621,19 +622,29 @@ async function connectBookDialog(capture) {
         const bookId = form.elements.book.value;
         if (fsa) {
           try {
-            const [handle] = await window.showOpenFilePicker({
+            const handles = await window.showOpenFilePicker({
+              multiple: true,
               types: [{ description: "PDF", accept: { "application/pdf": [".pdf"] } }],
             });
-            const file = await handle.getFile();
-            await ingestBook(bookId, await file.arrayBuffer(), { cache: file });
-            await locationPut(bookId, { kind: "handle", handle, name: handle.name ?? null });
-            ui.notifications.info(game.i18n.format(`${LANG_PREFIX}.ui.locationSaved`, { book: BOOKS[bookId].label }));
+            if (handles.length === 1) {
+              const [handle] = handles;
+              const file = await handle.getFile();
+              await ingestBook(bookId, await file.arrayBuffer(), { cache: file });
+              await locationPut(bookId, { kind: "handle", handle, name: handle.name ?? null, size: file.size });
+              ui.notifications.info(game.i18n.format(`${LANG_PREFIX}.ui.locationSaved`, { book: BOOKS[bookId].label }));
+            } else if (handles.length > 1) {
+              const picks = [];
+              for (const handle of handles) picks.push({ handle, file: await handle.getFile() });
+              await connectSeveral(picks);
+            }
           } catch (err) {
             if (err?.name !== "AbortError") throw err;
           }
         } else {
-          const file = form.elements.pdf.files[0];
-          if (!file) return ui.notifications.warn("acks-content | no file chosen — nothing read.");
+          const files = [...(form.elements.pdf.files ?? [])];
+          if (!files.length) return ui.notifications.warn("acks-content | no file chosen — nothing read.");
+          if (files.length > 1) return connectSeveral(files.map((file) => ({ file })));
+          const file = files[0];
           await ingestBook(bookId, await file.arrayBuffer(), { cache: file });
           // All this browser will let us keep is which file it was. That is
           // still worth keeping: next session says the name and offers the
@@ -782,6 +793,46 @@ function matchFilesToBooks(files, pendingIds, records) {
 }
 
 /**
+ * First-time linking, several files in one trip through Connect Your Book.
+ *
+ * Files are matched against EVERY book this build reads — first-time linking
+ * is the whole point, so there may be no remembered record to lean on and the
+ * title-in-filename pass does most of the work. Each match is read and then
+ * remembered in the strongest form this seat supports: the FSA handle when the
+ * pick came through `showOpenFilePicker` (silent-ish reopen next session),
+ * name-only otherwise. Reads are sequential for the same reason the reconnect
+ * picker's are — several ACKS PDFs parsed at once is hundreds of megabytes in
+ * flight. Anything unmatched is named, never guessed: the remedy is the same
+ * dialog again, one file, with the Book dropdown saying which slot it fills.
+ */
+async function connectSeveral(picks) {
+  const remembered = await locations();
+  const byFile = new Map(picks.map((pick) => [pick.file, pick]));
+  const { matched, unmatched } = matchFilesToBooks([...byFile.keys()], Object.keys(BOOKS), remembered);
+  const done = [];
+  for (const [bookId, file] of matched) {
+    const handle = byFile.get(file)?.handle ?? null;
+    try {
+      await ingestBook(bookId, await file.arrayBuffer(), { cache: file });
+      if (handle) await locationPut(bookId, { kind: "handle", handle, name: handle.name ?? null, size: file.size });
+      else await rememberFile(bookId, file);
+      done.push(BOOKS[bookId].label);
+    } catch (err) {
+      console.error(`${MODULE_ID} | connect ${bookId} from ${file.name}`, err);
+      ui.notifications.error(`${BOOKS[bookId].label}: ${game.i18n.localize(`${LANG_PREFIX}.ui.reconnectFailed`)}`);
+    }
+  }
+  if (done.length) {
+    ui.notifications.info(game.i18n.format(`${LANG_PREFIX}.ui.connectBulkDone`, { count: done.length, books: done.join(", ") }));
+  }
+  if (unmatched.length) {
+    ui.notifications.warn(
+      game.i18n.format(`${LANG_PREFIX}.ui.connectBulkUnmatched`, { files: unmatched.map((f) => f.name).join(", ") }),
+    );
+  }
+}
+
+/**
  * The join-time offer: one row per book that could not reopen itself.
  *
  * One control PER BOOK, not one button for the lot, because re-granting file
@@ -792,11 +843,11 @@ function matchFilesToBooks(files, pendingIds, records) {
  * used, and says what happened; the dialog closes itself once nothing is left.
  *
  * The one control that CAN answer for several books at once is a plain file
- * picker, which grants no persistent permission and so consumes nothing: a
- * seat re-picking two or more books gets a "choose them all" row above the
- * per-book ones. That is the difference between three round trips through the
- * OS file dialog every reload and one — and on a remote seat, which is where
- * this path is reached from, it is the whole of the reconnect experience.
+ * picker, which grants no persistent permission and so consumes nothing: any
+ * seat with two or more books waiting gets a "choose them all" row above the
+ * per-book ones — handle seats included, whose remembered handles are kept so
+ * next session still offers the one-click Unlock. That is the difference
+ * between three round trips through the OS file dialog every reload and one.
  */
 const offerReconnect = (pending) => singleton("reconnect", (capture) => offerReconnectDialog(pending, capture));
 
@@ -828,9 +879,14 @@ async function offerReconnectDialog(pending, capture) {
     })
     .join("");
 
-  // Only worth showing when it actually saves a trip: two or more books that
-  // this browser can only get back through the picker.
-  const pickable = pending.filter((id) => records.get(id)?.kind === "file" || !records.get(id));
+  // Only worth showing when it actually saves a trip: two or more books a
+  // picker can answer — every kind but `url`, whose Retry needs no picker.
+  // Handle seats qualify too: a plain multi-file input grants no persistent
+  // permission and so consumes no gesture, so the one-gesture-per-book rule
+  // that forces their per-row Unlock buttons does not bind it. Their handle
+  // records are kept (see the ingest loop) — bulk is a faster way in, not a
+  // downgrade of what the seat remembers.
+  const pickable = pending.filter((id) => records.get(id)?.kind !== "url");
   const bulk =
     pickable.length > 1
       ? `<div class="acks-content-reconnect-row acks-content-reconnect-bulk">
@@ -903,7 +959,18 @@ async function offerReconnectDialog(pending, capture) {
         for (const [bookId, file] of matched) {
           try {
             await ingestBook(bookId, await file.arrayBuffer(), { cache: file });
-            await rememberFile(bookId, file);
+            const record = records.get(bookId);
+            if (record?.kind === "handle") {
+              // Never downgrade a handle to a name-only record: the handle
+              // still reopens with one click next session, which a re-picked
+              // name never will. Refresh the size so a renamed copy can still
+              // be matched by pass 2 next time.
+              await locationPut(bookId, { ...record, size: file.size }).catch((err) =>
+                console.warn(`${MODULE_ID} | could not update remembered location for ${bookId}`, err),
+              );
+            } else {
+              await rememberFile(bookId, file);
+            }
             opened++;
             settle(bookId, true, game.i18n.localize(`${LANG_PREFIX}.ui.reconnectOpened`));
           } catch (err) {

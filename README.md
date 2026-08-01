@@ -60,21 +60,25 @@ Enable the module in an `acks` world, then open the **"ACKS Content — Macros"*
 compendium. They are ordered by what you do first.
 
 **Set up your seat.** `Connect Your Book` picks a book and your local PDF (read
-in this browser only, never uploaded). Re-open a sheet afterwards and its
-description gains "📖 Show book text". `Book Status` says which books this seat
-can read; `Forget Books` drops the remembered locations and this session's prose.
+in this browser only, never uploaded) — and takes **several PDFs in one trip**:
+pick them all and each is matched to its book by filename (the stock DTRPG
+names all match), with anything unplaceable named so you can connect it alone.
+Re-open a sheet afterwards and its description gains "📖 Show book text".
+`Book Status` says which books this seat can read; `Forget Books` drops the
+remembered locations and this session's prose.
 
 Where each book lives is remembered **on this device**, so joining again offers
 them back: books that can reopen themselves do, silently, and anything else is
-listed in a **Reconnect your books** dialog — one control per book, because
-browsers grant file permission one file at a time. `Reconnect Remembered Books`
-runs that pass again if you dismissed it. On browsers that cannot reopen a file
-at all (Firefox, or any seat on an insecure `http://` origin), the file's *name*
-is what gets remembered, and the dialog offers a picker with that name beside
-it. If several books are waiting, one **All N at once** picker takes them all in
-a single trip and matches each file to its book by name, then size, then the
-book's title in the filename; anything it cannot place is named so you can use
-that book's own picker. The prose itself is never stored, on any path.
+listed in a **Reconnect your books** dialog. Each book has its own control —
+browsers re-grant file permission one file per click — but whenever two or more
+books are waiting, one **All N at once** picker takes them all in a single trip
+and matches each file to its book by name, then size, then the book's title in
+the filename; anything it cannot place is named so you can use that book's own
+control. `Reconnect Remembered Books` runs that pass again if you dismissed it.
+On browsers that cannot reopen a file at all (Firefox, or any seat on an
+insecure `http://` origin), the file's *name* is what gets remembered, and the
+dialog offers a picker with that name beside it. The prose itself is never
+stored, on any path.
 
 **Page reloads don't cost you the picker.** Foundry reloads often, and a remote
 seat — plain `http://` on the LAN, or any Firefox seat — used to re-pick every
