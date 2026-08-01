@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.62.0
+
+- **Connect Your Book takes several PDFs in one trip.** Both branches (the
+  File System Access picker and the plain input) accept multiple files; each
+  is matched to its book by remembered name, then size, then the book's title
+  in the filename — a single pick still honours the Book dropdown exactly as
+  before, and anything unmatched is named, never guessed.
+- **The reconnect "All N at once" picker now appears on every seat kind** with
+  two or more books waiting — it was gated to re-pick (name-only) seats, so
+  the FSA browsers most GMs run never saw it and unlocked books one click at
+  a time. Handle records are preserved through a bulk re-pick (never
+  downgraded to name-only), with their size refreshed for the matcher.
+
 ## 0.61.1
 
 **The refresh bridge shipped in 0.61.0 never actually fired.** A page reload
