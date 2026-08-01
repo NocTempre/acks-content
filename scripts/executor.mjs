@@ -390,6 +390,16 @@ function readNumber(raw, allowFraction) {
     const v = Number(ratio[1]) / Number(ratio[2]);
     return allowFraction ? v : Math.round(v);
   }
+  // A DICE EXPRESSION IS A FORMULA, NOT A NUMBER. The strip below removes every
+  // non-digit, so "2d6" would read as 26 — and it does not fail: the effect
+  // materializes as `{amount: 26}`, looking exactly like a value read cleanly
+  // off the page. No gate can catch it (the count matches, the locator
+  // "resolved"), which makes it precisely the plausible-wrong-value failure
+  // this pipeline exists to prevent. Refusing it drops the effect instead, so
+  // the gap is visible and reportable — a missing mechanic is honest, an
+  // invented number is not. There is no locatable dice field today; when one is
+  // added it must parse the formula, never fall through to here.
+  if (/^\d+\s*d\s*\d+/i.test(s)) return NaN;
   return allowFraction ? parseFloat(s.replace(/[^\d.-]/g, "")) : parseInt(s.replace(/[^\d-]/g, ""), 10);
 }
 
