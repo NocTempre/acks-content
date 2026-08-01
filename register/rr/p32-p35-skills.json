@@ -13,7 +13,23 @@
     "meta": {
       "category": "skill"
     },
-    "icon": "icons/svg/thrust.svg"
+    "icon": "icons/svg/thrust.svg",
+    "effects": [
+      {
+        "type": "modifier",
+        "target": "attackThrow",
+        "mode": "add",
+        "condition": "backstabbing a vulnerable opponent",
+        "from": {
+          "pattern": "backstabbing[^.]{0,40}?\\+\\s*(\\d+)\\s*bonus\\s*to\\s*hit"
+        }
+      },
+      {
+        "type": "capability",
+        "condition": "backstabbing a vulnerable opponent",
+        "note": "Extra damage dice are added as the thief gains levels; the description states the levels, and the class table the die count."
+      }
+    ]
   },
   {
     "id": "def.skill.climbing",
@@ -41,15 +57,28 @@
       {
         "type": "modifier",
         "target": "proficiencyThrow",
+        "forWhat": "Climbing",
         "mode": "add",
-        "condition": "moving at full combat speed",
+        "condition": "climbing at one-half combat speed",
         "from": {
-          "pattern": "full combat speed[^.]{0,24}?(-\\d+)"
+          "pattern": "one-half\\s*combat\\s*speed[^.]{0,40}?(-\\s*\\d+)\\s*penalty"
+        }
+      },
+      {
+        "type": "modifier",
+        "target": "proficiencyThrow",
+        "forWhat": "Climbing",
+        "mode": "add",
+        "condition": "climbing at full combat speed",
+        "from": {
+          "pattern": "full\\s*combat\\s*speed[^.]{0,40}?(-\\s*\\d+)\\s*penalty"
         }
       }
     ],
     "icon": "icons/tools/hand/claws-climbing.webp",
-    "iconNiche": "modules/game-icons-net/blacktransparent/mountain-climbing.svg"
+    "iconNiche": "modules/game-icons-net/blacktransparent/mountain-climbing.svg",
+    "audited": "2026-08-01",
+    "auditor": "chef"
   },
   {
     "id": "def.skill.hiding",
@@ -271,7 +300,37 @@
       ]
     },
     "icon": "icons/svg/eye.svg",
-    "iconNiche": "modules/game-icons-net/blacktransparent/all-seeing-eye.svg"
+    "iconNiche": "modules/game-icons-net/blacktransparent/all-seeing-eye.svg",
+    "effects": [
+      {
+        "type": "sense",
+        "vision": "lightless",
+        "condition": "moving at combat or exploration speed",
+        "from": {
+          "into": "range",
+          "pattern": "sheds\\s*dim\\s*light\\s*in\\s*a\\s*(\\d+)"
+        },
+        "note": "Sight with no light source, equal to dim light out to the located radius. Usable to fight and to probe for traps."
+      },
+      {
+        "type": "limitation",
+        "restriction": "Fails when deafened or in magical silence"
+      },
+      {
+        "type": "limitation",
+        "restriction": "Fails in bright light or in magical darkness"
+      },
+      {
+        "type": "limitation",
+        "restriction": "No colour or fine detail; cannot read by it"
+      },
+      {
+        "type": "limitation",
+        "restriction": "Counts as dim light, so a foe can still hide"
+      }
+    ],
+    "audited": "2026-08-01",
+    "auditor": "chef"
   },
   {
     "id": "def.skill.sneaking",
@@ -405,7 +464,8 @@
         "table": "Thief Skills",
         "column": "Trapbreaking",
         "page": 33
-      }
+      },
+      "descStopY": 660
     },
     "effects": [
       {
@@ -415,9 +475,30 @@
         "mode": "add",
         "condition": "methodical attempt (one turn)",
         "from": {
-          "pattern": "methodically disarm[\\s\\S]{0,120}?with\\s*a \\+(\\d+) bonus"
+          "pattern": "methodically\\s*disarm[\\s\\S]{0,120}?with\\s*a\\s*\\+(\\d+)\\s*bonus"
         },
         "note": "Applies only to the slow method; a hasty attempt uses the unmodified throw."
+      },
+      {
+        "type": "limitation",
+        "forWhat": "Trapbreaking",
+        "condition": "hasty attempt (one round)",
+        "restriction": "Hasty: a low natural roll springs the trap",
+        "note": "The hasty method takes one round and uses the unmodified throw. Its triggering band is wider than the methodical method's; the band itself is a printed number and has no primitive here."
+      },
+      {
+        "type": "limitation",
+        "forWhat": "Trapbreaking",
+        "condition": "hasty attempt (one round)",
+        "restriction": "Hasty: one try per trap until he gains a level",
+        "note": "Any other failure only denies the quick fix — a methodical attempt on the same trap is still open."
+      },
+      {
+        "type": "limitation",
+        "forWhat": "Trapbreaking",
+        "condition": "methodical attempt (one turn)",
+        "restriction": "Methodical: a low natural roll springs the trap",
+        "note": "The methodical method takes one turn and may be repeated on the same trap as often as desired; springing it is its only failure risk."
       }
     ],
     "icon": "icons/svg/trap.svg"

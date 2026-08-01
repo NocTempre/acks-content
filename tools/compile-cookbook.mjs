@@ -2253,8 +2253,18 @@ async function compileDefinition(doc, entry, kindRow) {
       const cx1 = cols[col + 2] ? cols[col + 2] - 6 : pd.width;
       paras.push(...paragraphBoxes(toLines(cont), cx0, cx1).map((p) => withFixes(p, pd, tabs)));
       bodyText = `${bodyText} ${joinBody(cont)}`.trim();
-    } else if (!stop && col + 1 >= cols.length) {
+    } else if (!stop && assists.descStopY == null && col + 1 >= cols.length) {
       // Bottom of the LAST column: the block continues overleaf.
+      //
+      // `descStopY` gates this exactly as it gates the column-flow above. Two
+      // branches ask the same question — does this block end where it is? — and
+      // they must not disagree about what counts as an answer. They did: a chef
+      // who set `descStopY` stopped a bleed into the next COLUMN and had no way
+      // to stop one onto the next PAGE, because `pageFlow` re-detects columns
+      // on the following page and consults no assists. Trapbreaking swallowed
+      // p.35's "Additional Class Powers" heading, and the only assist that
+      // suppressed it was a FALSE `columns` — lying in the one field whose
+      // whole justification is that it states geometric fact.
       const pf = await pageFlow(doc, page, (it) => it.alias === anchor.alias);
       if (pf?.items.length) {
         const px0 = pf.cols[0] - 5;
